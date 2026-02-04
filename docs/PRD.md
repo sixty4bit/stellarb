@@ -83,73 +83,46 @@ The three-phase journey from tutorial to the real game.
 
 #### **4.3.1. Recruiter Database Schema**
 
-The Recruiter uses a three-table architecture for efficiency:
+```ruby
+class Recruit < ApplicationRecord
+  # Shared pool - all players of same level see same recruits
+  # Columns: level_tier, race, npc_class, skill, base_stats (jsonb),
+  #          employment_history (jsonb), chaos_factor, available_at, expires_at
+  
+  scope :available_for, ->(user) { where(level_tier: user.level_tier).where("available_at <= ? AND expires_at > ?", Time.current, Time.current) }
+end
 
-**Table 1: `recruits` (The Shared Pool)**
+class HiredRecruit < ApplicationRecord
+  # Immutable copy created when player hires from pool
+  # Columns: original_recruit_id, race, npc_class, skill, stats (jsonb),
+  #          employment_history (jsonb), chaos_factor
+  
+  has_many :hirings
+  has_many :users, through: :hirings
+end
+
+class Hiring < ApplicationRecord
+  # Player's relationship to their hired recruits
+  # Columns: user_id, hired_recruit_id, custom_name, assignable_type,
+  #          assignable_id, hired_at, wage, status, terminated_at
+  
+  belongs_to :user
+  belongs_to :hired_recruit
+  belongs_to :assignable, polymorphic: true  # Ship or Building
+  
+  enum :status, { active: 0, fired: 1, deceased: 2, retired: 3, striking: 4 }
+end
+
+class Ship < ApplicationRecord
+  has_many :hirings, as: :assignable
+  has_many :crew, through: :hirings, source: :hired_recruit
+end
+
+class Building < ApplicationRecord
+  has_many :hirings, as: :assignable
+  has_many :staff, through: :hirings, source: :hired_recruit
+end
 ```
-recruits
-├── id
-├── level_tier          # Which player levels see this recruit
-├── race                # Vex, Solari, Krog, Myrmidon
-├── class               # Governor, Navigator, Engineer, Marine
-├── skill               # 1-100
-├── base_stats          # JSONB - all procedural attributes
-├── employment_history  # JSONB - generated resume (see 5.1.6)
-├── chaos_factor        # 0-100, hidden from players
-├── available_at        # When this recruit appears in rotation
-└── expires_at          # When removed from pool (30-90 min window)
-```
-
-* **Generation:** Pool is pre-generated based on player count and class demand.
-* **Rotation:** Recruits cycle in/out on random intervals (30-90 min).
-* **Reuse:** Same recruit record shown to ALL players of that level tier.
-
-**Table 2: `hired_recruits` (Permanent Copy)**
-```
-hired_recruits
-├── id
-├── original_recruit_id  # Reference to source (nullable, for audit)
-├── race
-├── class
-├── skill
-├── stats               # JSONB - frozen at hire time
-├── employment_history  # JSONB - frozen at hire time
-├── chaos_factor        # Frozen, still hidden
-└── created_at          # Hire timestamp
-```
-
-* **Copy on Hire:** When a player hires, the recruit is **copied** to this table.
-* **Immutable:** Stats are frozen forever. The recruit's history at hire time is preserved.
-* **Decoupled:** Original recruit can expire from pool; hired copy persists.
-
-**Table 3: `hirings` (Player ↔ Recruit Relationship)**
-```
-hirings
-├── id
-├── user_id
-├── hired_recruit_id
-├── custom_name         # Player can rename their crew
-├── assignable_type     # "Ship" or "Building" (polymorphic)
-├── assignable_id       # FK to ships or buildings table
-├── hired_at
-├── wage                # Current wage (can change over time)
-├── status              # active, fired, deceased, retired, striking
-└── terminated_at       # When employment ended (if applicable)
-```
-
-* **Polymorphic Assignment:** `assignable_type` + `assignable_id` allows assignment to Ships OR Buildings.
-* **Mutable Data:** Only player-controlled data lives here (name, assignment, wage).
-* **History:** Terminated hirings are kept for the player's employment history view.
-
-**Why This Architecture:**
-| Concern | Solution |
-|---------|----------|
-| Generation speed | Generate pool once, not per-player |
-| Memory efficiency | Shared pool, not N copies |
-| Deterministic rotation | Same recruits for same level = predictable |
-| Stat immutability | Copy-on-hire freezes the recruit forever |
-| Flexible assignment | Polymorphic handles ships/buildings |
-| Player customization | Join table holds mutable fields only |
 
 ### **4.4. NPC Mechanics (Human Resources)**
 NPCs are the "Software" that runs the "Hardware" (Ships/Buildings). They are a finite, decaying resource that directly impacts the mathematical efficiency of assets.
