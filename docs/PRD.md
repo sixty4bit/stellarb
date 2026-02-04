@@ -109,11 +109,94 @@ NPCs are the "Software" that runs the "Hardware" (Ships/Buildings). They are a f
 
 ## **5. Infrastructure & Assets**
 
-### **5.1. Procedural Asset Generation**
-* Growth: The list of available Ship and Building blueprints grows dynamically as the player base increases.
-* Definition: Assets are not pre-designed manually but generated from a list of attributes:
-  * *Example Attributes:* Cargo Capacity, Fuel Efficiency, Maneuverability, Hardpoints, NPC Crew Slots, Maintenance Rate.
-* Uniqueness: A "Mark IV Hauler" in Galaxy A might have slightly different stats than one generated in Galaxy B, encouraging trade of blueprints and ships.
+### **5.1. Procedural Generation Engine**
+
+The universe, assets, and NPCs are generated deterministically from coordinate seeds — not stored until "realized" by player action.
+
+#### **5.1.1. Core Principles**
+* **Deterministic:** Same seed → same output, always. No randomness at generation time.
+* **Lazy Realization:** Nothing exists in the database until a player discovers it.
+* **Attribute-Based:** Assets are combinations of attributes, not hand-crafted designs.
+
+#### **5.1.2. System Generation**
+* **Input:** 3D coordinate tuple `(x, y, z)` where each axis is `0..999,999`
+* **Seed Formula:** `SHA256(x || y || z)` → 256-bit seed
+* **Output:** Deterministic system properties:
+  * Star type (enum: Red Dwarf, Yellow, Blue Giant, etc.)
+  * Planet count (0-12)
+  * Resource distribution (mineral types + quantities)
+  * Base market prices
+  * Hazard level (0-100)
+
+#### **5.1.3. Asset Generation (Ships & Buildings)**
+* **Blueprint Pool:** Grows dynamically as player base increases.
+* **Attribute Set:**
+  | Attribute | Ships | Buildings |
+  |-----------|-------|-----------|
+  | Cargo Capacity | ✓ | ✓ |
+  | Fuel Efficiency | ✓ | — |
+  | Maneuverability | ✓ | — |
+  | Hardpoints | ✓ | ✓ |
+  | NPC Crew Slots | ✓ | ✓ |
+  | Maintenance Rate | ✓ | ✓ |
+  | Output Rate | — | ✓ |
+  | Storage Capacity | — | ✓ |
+* **Variation:** A "Mark IV Hauler" in Galaxy A has different stats than one in Galaxy B (seed includes location).
+
+#### **5.1.4. NPC Generation**
+* **Input:** System seed + timestamp + slot index
+* **Output:**
+  * Name (procedural, race-appropriate)
+  * Race (Vex, Solari, Krog, Myrmidon)
+  * Class (Governor, Navigator, Engineer, Marine)
+  * Skill level (1-100)
+  * Rarity tier (Common 70%, Uncommon 20%, Rare 8%, Legendary 2%)
+  * Quirks (1-3 procedural traits)
+  * Hidden Chaos Factor (0-100, never shown to player)
+
+#### **5.1.5. Success Criteria**
+
+**Done when:**
+- [ ] `generate_system(x, y, z)` returns identical output on every call
+- [ ] `generate_system(0, 0, 0)` returns "The Cradle" with fixed tutorial properties
+- [ ] System generation completes in <10ms
+- [ ] Asset generation completes in <5ms
+- [ ] NPC generation completes in <2ms
+- [ ] No database reads required for generation (pure function)
+- [ ] 1 million unique coordinates produce 1 million unique systems (collision test)
+
+**Measured by:**
+| Metric | Target | Verify |
+|--------|--------|--------|
+| Generation time (system) | <10ms | `Benchmark.measure { generate_system(rand, rand, rand) }` |
+| Generation time (asset) | <5ms | `Benchmark.measure { generate_ship(seed) }` |
+| Determinism | 100% | `1000.times { assert_equal generate_system(x,y,z), generate_system(x,y,z) }` |
+| Collision rate | 0% | Hash 10^6 coords, check for duplicate seeds |
+
+**Fails if:**
+- Same coordinates produce different results on different calls
+- Same coordinates produce different results on different servers
+- Generation requires database lookup (breaks offline/testing)
+- Cradle (0,0,0) is not special-cased for tutorial
+- Generation time exceeds 50ms (blocks UI)
+
+**Racial Integrity Checks (from Section 10):**
+- [ ] Vex ships average 20% higher Cargo Capacity than global mean
+- [ ] Solari ships average 20% higher Sensor Range than global mean
+- [ ] Krog ships average 20% higher Hull Points than global mean
+- [ ] Myrmidon ships average 20% lower Cost than global mean
+
+**Verify with:**
+```ruby
+# Run the generation test suite
+bin/rails test test/lib/procedural_generation_test.rb
+
+# Verify racial balance
+bin/rails runner "ProceduralGeneration.audit_racial_balance"
+
+# Stress test determinism
+bin/rails runner "ProceduralGeneration.determinism_check(iterations: 10_000)"
+```
 
 ### **5.2. Building Ecosystem**
 * Function: Buildings provide passive income, storage, or resource processing.
