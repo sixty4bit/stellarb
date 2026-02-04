@@ -153,9 +153,7 @@ The universe, assets, and NPCs are generated deterministically from coordinate s
   * Power Consumption (energy/hour)
   * Durability (hit points)
 
-#### **5.1.6. NPC Generation**
-
-#### **5.1.4. NPC Generation**
+#### **5.1.5. NPC Generation**
 * **Input:** System seed + timestamp + slot index
 * **Output:**
   * Name (procedural, race-appropriate)
@@ -165,6 +163,59 @@ The universe, assets, and NPCs are generated deterministically from coordinate s
   * Rarity tier (Common 70%, Uncommon 20%, Rare 8%, Legendary 2%)
   * Quirks (1-3 procedural traits)
   * Hidden Chaos Factor (0-100, never shown to player)
+
+#### **5.1.6. NPC Employment History (The Resume)**
+Every NPC comes with a procedurally generated work history. This is the player's only clue to the hidden Chaos Factor.
+
+* **Input:** NPC seed + Chaos Factor
+* **Output:** 2-5 prior employment records
+
+**Record Structure:**
+```
+[Employer Name] — [Duration] — [Outcome]
+```
+
+**Outcome Generation (weighted by Chaos Factor):**
+| Chaos Factor | "Clean Exit" % | "Incident" % | "Catastrophe" % |
+|--------------|----------------|--------------|-----------------|
+| 0-20 | 90% | 10% | 0% |
+| 21-50 | 70% | 25% | 5% |
+| 51-80 | 40% | 45% | 15% |
+| 81-100 | 10% | 50% | 40% |
+
+**Example Resumes:**
+
+*Low Chaos (Safe Hire):*
+```
+Eng. Yara (Solari) — Skill: 72
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Prior Employment:
+• Stellaris Corp — 14 months — Contract completed
+• Frontier Mining Co — 8 months — Promoted to Lead
+• Void Runners LLC — 22 months — Company dissolved (economic)
+```
+
+*High Chaos (Red Flags):*
+```
+Eng. Zorg (Krog) — Skill: 91
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Prior Employment:
+• Titan Haulers — 2 months — "Creative differences"
+• DeepCore Mining — 6 months — Reactor incident (T4)
+• Freeport Station — 1 month — Mutual separation
+• Unlisted (gap) — 8 months
+```
+
+**Red Flag Signals (learnable patterns):**
+* Short tenures (<3 months)
+* Vague exit reasons ("creative differences", "mutual separation")
+* Employment gaps ("Unlisted")
+* Incident mentions with severity tier
+* Multiple employers in short timespan
+* "Reactor incident" / "cargo loss" / "navigation error"
+
+**The Skill:**
+High-skill NPCs with clean histories are rare and expensive. Players must decide: *Is a Skill-91 Engineer with two "incidents" worth the risk over a Skill-65 Engineer with a spotless record?*
 
 #### **5.1.7. Success Criteria**
 
