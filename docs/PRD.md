@@ -75,11 +75,81 @@ The three-phase journey from tutorial to the real game.
 * Definition: NPCs are a resource, governed like minerals. They are required to operate Ships and Buildings.
 * Recruitment:
   * **The Recruiter:** A rotating list of available NPCs, refreshed at random intervals (30-90 minutes).
-  * **Selection:** When you hire an NPC from the Recruiter, they become available for pickup at the nearest Habitation center.
+  * **Shared Pool:** All players of the same level see the **same recruits**. No per-player generation.
   * **Scarcity:** High-level NPCs (Specialists) appear rarely in the Recruiter's list and are essential for advanced assets.
 * Lifecycle:
   * **Decay:** NPCs age, retire, or die, requiring constant replenishment.
   * **Wage Demands:** Higher skill NPCs demand exponentially higher wages (see 4.4.3).
+
+#### **4.3.1. Recruiter Database Schema**
+
+The Recruiter uses a three-table architecture for efficiency:
+
+**Table 1: `recruits` (The Shared Pool)**
+```
+recruits
+├── id
+├── level_tier          # Which player levels see this recruit
+├── race                # Vex, Solari, Krog, Myrmidon
+├── class               # Governor, Navigator, Engineer, Marine
+├── skill               # 1-100
+├── base_stats          # JSONB - all procedural attributes
+├── employment_history  # JSONB - generated resume (see 5.1.6)
+├── chaos_factor        # 0-100, hidden from players
+├── available_at        # When this recruit appears in rotation
+└── expires_at          # When removed from pool (30-90 min window)
+```
+
+* **Generation:** Pool is pre-generated based on player count and class demand.
+* **Rotation:** Recruits cycle in/out on random intervals (30-90 min).
+* **Reuse:** Same recruit record shown to ALL players of that level tier.
+
+**Table 2: `hired_recruits` (Permanent Copy)**
+```
+hired_recruits
+├── id
+├── original_recruit_id  # Reference to source (nullable, for audit)
+├── race
+├── class
+├── skill
+├── stats               # JSONB - frozen at hire time
+├── employment_history  # JSONB - frozen at hire time
+├── chaos_factor        # Frozen, still hidden
+└── created_at          # Hire timestamp
+```
+
+* **Copy on Hire:** When a player hires, the recruit is **copied** to this table.
+* **Immutable:** Stats are frozen forever. The recruit's history at hire time is preserved.
+* **Decoupled:** Original recruit can expire from pool; hired copy persists.
+
+**Table 3: `hirings` (Player ↔ Recruit Relationship)**
+```
+hirings
+├── id
+├── user_id
+├── hired_recruit_id
+├── custom_name         # Player can rename their crew
+├── assignable_type     # "Ship" or "Building" (polymorphic)
+├── assignable_id       # FK to ships or buildings table
+├── hired_at
+├── wage                # Current wage (can change over time)
+├── status              # active, fired, deceased, retired, striking
+└── terminated_at       # When employment ended (if applicable)
+```
+
+* **Polymorphic Assignment:** `assignable_type` + `assignable_id` allows assignment to Ships OR Buildings.
+* **Mutable Data:** Only player-controlled data lives here (name, assignment, wage).
+* **History:** Terminated hirings are kept for the player's employment history view.
+
+**Why This Architecture:**
+| Concern | Solution |
+|---------|----------|
+| Generation speed | Generate pool once, not per-player |
+| Memory efficiency | Shared pool, not N copies |
+| Deterministic rotation | Same recruits for same level = predictable |
+| Stat immutability | Copy-on-hire freezes the recruit forever |
+| Flexible assignment | Polymorphic handles ships/buildings |
+| Player customization | Join table holds mutable fields only |
 
 ### **4.4. NPC Mechanics (Human Resources)**
 NPCs are the "Software" that runs the "Hardware" (Ships/Buildings). They are a finite, decaying resource that directly impacts the mathematical efficiency of assets.
@@ -153,8 +223,10 @@ The universe, assets, and NPCs are generated deterministically from coordinate s
   * Power Consumption (energy/hour)
   * Durability (hit points)
 
-#### **5.1.5. NPC Generation**
-* **Input:** System seed + timestamp + slot index
+#### **5.1.5. NPC Generation (Pool Generation)**
+NPCs are generated for the **shared Recruiter pool**, not per-player. See Section 4.3.1 for schema.
+
+* **Input:** Level tier + rotation timestamp + slot index
 * **Output:**
   * Name (procedural, race-appropriate)
   * Race (Vex, Solari, Krog, Myrmidon)
@@ -163,6 +235,9 @@ The universe, assets, and NPCs are generated deterministically from coordinate s
   * Rarity tier (Common 70%, Uncommon 20%, Rare 8%, Legendary 2%)
   * Quirks (1-3 procedural traits)
   * Hidden Chaos Factor (0-100, never shown to player)
+  * Employment History (see 5.1.6)
+* **Pool Size:** Based on `(active_players * 0.3)` per class, minimum 10 per class.
+* **Rotation:** New recruits generated every 30-90 minutes (random per level tier).
 
 #### **5.1.6. NPC Employment History (The Resume)**
 Every NPC comes with a procedurally generated work history. This is the player's only clue to the hidden Chaos Factor.
@@ -222,32 +297,45 @@ High-skill NPCs with clean histories are rare and expensive. Players must decide
 **Done when:**
 - [ ] `generate_system(x, y, z)` returns identical output on every call
 - [ ] `generate_system(0, 0, 0)` returns "The Cradle" with fixed tutorial properties
-- [ ] System generation completes in <10ms
-- [ ] Asset generation completes in <5ms
-- [ ] NPC generation completes in <2ms
-- [ ] No database reads required for generation (pure function)
+- [ ] System generation completes in <15ms
+- [ ] Ship generation completes in <10ms
+- [ ] Building generation completes in <10ms
+- [ ] NPC pool rotation completes in <500ms (batch job, not per-request)
+- [ ] Recruiter query returns in <5ms (indexed lookup, no generation)
+- [ ] No database reads required for system/asset generation (pure function)
 - [ ] 1 million unique coordinates produce 1 million unique systems (collision test)
 
 **Measured by:**
 | Metric | Target | Verify |
 |--------|--------|--------|
-| Generation time (system) | <10ms | `Benchmark.measure { generate_system(rand, rand, rand) }` |
-| Generation time (asset) | <5ms | `Benchmark.measure { generate_ship(seed) }` |
+| System generation | <15ms | `Benchmark.measure { generate_system(rand, rand, rand) }` |
+| Ship generation | <10ms | `Benchmark.measure { generate_ship(seed) }` |
+| Building generation | <10ms | `Benchmark.measure { generate_building(seed) }` |
+| NPC pool rotation (100 NPCs) | <500ms | `Benchmark.measure { RecruiterPool.rotate!(tier: 1) }` |
+| Recruiter query | <5ms | `Benchmark.measure { Recruit.available_for(user) }` |
 | Determinism | 100% | `1000.times { assert_equal generate_system(x,y,z), generate_system(x,y,z) }` |
 | Collision rate | 0% | Hash 10^6 coords, check for duplicate seeds |
 
 **Fails if:**
 - Same coordinates produce different results on different calls
 - Same coordinates produce different results on different servers
-- Generation requires database lookup (breaks offline/testing)
+- System/asset generation requires database lookup (breaks offline/testing)
 - Cradle (0,0,0) is not special-cased for tutorial
-- Generation time exceeds 50ms (blocks UI)
+- Recruiter shows different NPCs to players of the same level tier
+- Hired recruit stats differ from original recruit stats (copy failure)
+- Generation time exceeds 50ms for any single item (blocks UI)
 
 **Racial Integrity Checks (from Section 10):**
 - [ ] Vex ships average 20% higher Cargo Capacity than global mean
 - [ ] Solari ships average 20% higher Sensor Range than global mean
 - [ ] Krog ships average 20% higher Hull Points than global mean
 - [ ] Myrmidon ships average 20% lower Cost than global mean
+
+**Recruiter Schema Checks:**
+- [ ] All players of same level see identical recruit list
+- [ ] `hired_recruits` row matches source `recruits` row exactly
+- [ ] `hirings.assignable` polymorphic works for both Ship and Building
+- [ ] Pool rotation doesn't affect already-hired recruits
 
 **Verify with:**
 ```ruby
@@ -259,6 +347,12 @@ bin/rails runner "ProceduralGeneration.audit_racial_balance"
 
 # Stress test determinism
 bin/rails runner "ProceduralGeneration.determinism_check(iterations: 10_000)"
+
+# Verify recruiter consistency
+bin/rails test test/models/recruiter_pool_test.rb
+
+# Verify hire-copy integrity
+bin/rails runner "HiredRecruit.verify_copy_integrity!"
 ```
 
 ### **5.2. Building Ecosystem**
