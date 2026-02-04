@@ -163,7 +163,7 @@ The universe, assets, and NPCs are generated deterministically from coordinate s
 
 #### **5.1.2. System Generation**
 * **Input:** 3D coordinate tuple `(x, y, z)` where each axis is `0..999,999`
-* **Seed Formula:** `SHA256(x || y || z)` → 256-bit seed
+* **Seed Formula:** `SHA256(x || y || z)` → 256-bit seed (64 hex characters)
 * **Output:** Deterministic system properties:
   * Star type (enum: Red Dwarf, Yellow, Blue Giant, etc.)
   * Planet count (0-12)
@@ -171,19 +171,82 @@ The universe, assets, and NPCs are generated deterministically from coordinate s
   * Base market prices
   * Hazard level (0-100)
 
+**Seed Extraction Algorithm:**
+```ruby
+def extract_from_seed(seed_hex, byte_offset, byte_length, max_value)
+  # seed_hex is 64 chars (256 bits), each char = 4 bits
+  slice = seed_hex[byte_offset * 2, byte_length * 2]
+  slice.to_i(16) % max_value
+end
+
+# Example: generate_system(100, 200, 300)
+seed = Digest::SHA256.hexdigest("100|200|300")
+# => "a1b2c3d4e5f6..." (64 hex chars)
+
+# Byte allocations (non-overlapping):
+star_type_idx  = extract_from_seed(seed, 0, 2, STAR_TYPES.length)   # bytes 0-1
+planet_count   = extract_from_seed(seed, 2, 1, 13)                   # byte 2 (0-12)
+hazard_level   = extract_from_seed(seed, 3, 1, 101)                  # byte 3 (0-100)
+mineral_seed   = extract_from_seed(seed, 4, 4, 2**32)                # bytes 4-7
+price_seed     = extract_from_seed(seed, 8, 4, 2**32)                # bytes 8-11
+# ... remaining 20 bytes available for future expansion
+```
+
+**Star Types:**
+```ruby
+STAR_TYPES = %w[
+  red_dwarf yellow_dwarf orange_dwarf white_dwarf
+  blue_giant red_giant yellow_giant
+  neutron_star binary_system black_hole_proximity
+].freeze
+```
+
 #### **5.1.3. Ship Generation**
 * **Blueprint Pool:** Grows dynamically as player base increases.
 * **Input:** Race + Hull Size + Variant Index + Location Seed
-* **Attributes (all ships have these):**
-  * Cargo Capacity (tons)
-  * Fuel Efficiency (units per grid)
-  * Maneuverability (turn rate)
-  * Hardpoints (weapon slots)
-  * NPC Crew Slots (min/max)
-  * Maintenance Rate (credits/day)
-  * Hull Points (durability)
-  * Sensor Range (grids)
 * **Variation:** A "Mark IV Hauler" in Galaxy A has different stats than one in Galaxy B (seed includes location).
+
+**Hull Sizes & Base Scaling:**
+```ruby
+HULL_SIZES = {
+  scout:     { cargo: 10,   fuel_eff: 1.0, crew: 1..2,  hardpoints: 1 },
+  frigate:   { cargo: 50,   fuel_eff: 1.2, crew: 2..4,  hardpoints: 2 },
+  transport: { cargo: 200,  fuel_eff: 1.5, crew: 3..6,  hardpoints: 2 },
+  cruiser:   { cargo: 500,  fuel_eff: 1.8, crew: 5..10, hardpoints: 4 },
+  titan:     { cargo: 2000, fuel_eff: 2.0, crew: 10..20, hardpoints: 8 }
+}.freeze
+```
+
+**Attribute Generation:**
+```ruby
+def generate_ship(race, hull_size, variant_idx, location_seed)
+  base = HULL_SIZES[hull_size]
+  seed = Digest::SHA256.hexdigest("#{race}|#{hull_size}|#{variant_idx}|#{location_seed}")
+  
+  # Cargo scales with size (base ± 20%)
+  cargo_variance = extract_from_seed(seed, 0, 2, 41) - 20  # -20 to +20
+  cargo = (base[:cargo] * (1 + cargo_variance / 100.0)).round
+  
+  # Fuel efficiency: better with size, ±15% variance
+  fuel_variance = extract_from_seed(seed, 2, 2, 31) - 15   # -15 to +15
+  fuel_efficiency = (base[:fuel_eff] * (1 + fuel_variance / 100.0)).round(2)
+  
+  # Apply racial bonuses (see Section 10)
+  # ...
+end
+```
+
+**Ship Attributes (all ships have these):**
+| Attribute | Unit | Scales With |
+|-----------|------|-------------|
+| Cargo Capacity | tons | Hull size (base ± 20%) |
+| Fuel Efficiency | units/grid | Hull size (base ± 15%) |
+| Maneuverability | 1-100 | Inverse of hull size |
+| Hardpoints | slots | Hull size |
+| Crew Slots | min..max | Hull size |
+| Maintenance Rate | credits/day | Hull size × quality |
+| Hull Points | HP | Hull size |
+| Sensor Range | grids | Race bonus + variant |
 
 #### **5.1.4. Building Generation**
 * **Input:** Race + Function + Tier + Location Seed
@@ -201,16 +264,69 @@ NPCs are generated for the **shared Recruiter pool**, not per-player. See Sectio
 
 * **Input:** Level tier + rotation timestamp + slot index
 * **Output:**
-  * Name (procedural, race-appropriate)
+  * Name (from pre-generated name pool, see below)
   * Race (Vex, Solari, Krog, Myrmidon)
   * Class (Governor, Navigator, Engineer, Marine)
   * Skill level (1-100)
   * Rarity tier (Common 70%, Uncommon 20%, Rare 8%, Legendary 2%)
-  * Quirks (1-3 procedural traits)
+  * Quirks (1-3 traits, determined by Chaos Factor)
   * Hidden Chaos Factor (0-100, never shown to player)
   * Employment History (see 5.1.6)
 * **Pool Size:** Based on `(active_players * 0.3)` per class, minimum 10 per class.
 * **Rotation:** New recruits generated every 30-90 minutes (random per level tier).
+
+**NPC Classes:**
+| Class | Assigned To | Effect |
+|-------|-------------|--------|
+| Governor | Habitats, Factories | Tax yield variance |
+| Navigator | Ships | Fuel efficiency, event avoidance |
+| Engineer | Any asset w/ maintenance | Breakdown chance reduction |
+| Marine | Defense assets | Combat rolls, theft protection |
+
+**Quirks (Chaos Factor Driven):**
+Quirks are personality traits that affect NPC performance. Higher Chaos Factor = more disruptive quirks.
+
+```ruby
+# Quirk count based on Chaos Factor
+quirk_count = case chaos_factor
+  when 0..20   then rand(0..1)   # 0-1 quirks, mostly positive
+  when 21..50  then rand(1..2)   # 1-2 quirks, mixed
+  when 51..80  then rand(1..2)   # 1-2 quirks, mostly negative
+  when 81..100 then rand(2..3)   # 2-3 quirks, mostly negative
+end
+
+# Quirk pools (expand these with procedural generation later)
+POSITIVE_QUIRKS = %w[meticulous efficient loyal frugal lucky]
+NEUTRAL_QUIRKS = %w[superstitious nocturnal chatty loner gambler]
+NEGATIVE_QUIRKS = %w[lazy greedy volatile reckless paranoid saboteur]
+
+# Selection weighted by chaos factor
+# Low chaos: 70% positive, 25% neutral, 5% negative
+# High chaos: 5% positive, 25% neutral, 70% negative
+```
+
+**Name Generation:**
+Names are pulled from a pre-generated pool of ~1000 funny sci-fi names stored in `db/seeds/npc_names.yml`. Names are race-tagged for flavor.
+
+```yaml
+# db/seeds/npc_names.yml
+vex:
+  - "Grimbly Skunt"
+  - "Fleezo Margin"
+  - "Krix Bottomline"
+solari:
+  - "7-Alpha-Null"
+  - "Research Unit Zed"
+  - "Calculus Prime"
+krog:
+  - "Smashgut Ironface"
+  - "Bork the Unpleasant"
+  - "Captain Dents"
+myrmidon:
+  - "Cluster 447"
+  - "The Swarm That Hums"
+  - "Unit Formerly Known As 12"
+```
 
 #### **5.1.6. NPC Employment History (The Resume)**
 Every NPC comes with a procedurally generated work history. This is the player's only clue to the hidden Chaos Factor.
