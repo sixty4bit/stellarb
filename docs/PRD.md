@@ -110,7 +110,7 @@ class Hiring < ApplicationRecord
   belongs_to :hired_recruit
   belongs_to :assignable, polymorphic: true  # Ship or Building
   
-  enum :status, { active: 0, fired: 1, deceased: 2, retired: 3, striking: 4 }
+  enum :status, { active: "active", fired: "fired", deceased: "deceased", retired: "retired", striking: "striking" }
 end
 
 class Ship < ApplicationRecord
