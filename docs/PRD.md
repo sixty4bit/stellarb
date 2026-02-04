@@ -128,20 +128,32 @@ The universe, assets, and NPCs are generated deterministically from coordinate s
   * Base market prices
   * Hazard level (0-100)
 
-#### **5.1.3. Asset Generation (Ships & Buildings)**
+#### **5.1.3. Ship Generation**
 * **Blueprint Pool:** Grows dynamically as player base increases.
-* **Attribute Set:**
-  | Attribute | Ships | Buildings |
-  |-----------|-------|-----------|
-  | Cargo Capacity | ✓ | ✓ |
-  | Fuel Efficiency | ✓ | — |
-  | Maneuverability | ✓ | — |
-  | Hardpoints | ✓ | ✓ |
-  | NPC Crew Slots | ✓ | ✓ |
-  | Maintenance Rate | ✓ | ✓ |
-  | Output Rate | — | ✓ |
-  | Storage Capacity | — | ✓ |
+* **Input:** Race + Hull Size + Variant Index + Location Seed
+* **Attributes (all ships have these):**
+  * Cargo Capacity (tons)
+  * Fuel Efficiency (units per grid)
+  * Maneuverability (turn rate)
+  * Hardpoints (weapon slots)
+  * NPC Crew Slots (min/max)
+  * Maintenance Rate (credits/day)
+  * Hull Points (durability)
+  * Sensor Range (grids)
 * **Variation:** A "Mark IV Hauler" in Galaxy A has different stats than one in Galaxy B (seed includes location).
+
+#### **5.1.4. Building Generation**
+* **Input:** Race + Function + Tier + Location Seed
+* **Attributes (all buildings have these):**
+  * NPC Staff Slots (min/max)
+  * Maintenance Rate (credits/day)
+  * Hardpoints (defense slots)
+  * Storage Capacity (tons)
+  * Output Rate (units/hour)
+  * Power Consumption (energy/hour)
+  * Durability (hit points)
+
+#### **5.1.6. NPC Generation**
 
 #### **5.1.4. NPC Generation**
 * **Input:** System seed + timestamp + slot index
@@ -154,7 +166,7 @@ The universe, assets, and NPCs are generated deterministically from coordinate s
   * Quirks (1-3 procedural traits)
   * Hidden Chaos Factor (0-100, never shown to player)
 
-#### **5.1.5. Success Criteria**
+#### **5.1.7. Success Criteria**
 
 **Done when:**
 - [ ] `generate_system(x, y, z)` returns identical output on every call

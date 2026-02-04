@@ -1,0 +1,14 @@
+{
+  "id": "_Users_sia_clawd_stellarb",
+  "name": "StellArb",
+  "path": "/Users/sia/clawd/stellarb",
+  "status": "stopped",
+  "currentConversationId": null,
+  "nextItem": null,
+  "currentItem": null,
+  "lastContextUsage": null,
+  "permissionOverrides": null,
+  "modelOverride": null,
+  "createdAt": "2026-02-04T21:04:13.782Z",
+  "updatedAt": "2026-02-04T21:04:13.783Z"
+}
