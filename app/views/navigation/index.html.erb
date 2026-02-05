@@ -59,80 +59,85 @@
     <% end %>
   </div>
 
-  <!-- Warp Gates (Instant Travel) -->
-  <% if @warp_destinations.any? %>
-    <div class="bg-blue-900 border border-purple-600 rounded p-4 mb-6">
-      <h3 class="text-lg font-semibold text-purple-400 mb-2">⚡ Warp Gates</h3>
-      <p class="text-gray-400 text-xs mb-3">Instant travel via warp network. Fixed fuel cost: <%= WarpGate::WARP_FUEL_COST %></p>
-      <div class="space-y-2">
-        <% @warp_destinations.each do |dest| %>
-          <div class="flex items-center justify-between p-2 bg-blue-800 rounded">
-            <div>
-              <span class="text-white"><%= dest[:system].name %></span>
-              <span class="text-gray-500 text-sm ml-2">(<%= dest[:distance] %> LY)</span>
-            </div>
-            <div class="flex items-center gap-4">
-              <div class="text-sm">
-                <span class="text-gray-400">Fuel:</span>
-                <span class="<%= dest[:can_reach] ? 'text-purple-400' : 'text-red-400' %> ml-1"><%= dest[:fuel_cost] %></span>
+  <% if @ship&.status == 'in_transit' %>
+    <!-- In Transit View -->
+    <%= render 'navigation/in_transit', ship: @ship %>
+  <% else %>
+    <!-- Warp Gates (Instant Travel) -->
+    <% if @warp_destinations.any? %>
+      <div class="bg-blue-900 border border-purple-600 rounded p-4 mb-6">
+        <h3 class="text-lg font-semibold text-purple-400 mb-2">⚡ Warp Gates</h3>
+        <p class="text-gray-400 text-xs mb-3">Instant travel via warp network. Fixed fuel cost: <%= WarpGate::WARP_FUEL_COST %></p>
+        <div class="space-y-2">
+          <% @warp_destinations.each do |dest| %>
+            <div class="flex items-center justify-between p-2 bg-blue-800 rounded">
+              <div>
+                <span class="text-white"><%= dest[:system].name %></span>
+                <span class="text-gray-500 text-sm ml-2">(<%= dest[:distance] %> LY)</span>
               </div>
-              <% if dest[:can_reach] %>
-                <%= form_with url: warp_navigation_index_path, method: :post, class: "inline" do |f| %>
-                  <%= f.hidden_field :destination_id, value: dest[:system].id %>
-                  <%= f.hidden_field :intent, value: "trade" %>
-                  <%= f.submit "Warp →", class: "px-3 py-1 bg-purple-700 hover:bg-purple-600 text-white text-sm rounded cursor-pointer" %>
+              <div class="flex items-center gap-4">
+                <div class="text-sm">
+                  <span class="text-gray-400">Fuel:</span>
+                  <span class="<%= dest[:can_reach] ? 'text-purple-400' : 'text-red-400' %> ml-1"><%= dest[:fuel_cost] %></span>
+                </div>
+                <% if dest[:can_reach] %>
+                  <%= form_with url: warp_navigation_index_path, method: :post, class: "inline" do |f| %>
+                    <%= f.hidden_field :destination_id, value: dest[:system].id %>
+                    <%= f.hidden_field :intent, value: "trade" %>
+                    <%= f.submit "Warp →", class: "px-3 py-1 bg-purple-700 hover:bg-purple-600 text-white text-sm rounded cursor-pointer" %>
+                  <% end %>
+                <% else %>
+                  <span class="px-3 py-1 bg-gray-700 text-gray-500 text-sm rounded">Low Fuel</span>
                 <% end %>
-              <% else %>
-                <span class="px-3 py-1 bg-gray-700 text-gray-500 text-sm rounded">Low Fuel</span>
-              <% end %>
+              </div>
             </div>
-          </div>
-        <% end %>
+          <% end %>
+        </div>
       </div>
+    <% end %>
+
+    <!-- Nearby Systems (Conventional Travel) -->
+    <div class="bg-blue-900 border border-blue-700 rounded p-4 mb-6">
+      <h3 class="text-lg font-semibold text-lime-400 mb-2">🚀 Reachable Systems</h3>
+      <% if @nearby_systems.any? %>
+        <p class="text-gray-400 text-xs mb-3">Conventional travel. Fuel cost varies by distance.</p>
+        <div class="space-y-2">
+          <% @nearby_systems.each do |dest| %>
+            <div class="flex items-center justify-between p-2 hover:bg-blue-800 rounded <%= dest[:can_reach] ? '' : 'opacity-50' %>">
+              <div>
+                <span class="text-white"><%= dest[:system].name %></span>
+                <span class="text-gray-500 text-sm ml-2">(<%= dest[:distance] %> LY)</span>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="text-sm">
+                  <span class="text-gray-400">Fuel:</span>
+                  <span class="<%= dest[:can_reach] ? 'text-orange-400' : 'text-red-400' %> ml-1"><%= dest[:fuel_cost] %></span>
+                </div>
+                <div class="text-sm">
+                  <span class="text-gray-400">ETA:</span>
+                  <span class="text-gray-300 ml-1"><%= dest[:travel_time] %></span>
+                </div>
+                <% if dest[:can_reach] %>
+                  <%= form_with url: warp_navigation_index_path, method: :post, class: "inline" do |f| %>
+                    <%= f.hidden_field :destination_id, value: dest[:system].id %>
+                    <%= f.hidden_field :intent, value: "trade" %>
+                    <%= f.submit "Travel →", class: "px-3 py-1 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded cursor-pointer" %>
+                  <% end %>
+                <% else %>
+                  <span class="px-3 py-1 bg-gray-700 text-gray-500 text-sm rounded">Out of Range</span>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-gray-500">No known systems within sensor range. Explore to discover new systems.</p>
+      <% end %>
     </div>
   <% end %>
 
-  <!-- Nearby Systems (Conventional Travel) -->
-  <div class="bg-blue-900 border border-blue-700 rounded p-4 mb-6">
-    <h3 class="text-lg font-semibold text-lime-400 mb-2">🚀 Reachable Systems</h3>
-    <% if @nearby_systems.any? %>
-      <p class="text-gray-400 text-xs mb-3">Conventional travel. Fuel cost varies by distance.</p>
-      <div class="space-y-2">
-        <% @nearby_systems.each do |dest| %>
-          <div class="flex items-center justify-between p-2 hover:bg-blue-800 rounded <%= dest[:can_reach] ? '' : 'opacity-50' %>">
-            <div>
-              <span class="text-white"><%= dest[:system].name %></span>
-              <span class="text-gray-500 text-sm ml-2">(<%= dest[:distance] %> LY)</span>
-            </div>
-            <div class="flex items-center gap-4">
-              <div class="text-sm">
-                <span class="text-gray-400">Fuel:</span>
-                <span class="<%= dest[:can_reach] ? 'text-orange-400' : 'text-red-400' %> ml-1"><%= dest[:fuel_cost] %></span>
-              </div>
-              <div class="text-sm">
-                <span class="text-gray-400">ETA:</span>
-                <span class="text-gray-300 ml-1"><%= dest[:travel_time] %></span>
-              </div>
-              <% if dest[:can_reach] %>
-                <%= form_with url: warp_navigation_index_path, method: :post, class: "inline" do |f| %>
-                  <%= f.hidden_field :destination_id, value: dest[:system].id %>
-                  <%= f.hidden_field :intent, value: "trade" %>
-                  <%= f.submit "Travel →", class: "px-3 py-1 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded cursor-pointer" %>
-                <% end %>
-              <% else %>
-                <span class="px-3 py-1 bg-gray-700 text-gray-500 text-sm rounded">Out of Range</span>
-              <% end %>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    <% else %>
-      <p class="text-gray-500">No known systems within sensor range. Explore to discover new systems.</p>
-    <% end %>
-  </div>
-
-  <!-- Ship Status / Travel Intent -->
-  <% if @ship&.status == 'in_transit' %>
+  <%# Legacy in-transit section - kept for backwards compatibility %>
+  <% if false && @ship&.status == 'in_transit' %>
     <div class="bg-yellow-900 border border-yellow-700 rounded p-4 mb-6">
       <h3 class="text-lg font-semibold text-yellow-400 mb-2">🛸 In Transit</h3>
       <p class="text-gray-300">
