@@ -1,0 +1,45 @@
+<%# In-Transit View Partial %>
+<%# Shown when ship.status == 'in_transit' %>
+
+<div class="bg-yellow-900 border border-yellow-700 rounded p-6 mb-6">
+  <h3 class="text-xl font-semibold text-yellow-400 mb-4">🛸 In Transit</h3>
+  
+  <div class="space-y-4">
+    <!-- Destination -->
+    <div>
+      <p class="text-gray-300 text-lg">
+        En route to <strong class="text-white text-xl"><%= ship.destination_system&.name || "Unknown" %></strong>
+      </p>
+    </div>
+
+    <!-- ETA -->
+    <% if ship.arrival_at %>
+      <div class="bg-yellow-800 rounded p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="text-gray-400 text-sm">ETA:</span>
+            <span class="text-yellow-300 text-lg ml-2" data-controller="countdown" data-countdown-arrival-value="<%= ship.arrival_at.iso8601 %>">
+              <%= distance_of_time_in_words(Time.current, ship.arrival_at) %>
+            </span>
+          </div>
+          <div class="text-sm text-gray-400">
+            Arrival: <%= ship.arrival_at.strftime("%H:%M:%S") %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Progress indicator -->
+    <div class="text-sm text-gray-400">
+      <p>🚀 Engines engaged • Navigation locked • Cannot change course while in transit</p>
+    </div>
+  </div>
+</div>
+
+<!-- Info message -->
+<div class="bg-blue-900 border border-blue-700 rounded p-4 mb-6">
+  <p class="text-gray-400 text-sm">
+    <span class="text-orange-400">ℹ️</span> 
+    Travel options will be available once you arrive at your destination.
+  </p>
+</div>
