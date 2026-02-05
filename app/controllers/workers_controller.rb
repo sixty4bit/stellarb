@@ -88,8 +88,8 @@ class WorkersController < ApplicationController
 
   private
 
-  def set_active_menu
-    super(:workers)
+  def set_active_menu(_unused = nil)
+    @active_menu = :workers
   end
 
   def set_worker

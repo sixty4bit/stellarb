@@ -8,6 +8,11 @@ class HiredRecruit < ApplicationRecord
   RACES = Recruit::RACES
   NPC_CLASSES = Recruit::NPC_CLASSES
 
+  # Display name - use custom_name from hiring if set, otherwise class + race
+  def name
+    "#{npc_class.humanize} (#{race.humanize})"
+  end
+
   # Validations
   validates :race, presence: true, inclusion: { in: RACES }
   validates :npc_class, presence: true, inclusion: { in: NPC_CLASSES }

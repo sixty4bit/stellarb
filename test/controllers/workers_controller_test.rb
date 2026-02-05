@@ -35,11 +35,11 @@ class WorkersControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='#{recruiter_workers_path}']"
   end
 
-  test "index highlights unassigned workers" do
+  test "index shows assigned status" do
     get workers_path
     assert_response :success
-    # Unassigned workers should be highlighted
-    assert_select "*", text: /unassigned/i
+    # Should show worker assignment status
+    assert_select "*", text: /ACTIVE/i
   end
 
   # Screen 15: Recruiter

@@ -1,0 +1,111 @@
+<%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
+
+<% hiring = @worker.hirings.find { |h| h.user_id == current_user.id } %>
+
+<div class="max-w-4xl">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-orange-500"><%= @worker.npc_class.humanize %></h1>
+      <div class="text-sm text-gray-400">
+        <%= @worker.race.humanize %> ·
+        <span class="text-<%= @worker.rarity_tier == 'legendary' ? 'yellow' : @worker.rarity_tier == 'rare' ? 'purple' : @worker.rarity_tier == 'uncommon' ? 'sky' : 'gray' %>-400">
+          <%= @worker.rarity_tier&.upcase || 'COMMON' %>
+        </span>
+      </div>
+    </div>
+    <%= link_to workers_path, class: "text-sky-400 hover:text-sky-300", data: { turbo_frame: "content_panel" } do %>
+      ← Back to Workers
+    <% end %>
+  </div>
+
+  <!-- Stats -->
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+    <h2 class="text-lime-400 font-bold mb-3">Statistics</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div>
+        <div class="text-gray-400 text-sm">Skill Level</div>
+        <div class="text-white text-2xl font-bold"><%= @worker.skill %></div>
+      </div>
+      <div>
+        <div class="text-gray-400 text-sm">Chaos Factor</div>
+        <div class="text-<%= @worker.chaos_factor > 50 ? 'orange' : @worker.chaos_factor > 25 ? 'yellow' : 'lime' %>-400 text-2xl font-bold">
+          <%= @worker.chaos_factor %>
+        </div>
+      </div>
+      <div>
+        <div class="text-gray-400 text-sm">Wage</div>
+        <div class="text-white text-2xl font-bold"><%= hiring&.wage || @worker.calculate_wage %> cr/day</div>
+      </div>
+      <div>
+        <div class="text-gray-400 text-sm">Status</div>
+        <div class="text-<%= hiring&.assignable.present? ? 'lime' : 'orange' %>-400 text-lg">
+          <%= hiring&.assignable.present? ? 'Assigned' : 'Unassigned' %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Traits/Quirks -->
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+    <h2 class="text-lime-400 font-bold mb-3">Traits & Quirks</h2>
+    <% if @worker.stats.is_a?(Hash) && @worker.stats.any? %>
+      <div class="flex flex-wrap gap-2">
+        <% @worker.stats.each do |trait, value| %>
+          <span class="px-3 py-1 bg-blue-800 text-gray-300 rounded text-sm">
+            <%= trait.to_s.humanize %>: <%= (value * 100).round %>%
+          </span>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-gray-500">No notable traits.</p>
+    <% end %>
+  </div>
+
+  <!-- Employment History -->
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+    <h2 class="text-lime-400 font-bold mb-3">Employment History</h2>
+    <% if @worker.employment_history.is_a?(Array) && @worker.employment_history.any? %>
+      <div class="space-y-3">
+        <% @worker.employment_history.each do |job| %>
+          <div class="border-l-2 border-blue-700 pl-4 py-1">
+            <div class="text-white font-bold"><%= job["employer"] || job[:employer] %></div>
+            <div class="text-sm text-gray-400">
+              <span><%= job["duration_months"] || job[:duration_months] %> months</span>
+              <span class="mx-2">·</span>
+              <span class="text-<%= (job["outcome"] || job[:outcome]).to_s.downcase.include?("incident") || (job["outcome"] || job[:outcome]).to_s.downcase.include?("difference") ? 'orange' : 'gray' %>-400">
+                <%= job["outcome"] || job[:outcome] %>
+              </span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-gray-500">No employment history available.</p>
+    <% end %>
+  </div>
+
+  <!-- Assignment -->
+  <% if hiring&.assignable.present? %>
+    <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+      <h2 class="text-lime-400 font-bold mb-3">Current Assignment</h2>
+      <p class="text-white">
+        Assigned to: 
+        <span class="text-orange-400"><%= hiring.assignable.name rescue 'Unknown Asset' %></span>
+        (<%= hiring.assignable.class.name %>)
+      </p>
+    </div>
+  <% end %>
+
+  <!-- Actions -->
+  <div class="flex gap-4 mt-6">
+    <%= link_to "Assign to Asset", "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
+    <%= link_to "Fire", fire_worker_path(@worker),
+        method: :post,
+        data: { confirm: "Are you sure you want to fire this worker? This cannot be undone." },
+        class: "px-4 py-2 bg-red-800 text-white hover:bg-red-700 rounded transition-colors" %>
+  </div>
+
+  <div class="mt-8 text-sm text-gray-500">
+    <p>Keyboard: a=assign, f=fire, Esc=back</p>
+  </div>
+</div>
