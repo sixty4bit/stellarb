@@ -4,7 +4,7 @@ class ShipTravelTest < ActiveSupport::TestCase
   setup do
     @user = User.create!(name: "Test Captain", email: "captain@test.com")
     @origin = System.create!(x: 0, y: 0, z: 0, name: "Origin")
-    @destination = System.create!(x: 3, y: 4, z: 0, name: "Destination")  # Distance = 5
+    @destination = System.create!(x: 3, y: 0, z: 0, name: "Destination")  # Distance = 3
 
     @ship = Ship.create!(
       name: "Test Ship",
@@ -20,52 +20,52 @@ class ShipTravelTest < ActiveSupport::TestCase
 
   # Distance calculation tests
   test "calculates distance between two systems" do
-    # 3D Euclidean distance: sqrt(3^2 + 4^2 + 0^2) = 5
-    assert_equal 5.0, System.distance_between(@origin, @destination)
+    # 3D Euclidean distance: sqrt(3^2 + 0^2 + 0^2) = 3
+    assert_equal 3.0, System.distance_between(@origin, @destination)
   end
 
   test "calculates distance to distant system" do
-    distant = System.create!(x: 100, y: 100, z: 100, name: "Distant")
-    # sqrt(100^2 + 100^2 + 100^2) = sqrt(30000) ≈ 173.2
+    distant = System.create!(x: 6, y: 6, z: 6, name: "Distant")
+    # sqrt(6^2 + 6^2 + 6^2) = sqrt(108) ≈ 10.39
     distance = System.distance_between(@origin, distant)
-    assert_in_delta 173.2, distance, 0.1
+    assert_in_delta 10.39, distance, 0.1
   end
 
   # Fuel consumption tests
   test "calculates fuel required for journey" do
     # Base fuel cost is 1 fuel per distance unit, modified by fuel_efficiency
     fuel_needed = @ship.fuel_required_for(@destination)
-    # Distance is 5, efficiency is 1.0 for vex, so 5 fuel
-    assert_equal 5.0, fuel_needed
+    # Distance is 3, efficiency is 1.0 for vex, so 3 fuel
+    assert_equal 3.0, fuel_needed
   end
 
   test "fuel consumption considers ship efficiency" do
     @ship.ship_attributes["fuel_efficiency"] = 0.5  # More efficient
     fuel_needed = @ship.fuel_required_for(@destination)
-    assert_equal 2.5, fuel_needed
+    assert_equal 1.5, fuel_needed
   end
 
   test "checks if ship can reach destination" do
     assert @ship.can_reach?(@destination)
 
-    @ship.fuel = 2.0  # Not enough fuel
+    @ship.fuel = 1.0  # Not enough fuel (need 3)
     refute @ship.can_reach?(@destination)
   end
 
   # Travel time/ETA tests
   test "calculates travel time based on distance" do
     # Base speed: 1 unit per game tick (configurable)
-    # For distance 5 with speed 1.0 = 5 ticks
+    # For distance 3 with speed 1.0 = 3 ticks
     travel_time = @ship.travel_time_to(@destination)
-    assert_equal 5, travel_time
+    assert_equal 3, travel_time
   end
 
   test "travel time considers ship maneuverability" do
     # Higher maneuverability = faster travel
     @ship.ship_attributes["maneuverability"] = 100  # Double speed
     travel_time = @ship.travel_time_to(@destination)
-    # Distance 5, speed multiplier 2x = 2.5 ticks, ceiling = 3
-    assert_equal 3, travel_time  # Faster due to higher maneuverability (5 -> 3)
+    # Distance 3, speed multiplier 2x = 1.5 ticks, ceiling = 2
+    assert_equal 2, travel_time  # Faster due to higher maneuverability
   end
 
   # Initiate travel tests
@@ -76,7 +76,7 @@ class ShipTravelTest < ActiveSupport::TestCase
     assert_equal "in_transit", @ship.status
     assert_equal @destination.id, @ship.destination_system_id
     assert_not_nil @ship.arrival_at
-    assert_equal 95.0, @ship.fuel  # 100 - 5
+    assert_equal 97.0, @ship.fuel  # 100 - 3
   end
 
   test "ship cannot travel without sufficient fuel" do

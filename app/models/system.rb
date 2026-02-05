@@ -91,6 +91,21 @@ class System < ApplicationRecord
     self.class.distance_between(self, other_system)
   end
 
+  # Warp gate connections
+  def warp_gates
+    WarpGate.where(system_a_id: id).or(WarpGate.where(system_b_id: id))
+  end
+
+  def warp_connected_systems
+    active_gates = warp_gates.active
+    system_ids = active_gates.pluck(:system_a_id, :system_b_id).flatten.uniq - [id]
+    System.where(id: system_ids)
+  end
+
+  def warp_connected_to?(other_system)
+    WarpGate.connected?(self, other_system)
+  end
+
   private
 
   def generate_short_id

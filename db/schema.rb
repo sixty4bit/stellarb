@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_142435) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_05_142701) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -163,6 +163,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_142435) do
     t.index ["short_id"], name: "index_users_on_short_id", unique: true
   end
 
+  create_table "warp_gates", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name"
+    t.string "short_id", null: false
+    t.string "status", default: "active"
+    t.bigint "system_a_id", null: false
+    t.bigint "system_b_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["short_id"], name: "index_warp_gates_on_short_id", unique: true
+    t.index ["system_a_id"], name: "index_warp_gates_on_system_a_id"
+    t.index ["system_b_id"], name: "index_warp_gates_on_system_b_id"
+  end
+
   add_foreign_key "buildings", "systems"
   add_foreign_key "buildings", "users"
   add_foreign_key "hired_recruits", "recruits", column: "original_recruit_id"
@@ -176,4 +189,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_142435) do
   add_foreign_key "system_visits", "systems"
   add_foreign_key "system_visits", "users"
   add_foreign_key "systems", "users", column: "discovered_by_id"
+  add_foreign_key "warp_gates", "systems", column: "system_a_id"
+  add_foreign_key "warp_gates", "systems", column: "system_b_id"
 end
