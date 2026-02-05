@@ -45,7 +45,7 @@ class OnboardingOverlayTest < ActionView::TestCase
     progress = onboarding_progress(@user)
 
     assert_equal 3, progress[:current]  # 1-indexed: profile_setup=1, ships_tour=2, navigation_tutorial=3
-    assert_equal 5, progress[:total]
+    assert_equal 6, progress[:total]
   end
 
   test "onboarding_progress_percentage returns correct percentage" do
