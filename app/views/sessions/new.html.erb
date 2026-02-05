@@ -1,35 +1,64 @@
 <div class="text-center">
-  <h1 class="text-4xl font-bold text-orange-500 mb-2">StellArb</h1>
-  <p class="text-lime-400 mb-8">Stellar Arbitrage Trading System</p>
+  <!-- Terminal-style ASCII header -->
+  <pre class="text-orange-500 text-xs sm:text-sm mb-4 leading-tight">
+ ███████╗████████╗███████╗██╗     ██╗      █████╗ ██████╗ ██████╗
+ ██╔════╝╚══██╔══╝██╔════╝██║     ██║     ██╔══██╗██╔══██╗██╔══██╗
+ ███████╗   ██║   █████╗  ██║     ██║     ███████║██████╔╝██████╔╝
+ ╚════██║   ██║   ██╔══╝  ██║     ██║     ██╔══██║██╔══██╗██╔══██╗
+ ███████║   ██║   ███████╗███████╗███████╗██║  ██║██║  ██║██████╔╝
+ ╚══════╝   ╚═╝   ╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝
+  </pre>
+  <p class="text-lime-400 mb-8 text-sm">[ Stellar Arbitrage Trading System v1.0.0 ]</p>
 
-  <div class="bg-blue-900 border-2 border-orange-500 p-8 rounded-lg">
-    <h2 class="text-2xl font-bold mb-6">System Access</h2>
+  <div class="bg-blue-900 border-2 border-orange-500 p-6 text-left">
+    <!-- Terminal header bar -->
+    <div class="flex items-center gap-2 mb-4 pb-2 border-b border-blue-700">
+      <span class="w-3 h-3 rounded-full bg-red-500"></span>
+      <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+      <span class="w-3 h-3 rounded-full bg-green-500"></span>
+      <span class="ml-2 text-gray-400 text-xs">stellarb-auth@terminal</span>
+    </div>
 
-    <%= form_with model: @user, url: sessions_path, local: true do |f| %>
-      <div class="mb-6">
-        <%= f.label :email, "Email Address", class: "block text-sm font-bold mb-2" %>
-        <%= f.email_field :email,
-            class: "w-full px-3 py-2 bg-blue-950 border border-blue-700 rounded focus:border-orange-500 focus:outline-none",
-            placeholder: "pilot@example.com",
-            required: true,
-            autofocus: true %>
+    <div class="space-y-2 text-sm mb-6">
+      <p><span class="text-lime-400">$</span> system.init()</p>
+      <p class="text-gray-400">Initializing authentication module...</p>
+      <p><span class="text-lime-400">$</span> auth.request_access()</p>
+      <p class="text-gray-400">Enter pilot credentials to continue:</p>
+    </div>
+
+    <%= form_with model: @user, url: sessions_path, local: true, class: "space-y-4" do |f| %>
+      <div>
+        <label class="block text-sm mb-1">
+          <span class="text-lime-400">&gt;</span> EMAIL_ADDRESS:
+        </label>
+        <div class="flex items-center">
+          <span class="text-orange-500 mr-2">│</span>
+          <%= f.email_field :email,
+              class: "flex-1 px-3 py-2 bg-blue-950 border border-blue-700 rounded font-mono text-lime-400 focus:border-orange-500 focus:outline-none placeholder-gray-600",
+              placeholder: "pilot@stellarb.net",
+              required: true,
+              autofocus: true,
+              autocomplete: "email" %>
+        </div>
       </div>
 
-      <div>
-        <%= f.submit "Request Access Code",
-            class: "w-full bg-orange-500 text-blue-950 font-bold py-2 px-4 rounded hover:bg-orange-400 transition-colors cursor-pointer" %>
+      <div class="pt-2">
+        <%= f.submit "[ TRANSMIT ACCESS REQUEST ]",
+            class: "w-full bg-orange-500 text-blue-950 font-bold py-2 px-4 border-2 border-orange-400 hover:bg-orange-400 hover:border-orange-300 transition-colors cursor-pointer tracking-wider" %>
       </div>
     <% end %>
 
-    <div class="mt-6 text-sm text-gray-400">
-      <p>A one-time access code will be sent to your email.</p>
-      <p class="mt-2 text-xs">(Development mode: auto-login enabled)</p>
+    <div class="mt-6 pt-4 border-t border-blue-700 text-xs space-y-1">
+      <p class="text-gray-400"><span class="text-lime-400">INFO:</span> A one-time access code will be transmitted to your comm unit.</p>
+      <p class="text-gray-500"><span class="text-orange-500">DEV:</span> Auto-login enabled for development mode.</p>
     </div>
   </div>
 
-  <div class="mt-8 text-xs text-gray-500">
+  <div class="mt-8 text-xs text-gray-500 space-y-1">
+    <p class="text-gray-600">─────────────────────────────────────────</p>
     <p>You are traveling through space.</p>
     <p>It's like a maze of twisty passages that look all alike,</p>
     <p>but that's another game. This game has lasers.</p>
+    <p class="text-gray-600">─────────────────────────────────────────</p>
   </div>
 </div>
