@@ -223,21 +223,23 @@ class User < ApplicationRecord
   # ===========================================
 
   # Check if user can afford a ship
+  # Uses floor comparison to avoid floating-point precision issues with decimal credits
   # @param hull_size [String] Ship hull size
   # @param race [String] Ship race
   # @return [Boolean]
   def can_afford_ship?(hull_size:, race:)
     cost = Ship.cost_for(hull_size: hull_size, race: race)
-    credits >= cost
+    credits.to_i >= cost
   end
 
   # Deduct ship cost from user credits
+  # Uses consistent integer comparison with can_afford_ship?
   # @param hull_size [String] Ship hull size
   # @param race [String] Ship race
   # @raise [InsufficientCreditsError] If user doesn't have enough credits
   def deduct_ship_cost!(hull_size:, race:)
     cost = Ship.cost_for(hull_size: hull_size, race: race)
-    raise InsufficientCreditsError, "Insufficient credits (need #{cost}, have #{credits.to_i})" if credits < cost
+    raise InsufficientCreditsError, "Insufficient credits (need #{cost}, have #{credits.to_i})" if credits.to_i < cost
 
     update!(credits: credits - cost)
   end

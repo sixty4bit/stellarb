@@ -90,16 +90,24 @@ class ShipsController < ApplicationController
       return
     end
 
-    ActiveRecord::Base.transaction do
-      # Deduct cost from user
-      current_user.deduct_ship_cost!(hull_size: @ship.hull_size, race: @ship.race)
+    begin
+      ActiveRecord::Base.transaction do
+        # Deduct cost from user
+        current_user.deduct_ship_cost!(hull_size: @ship.hull_size, race: @ship.race)
 
-      if @ship.save
-        redirect_to @ship, notice: "Ship purchased successfully!"
-      else
-        # Rollback will restore credits
-        raise ActiveRecord::Rollback
+        if @ship.save
+          redirect_to @ship, notice: "Ship purchased successfully!"
+        else
+          # Rollback will restore credits
+          raise ActiveRecord::Rollback
+        end
       end
+    rescue User::InsufficientCreditsError => e
+      # Handle race condition where credits changed between check and deduct
+      @ship.errors.add(:base, "Insufficient credits to purchase this ship")
+      setup_new_view_vars
+      render :new, status: :unprocessable_entity
+      return
     end
 
     # If we get here without redirecting, save failed

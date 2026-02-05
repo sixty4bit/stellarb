@@ -135,4 +135,64 @@ class ShipCostsTest < ActiveSupport::TestCase
       user.deduct_ship_cost!(hull_size: "titan", race: "krog")
     end
   end
+
+  # ===========================================
+  # Edge Cases: Exact Credit Match
+  # ===========================================
+
+  test "user can afford ship when credits exactly match cost" do
+    user = users(:pilot)
+    cost = Ship.cost_for(hull_size: "scout", race: "vex")
+    user.update!(credits: cost)
+    
+    assert user.can_afford_ship?(hull_size: "scout", race: "vex"),
+      "User with exactly #{cost} credits should be able to afford #{cost} credit ship"
+  end
+
+  test "deduct_ship_cost works when credits exactly match cost" do
+    user = users(:pilot)
+    cost = Ship.cost_for(hull_size: "scout", race: "vex")
+    user.update!(credits: cost)
+    
+    # Should not raise - exact match should work
+    assert_nothing_raised do
+      user.deduct_ship_cost!(hull_size: "scout", race: "vex")
+    end
+    
+    user.reload
+    assert_equal 0, user.credits
+  end
+
+  test "user cannot afford ship when one credit short" do
+    user = users(:pilot)
+    cost = Ship.cost_for(hull_size: "scout", race: "vex")
+    user.update!(credits: cost - 1)
+    
+    refute user.can_afford_ship?(hull_size: "scout", race: "vex"),
+      "User with #{cost - 1} credits should NOT afford #{cost} credit ship"
+  end
+
+  test "deduct_ship_cost raises when one credit short" do
+    user = users(:pilot)
+    cost = Ship.cost_for(hull_size: "scout", race: "vex")
+    user.update!(credits: cost - 1)
+    
+    assert_raises(User::InsufficientCreditsError) do
+      user.deduct_ship_cost!(hull_size: "scout", race: "vex")
+    end
+  end
+
+  test "racial modifiers are applied correctly for all races" do
+    # Vex (1.0x) - base cost
+    assert_equal 500, Ship.cost_for(hull_size: "scout", race: "vex")
+    
+    # Solari (1.1x) - 10% premium
+    assert_equal 550, Ship.cost_for(hull_size: "scout", race: "solari")
+    
+    # Krog (1.15x) - 15% premium
+    assert_equal 575, Ship.cost_for(hull_size: "scout", race: "krog")
+    
+    # Myrmidon (0.9x) - 10% discount
+    assert_equal 450, Ship.cost_for(hull_size: "scout", race: "myrmidon")
+  end
 end

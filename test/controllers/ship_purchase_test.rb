@@ -158,6 +158,69 @@ class ShipPurchaseTest < ActionDispatch::IntegrationTest
   end
 
   # ===========================================
+  # Edge Cases: Exact Credit Match
+  # ===========================================
+
+  test "create succeeds when credits exactly match ship cost" do
+    cost = Ship.cost_for(hull_size: "scout", race: "vex")
+    @user.update!(credits: cost) # Exactly 500 credits for 500 credit ship
+
+    assert_difference("Ship.count", 1) do
+      post ships_path, params: {
+        ship: {
+          name: "Exact Match Ship",
+          hull_size: "scout",
+          race: "vex"
+        },
+        system_id: @system.id
+      }
+    end
+
+    assert_redirected_to ship_path(Ship.last)
+    @user.reload
+    assert_equal 0, @user.credits
+  end
+
+  test "create fails gracefully when one credit short" do
+    cost = Ship.cost_for(hull_size: "scout", race: "vex")
+    @user.update!(credits: cost - 1) # 499 credits, needs 500
+
+    assert_no_difference("Ship.count") do
+      post ships_path, params: {
+        ship: {
+          name: "One Short Ship",
+          hull_size: "scout",
+          race: "vex"
+        },
+        system_id: @system.id
+      }
+    end
+
+    # Should render form with error, NOT throw an exception/error page
+    assert_response :unprocessable_entity
+    assert_select "*", text: /insufficient|afford/i
+  end
+
+  test "insufficient credits shows validation error not exception" do
+    @user.update!(credits: 10)
+
+    # This should NOT raise an exception - should be handled gracefully
+    assert_nothing_raised do
+      post ships_path, params: {
+        ship: {
+          name: "Too Expensive",
+          hull_size: "titan",
+          race: "krog"
+        },
+        system_id: @system.id
+      }
+    end
+
+    # Should get a normal error response, not a 500 error
+    assert_response :unprocessable_entity
+  end
+
+  # ===========================================
   # Purchase From System Context
   # ===========================================
 
