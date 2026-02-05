@@ -1,1 +1,35 @@
 @import "tailwindcss";
+
+/* Onboarding highlight animation */
+@keyframes onboarding-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgb(249 115 22 / 0.4), 0 0 20px 5px rgb(249 115 22 / 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgb(249 115 22 / 0.6), 0 0 30px 10px rgb(249 115 22 / 0.3);
+  }
+}
+
+.onboarding-highlight {
+  animation: onboarding-pulse 2s ease-in-out infinite;
+  position: relative;
+  z-index: 30;
+}
+
+/* Arrow indicator pointing to highlighted element */
+.onboarding-highlight::after {
+  content: '←';
+  position: absolute;
+  right: -30px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgb(249 115 22);
+  font-size: 1.5rem;
+  font-weight: bold;
+  animation: bounce-left 1s ease-in-out infinite;
+}
+
+@keyframes bounce-left {
+  0%, 100% { transform: translateY(-50%) translateX(0); }
+  50% { transform: translateY(-50%) translateX(-5px); }
+}

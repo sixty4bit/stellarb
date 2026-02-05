@@ -1,9 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Onboarding overlay controller
-// Handles keyboard navigation and menu item highlighting
+// Onboarding sidebar controller
+// Handles keyboard navigation, menu item highlighting, and sidebar interactions
+// Works with non-blocking sidebar layout that lets users see the actual UI
 export default class extends Controller {
-  static targets = ["backdrop", "content", "continueButton"]
+  static targets = ["content", "continueButton"]
   static values = {
     step: String,
     highlight: String
@@ -12,6 +13,9 @@ export default class extends Controller {
   connect() {
     this.bindKeyboardEvents()
     this.highlightMenuItem()
+    
+    // Small delay to ensure DOM is ready, then scroll highlighted item into view
+    setTimeout(() => this.ensureHighlightVisible(), 100)
   }
 
   disconnect() {
@@ -25,6 +29,11 @@ export default class extends Controller {
   }
 
   onKeyDown(event) {
+    // Only handle if not typing in an input
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+      return
+    }
+
     switch(event.key) {
       case 'Enter':
         event.preventDefault()
@@ -51,59 +60,58 @@ export default class extends Controller {
     }
   }
 
-  focusOverlay() {
-    // Clicking backdrop refocuses the overlay (doesn't dismiss it)
-    if (this.hasContentTarget) {
-      this.contentTarget.focus()
-    }
-  }
-
   highlightMenuItem() {
     if (!this.highlightValue) return
 
     // Find the menu item to highlight
     const menuItem = document.querySelector(this.highlightValue)
     if (menuItem) {
-      // Add highlight classes
+      // Add highlight classes - uses CSS animation defined in application.css
       menuItem.classList.add(
         "ring-2",
         "ring-orange-500",
         "ring-offset-2",
         "ring-offset-blue-950",
-        "bg-blue-800",
+        "bg-orange-500/20",
+        "rounded",
         "onboarding-highlight"
       )
 
       // Store reference for cleanup
       this.highlightedElement = menuItem
+    }
+  }
 
-      // Scroll into view if needed
-      menuItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  ensureHighlightVisible() {
+    if (this.highlightedElement) {
+      // Scroll into view with some breathing room
+      this.highlightedElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center',
+        inline: 'nearest'
+      })
     }
   }
 
   removeHighlight() {
+    const highlightClasses = [
+      "ring-2",
+      "ring-orange-500",
+      "ring-offset-2",
+      "ring-offset-blue-950",
+      "bg-orange-500/20",
+      "rounded",
+      "onboarding-highlight"
+    ]
+
     if (this.highlightedElement) {
-      this.highlightedElement.classList.remove(
-        "ring-2",
-        "ring-orange-500",
-        "ring-offset-2",
-        "ring-offset-blue-950",
-        "bg-blue-800",
-        "onboarding-highlight"
-      )
+      this.highlightedElement.classList.remove(...highlightClasses)
+      this.highlightedElement = null
     }
 
-    // Also remove any leftover highlights
+    // Also remove any leftover highlights (defensive cleanup)
     document.querySelectorAll('.onboarding-highlight').forEach(el => {
-      el.classList.remove(
-        "ring-2",
-        "ring-orange-500",
-        "ring-offset-2",
-        "ring-offset-blue-950",
-        "bg-blue-800",
-        "onboarding-highlight"
-      )
+      el.classList.remove(...highlightClasses)
     })
   }
 
@@ -111,5 +119,6 @@ export default class extends Controller {
     // When step changes, update the highlight
     this.removeHighlight()
     this.highlightMenuItem()
+    this.ensureHighlightVisible()
   }
 }
