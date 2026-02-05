@@ -167,4 +167,64 @@ class ShipPurchaseTest < ActionDispatch::IntegrationTest
     # Should show the system context
     assert_select "*", text: /#{@system.name}/i
   end
+
+  # ===========================================
+  # Turbo Frame Compatibility
+  # ===========================================
+
+  test "new form is wrapped in content_panel turbo-frame" do
+    get new_ship_path(system_id: @system.id)
+    assert_response :success
+    assert_select "turbo-frame#content_panel form"
+  end
+
+  test "new form is configured for turbo submission" do
+    get new_ship_path(system_id: @system.id)
+    assert_response :success
+    # Form should NOT have data-turbo="false" (which local: true adds)
+    assert_select "form[data-turbo='false']", count: 0
+    # Form should target content_panel frame
+    assert_select "form[data-turbo-frame='content_panel']"
+  end
+
+  test "show page has matching turbo-frame for redirect" do
+    ship = Ship.create!(
+      user: @user,
+      name: "Test Ship",
+      hull_size: "scout",
+      race: "vex",
+      current_system: @system,
+      variant_idx: 0
+    )
+
+    get ship_path(ship)
+    assert_response :success
+    assert_select "turbo-frame#content_panel"
+  end
+
+  test "create redirects within turbo-frame context" do
+    post ships_path, params: {
+      ship: { name: "Turbo Ship", hull_size: "scout", race: "vex" },
+      system_id: @system.id
+    }
+
+    assert_redirected_to ship_path(Ship.last)
+    # The redirected page should have the same turbo-frame
+    follow_redirect!
+    assert_select "turbo-frame#content_panel"
+  end
+
+  test "create with errors re-renders within turbo-frame" do
+    @user.update!(credits: 10)
+
+    post ships_path, params: {
+      ship: { name: "Too Expensive", hull_size: "titan", race: "krog" },
+      system_id: @system.id
+    }
+
+    assert_response :unprocessable_entity
+    # Error response should still be wrapped in turbo-frame
+    assert_select "turbo-frame#content_panel"
+    assert_select "turbo-frame#content_panel form"
+  end
 end
