@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_142701) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_05_142933) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -110,6 +110,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_142701) do
     t.jsonb "cargo", default: {}
     t.datetime "created_at", null: false
     t.bigint "current_system_id"
+    t.datetime "defense_engaged_at"
     t.bigint "destination_system_id"
     t.decimal "fuel", default: "0.0"
     t.string "hull_size"
@@ -121,6 +122,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_142701) do
     t.jsonb "ship_attributes", default: {}
     t.string "short_id"
     t.string "status", default: "docked"
+    t.string "system_intent"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.string "uuid", limit: 36
@@ -150,6 +152,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_142701) do
     t.bigint "discovered_by_id"
     t.datetime "discovery_date"
     t.string "name"
+    t.bigint "owner_id"
     t.jsonb "properties"
     t.string "short_id"
     t.datetime "updated_at", null: false
@@ -158,6 +161,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_142701) do
     t.integer "y"
     t.integer "z"
     t.index ["discovered_by_id"], name: "index_systems_on_discovered_by_id"
+    t.index ["owner_id"], name: "index_systems_on_owner_id"
     t.index ["short_id"], name: "index_systems_on_short_id", unique: true
     t.index ["uuid"], name: "index_systems_on_uuid", unique: true
     t.index ["x", "y", "z"], name: "index_systems_on_x_and_y_and_z", unique: true
@@ -192,19 +196,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_142701) do
     t.index ["system_b_id"], name: "index_warp_gates_on_system_b_id"
   end
 
-  create_table "warp_gates", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "name"
-    t.string "short_id", null: false
-    t.string "status", default: "active"
-    t.bigint "system_a_id", null: false
-    t.bigint "system_b_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["short_id"], name: "index_warp_gates_on_short_id", unique: true
-    t.index ["system_a_id"], name: "index_warp_gates_on_system_a_id"
-    t.index ["system_b_id"], name: "index_warp_gates_on_system_b_id"
-  end
-
   add_foreign_key "buildings", "systems"
   add_foreign_key "buildings", "users"
   add_foreign_key "hired_recruits", "recruits", column: "original_recruit_id"
@@ -218,6 +209,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_142701) do
   add_foreign_key "system_visits", "systems"
   add_foreign_key "system_visits", "users"
   add_foreign_key "systems", "users", column: "discovered_by_id"
+  add_foreign_key "systems", "users", column: "owner_id"
   add_foreign_key "warp_gates", "systems", column: "system_a_id"
   add_foreign_key "warp_gates", "systems", column: "system_b_id"
 end
