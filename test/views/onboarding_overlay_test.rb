@@ -49,10 +49,10 @@ class OnboardingOverlayTest < ActionView::TestCase
   end
 
   test "onboarding_progress_percentage returns correct percentage" do
-    @user.update!(onboarding_step: "trade_routes")  # Step 4 of 5
+    @user.update!(onboarding_step: "trade_routes")  # Step 4 of 6
     percentage = onboarding_progress_percentage(@user)
 
-    assert_equal 80, percentage  # 4/5 * 100
+    assert_equal 67, percentage  # 4/6 * 100 rounded
   end
 
   # ===========================================
@@ -82,7 +82,7 @@ class OnboardingOverlayTest < ActionView::TestCase
     @user.update!(onboarding_step: "ships_tour")
     html = render partial: "shared/onboarding_overlay", locals: { user: @user }
 
-    # Should show step 2 of 5
-    assert_match(/2.*5|step 2/i, html)
+    # Should show step 2 of 6
+    assert_match(/2.*6|step 2/i, html)
   end
 end

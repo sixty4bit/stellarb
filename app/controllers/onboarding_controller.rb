@@ -44,6 +44,8 @@ class OnboardingController < ApplicationController
       redirect_to routes_path
     when "workers_overview"
       redirect_to workers_path
+    when "inbox_introduction"
+      redirect_to inbox_index_path
     else
       redirect_to inbox_index_path
     end

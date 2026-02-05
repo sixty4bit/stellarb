@@ -42,7 +42,8 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
       ["ships_tour", navigation_index_path],   # After advancing from ships_tour
       ["navigation_tutorial", routes_path],    # After advancing from navigation_tutorial
       ["trade_routes", workers_path],          # After advancing from trade_routes
-      ["workers_overview", inbox_index_path]   # After advancing from workers_overview (complete!)
+      ["workers_overview", inbox_index_path],  # After advancing from workers_overview
+      ["inbox_introduction", inbox_index_path] # After advancing from inbox_introduction (complete!)
     ]
 
     steps_and_redirects.each do |current_step, expected_redirect|
@@ -50,7 +51,7 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
 
       post advance_onboarding_path
 
-      if current_step == "workers_overview"
+      if current_step == "inbox_introduction"
         # Final step - should complete onboarding
         assert @user.reload.onboarding_complete?
       end
@@ -103,7 +104,7 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     get inbox_index_path
 
     assert_response :success
-    assert_select "#onboarding-overlay"
+    assert_select "#onboarding-sidebar"
     assert_select "[data-controller='onboarding']"
   end
 
@@ -113,7 +114,7 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     get inbox_index_path
 
     assert_response :success
-    assert_select "#onboarding-overlay", count: 0
+    assert_select "#onboarding-sidebar", count: 0
   end
 
 end
