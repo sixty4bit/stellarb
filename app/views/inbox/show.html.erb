@@ -1,36 +1,60 @@
 <div>
-  <%= render 'shared/breadcrumbs', breadcrumbs: [
-    { name: current_user.name, path: root_path },
-    { name: 'Inbox', path: inbox_index_path },
-    { name: @message[:title].truncate(30) }
-  ] %>
-
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold text-orange-500 mb-2"><%= @message[:title] %></h1>
-    <div class="text-sm text-gray-400">From: <%= @message[:from] %></div>
-    <div class="text-xs text-gray-500 mt-1"><%= time_ago_in_words(@message[:timestamp]) %> ago</div>
-  </div>
-
-  <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
-    <div class="whitespace-pre-wrap"><%= @message[:body] %></div>
-  </div>
-
-  <div class="flex gap-4">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-orange-500 mb-1">Message</h1>
+      <div class="text-sm text-gray-400">Inbox Detail View</div>
+    </div>
     <%= link_to inbox_index_path,
-        class: "px-4 py-2 bg-blue-800 hover:bg-blue-700 border border-blue-600 transition-colors",
+        class: "text-sm text-gray-400 hover:text-orange-500 transition-colors",
         data: { turbo_frame: "content_panel" } do %>
       ← Back to Inbox
     <% end %>
-
-    <% if @message[:can_reply] %>
-      <%= link_to "#",
-          class: "px-4 py-2 bg-orange-800 hover:bg-orange-700 border border-orange-600 transition-colors" do %>
-        Reply
-      <% end %>
-    <% end %>
   </div>
 
-  <div class="mt-8 text-sm text-gray-500">
-    <p>Keyboard: Esc to go back, r to reply</p>
+  <div class="bg-blue-900 border border-blue-700 p-6">
+    <div class="border-b border-blue-700 pb-4 mb-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="<%= @message[:unread] ? 'text-orange-500' : 'text-gray-500' %>">
+          <%= @message[:unread] ? '●' : '○' %>
+        </span>
+        <h2 class="text-xl font-bold <%= @message[:urgent] ? 'text-red-400' : 'text-white' %>">
+          <%= @message[:title] %>
+        </h2>
+        <% if @message[:urgent] %>
+          <span class="text-xs bg-red-800 text-white px-2 py-0.5 rounded">[URGENT]</span>
+        <% end %>
+      </div>
+
+      <div class="flex items-center justify-between text-sm text-gray-400">
+        <div>
+          <span class="text-gray-500">From:</span>
+          <span class="text-orange-400"><%= @message[:from] %></span>
+        </div>
+        <div>
+          <span class="text-gray-500">Received:</span>
+          <span><%= time_ago_in_words(@message[:timestamp]) %> ago</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-gray-200 leading-relaxed whitespace-pre-wrap mb-6">
+<%= @message[:body] %>
+    </div>
+
+    <div class="border-t border-blue-700 pt-4 flex items-center gap-4">
+      <button class="px-4 py-2 bg-blue-800 border border-blue-600 text-sm hover:border-orange-500 transition-colors">
+        <%= @message[:unread] ? '📖 Mark Read' : '📩 Mark Unread' %>
+      </button>
+      <button class="px-4 py-2 bg-blue-800 border border-blue-600 text-sm hover:border-orange-500 transition-colors">
+        ↩️ Reply
+      </button>
+      <button class="px-4 py-2 bg-blue-800 border border-red-800 text-sm text-red-400 hover:border-red-500 transition-colors">
+        🗑️ Delete
+      </button>
+    </div>
+  </div>
+
+  <div class="mt-6 text-sm text-gray-500">
+    <p>Keyboard: r to toggle read, d to delete, Backspace to return</p>
   </div>
 </div>
