@@ -1,0 +1,13 @@
+development:
+  adapter: async
+
+test:
+  adapter: test
+
+production:
+  adapter: async
+  # TODO: Switch to solid_cable when gem is added
+  # adapter: solid_cable
+  # connects_to:
+  #   database:
+  #     writing: cable
