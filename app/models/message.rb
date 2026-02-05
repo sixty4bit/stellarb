@@ -3,6 +3,8 @@
 # Inbox messages for players
 # Used for notifications, system alerts, NPC communications, etc.
 class Message < ApplicationRecord
+  include Turbo::Broadcastable
+
   # Associations
   belongs_to :user
 
@@ -21,6 +23,7 @@ class Message < ApplicationRecord
 
   # Callbacks
   before_create :generate_uuid
+  after_create_commit :broadcast_unread_badge
 
   # Instance methods
 
@@ -38,6 +41,21 @@ class Message < ApplicationRecord
 
   def urgent?
     urgent == true
+  end
+
+  # Returns the Turbo Stream target for this user's unread badge
+  def broadcast_unread_badge_target
+    "inbox_unread_badge_user_#{user_id}"
+  end
+
+  # Broadcasts an update to the user's unread badge via Turbo Streams
+  def broadcast_unread_badge
+    broadcast_replace_later_to(
+      broadcast_unread_badge_target,
+      target: "inbox_unread_badge",
+      partial: "shared/unread_badge",
+      locals: { user: user }
+    )
   end
 
   private
