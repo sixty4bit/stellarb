@@ -20,7 +20,10 @@ class ProfileController < ApplicationController
 
     if @user.update(profile_params)
       @user.complete_profile!
-      redirect_to profile_path, notice: "Profile updated successfully."
+      respond_to do |format|
+        format.turbo_stream
+        format.html { redirect_to profile_path, notice: "Profile updated successfully." }
+      end
     else
       render :edit, status: :unprocessable_entity
     end

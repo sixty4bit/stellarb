@@ -1,0 +1,7 @@
+<%= turbo_stream.replace "header_username" do %>
+  <%= render "shared/header_username", user: @user %>
+<% end %>
+
+<%= turbo_stream.replace "content_panel" do %>
+  <%= render "profile/show_content", user: @user, notice: "Profile updated successfully." %>
+<% end %>
