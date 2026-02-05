@@ -70,6 +70,11 @@
           </button>
         </div>
       </div>
+
+      <!-- Onboarding Tutorial Overlay -->
+      <% if current_user.needs_onboarding? %>
+        <%= render 'shared/onboarding_overlay', user: current_user %>
+      <% end %>
     <% else %>
       <!-- Login layout -->
       <main class="container mx-auto mt-28 px-5 max-w-md">
