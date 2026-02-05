@@ -5,7 +5,7 @@
   <div class="text-sm text-gray-400 mb-6">Your constructed facilities</div>
 
   <!-- Filters -->
-  <div class="flex gap-4 mb-6">
+  <div class="flex gap-4 mb-6 flex-wrap">
     <%= link_to buildings_path,
         class: "px-3 py-1 text-sm #{params[:type].blank? ? 'bg-orange-800 text-white' : 'bg-blue-800 text-gray-300'} rounded transition-colors",
         data: { turbo_frame: "content_panel" } do %>
@@ -24,30 +24,66 @@
     <div class="space-y-2">
       <% @buildings.each do |building| %>
         <%= link_to building_path(building),
-            class: "block bg-blue-900 border border-blue-700 p-4 hover:border-orange-500 transition-colors",
+            class: "block bg-blue-900 border border-blue-700 p-4 hover:border-orange-500 transition-colors #{building.disabled? ? 'opacity-60' : ''}",
             data: { turbo_frame: "content_panel" } do %>
           <div class="flex items-center justify-between">
-            <div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs font-mono text-gray-500"><%= building.short_id %></span>
               <span class="font-bold text-white"><%= building.name %></span>
-              <span class="text-xs bg-blue-800 text-gray-300 px-2 py-0.5 ml-2 rounded">
+              <span class="text-xs bg-blue-800 text-gray-300 px-2 py-0.5 rounded">
                 T<%= building.tier %>
               </span>
-              <span class="text-xs text-<%= building.status == 'active' ? 'lime' : 'orange' %>-400 ml-2">
-                [<%= building.status.upcase %>]
-              </span>
+              <% if building.disabled? %>
+                <span class="text-xs bg-red-900 text-red-400 px-2 py-0.5 rounded">
+                  DISABLED
+                </span>
+              <% elsif building.status != 'active' %>
+                <span class="text-xs text-orange-400">
+                  [<%= building.status.upcase.tr('_', ' ') %>]
+                </span>
+              <% else %>
+                <span class="text-xs text-lime-400">
+                  [ACTIVE]
+                </span>
+              <% end %>
             </div>
             <div class="text-sm">
               <span class="text-gray-400"><%= building.function.humanize %></span>
             </div>
           </div>
-          <div class="text-sm text-gray-400 mt-2">
-            <span>System: <%= building.system.name %></span>
-            <span class="ml-4">Race: <%= building.race.humanize %></span>
+          <div class="text-sm text-gray-400 mt-2 flex flex-wrap gap-x-4">
+            <span>
+              <span class="text-gray-500">System:</span>
+              <%= building.system.name %>
+            </span>
+            <span>
+              <span class="text-gray-500">Race:</span>
+              <%= building.race.humanize %>
+            </span>
             <% if building.staff.any? %>
-              <span class="ml-4 text-lime-400">Staff: <%= building.staff.count %></span>
+              <span class="text-lime-400">
+                <span class="text-gray-500">Staff:</span>
+                <%= building.staff.count %>/<%= building.building_attributes&.dig('staff_slots', 'max') || '?' %>
+              </span>
+            <% end %>
+            <% if building.building_attributes&.dig('output_rate') %>
+              <span>
+                <span class="text-gray-500">Output:</span>
+                <%= building.building_attributes['output_rate'].to_i %>/hr
+              </span>
             <% end %>
           </div>
         <% end %>
+      <% end %>
+    </div>
+
+    <!-- Summary -->
+    <div class="mt-6 p-4 bg-blue-950 border border-blue-800 text-sm text-gray-400">
+      <span class="text-white font-semibold"><%= @buildings.count %></span> buildings
+      <% operational = @buildings.select(&:operational?).count %>
+      <% if operational < @buildings.count %>
+        • <span class="text-lime-400"><%= operational %></span> operational
+        • <span class="text-orange-400"><%= @buildings.count - operational %></span> offline
       <% end %>
     </div>
   <% else %>
