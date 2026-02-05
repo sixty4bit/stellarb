@@ -20,58 +20,105 @@
     </div>
   </div>
 
-  <!-- Commodity Table -->
+  <!-- Commodity Table with Buy/Sell Interface -->
   <div class="bg-blue-900 border border-blue-700 mb-6">
-    <div class="grid grid-cols-6 gap-2 p-3 border-b border-blue-700 text-sm text-gray-400 font-bold">
+    <div class="grid grid-cols-8 gap-2 p-3 border-b border-blue-700 text-sm text-gray-400 font-bold">
       <div>Commodity</div>
-      <div class="text-right">Buy</div>
-      <div class="text-right">Sell</div>
-      <div class="text-right">Spread</div>
+      <div class="text-right">Buy Price</div>
+      <div class="text-right">Sell Price</div>
       <div class="text-right">Stock</div>
       <div class="text-center">Trend</div>
+      <div class="text-center">Qty</div>
+      <div class="text-center" colspan="2">Actions</div>
     </div>
     
     <% @market_data.each do |item| %>
-      <div class="grid grid-cols-6 gap-2 p-3 border-b border-blue-700 hover:bg-blue-800 transition-colors cursor-pointer">
+      <div class="grid grid-cols-8 gap-2 p-3 border-b border-blue-700 items-center hover:bg-blue-800 transition-colors">
         <div class="text-white font-bold"><%= item[:commodity].humanize %></div>
         <div class="text-right text-orange-400"><%= item[:buy_price] %> cr</div>
         <div class="text-right text-lime-400"><%= item[:sell_price] %> cr</div>
-        <div class="text-right text-gray-400">
-          <%= ((item[:buy_price] - item[:sell_price]).to_f / item[:buy_price] * 100).round(1) %>%
-        </div>
         <div class="text-right text-white"><%= number_with_delimiter(item[:inventory]) %></div>
         <div class="text-center">
           <% case item[:trend] %>
           <% when :up %>
-            <span class="text-lime-400">↑</span>
+            <span class="text-lime-400" title="Price trending up">↑</span>
           <% when :down %>
-            <span class="text-red-400">↓</span>
+            <span class="text-red-400" title="Price trending down">↓</span>
           <% else %>
-            <span class="text-gray-400">→</span>
+            <span class="text-gray-400" title="Price stable">→</span>
+          <% end %>
+        </div>
+        
+        <!-- Quantity Input -->
+        <div class="text-center">
+          <input type="number" 
+                 id="qty_<%= item[:commodity] %>" 
+                 value="1" 
+                 min="1" 
+                 max="<%= item[:inventory] %>"
+                 class="w-16 bg-blue-950 border border-blue-600 text-white text-center rounded px-2 py-1 text-sm">
+        </div>
+        
+        <!-- Buy/Sell Buttons -->
+        <div class="flex gap-2 col-span-2 justify-center">
+          <%= form_with url: buy_system_market_index_path(@system), method: :post, local: true, class: "inline" do |f| %>
+            <%= f.hidden_field :commodity, value: item[:commodity] %>
+            <%= f.hidden_field :price, value: item[:buy_price] %>
+            <input type="hidden" name="quantity" value="1" data-commodity="<%= item[:commodity] %>" class="qty-input">
+            <%= f.submit "Buy", 
+                class: "px-3 py-1 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded cursor-pointer transition-colors",
+                title: "Buy at #{item[:buy_price]} cr each" %>
+          <% end %>
+          
+          <%= form_with url: sell_system_market_index_path(@system), method: :post, local: true, class: "inline" do |f| %>
+            <%= f.hidden_field :commodity, value: item[:commodity] %>
+            <%= f.hidden_field :price, value: item[:sell_price] %>
+            <input type="hidden" name="quantity" value="1" data-commodity="<%= item[:commodity] %>" class="qty-input">
+            <%= f.submit "Sell", 
+                class: "px-3 py-1 bg-lime-700 hover:bg-lime-600 text-white text-sm rounded cursor-pointer transition-colors",
+                title: "Sell at #{item[:sell_price]} cr each" %>
           <% end %>
         </div>
       </div>
     <% end %>
   </div>
 
-  <!-- Quick Actions -->
-  <div class="flex gap-4">
-    <%= link_to "#", class: "px-4 py-2 bg-orange-800 text-white hover:bg-orange-700 rounded transition-colors" do %>
-      <span class="text-lime-400">b</span> Buy Commodity
-    <% end %>
-    <%= link_to "#", class: "px-4 py-2 bg-lime-800 text-white hover:bg-lime-700 rounded transition-colors" do %>
-      <span class="text-lime-400">s</span> Sell Commodity
-    <% end %>
-    <%= link_to "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" do %>
-      <span class="text-lime-400">c</span> Compare Markets
-    <% end %>
+  <!-- Price Legend -->
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-6">
+    <h3 class="text-sm font-semibold text-gray-400 mb-2">Market Guide</h3>
+    <div class="grid grid-cols-3 gap-4 text-sm">
+      <div>
+        <span class="text-lime-400">↑</span> <span class="text-gray-400">Price rising - good time to sell</span>
+      </div>
+      <div>
+        <span class="text-red-400">↓</span> <span class="text-gray-400">Price falling - good time to buy</span>
+      </div>
+      <div>
+        <span class="text-gray-400">→</span> <span class="text-gray-400">Price stable</span>
+      </div>
+    </div>
+    <p class="text-xs text-gray-500 mt-3">
+      Buy prices are what you pay. Sell prices are what you receive. The spread is the market's cut.
+    </p>
   </div>
 
-  <%= link_to system_path(@system), class: "block mt-6 text-sky-400 hover:text-sky-300", data: { turbo_frame: "content_panel" } do %>
+  <%= link_to system_path(@system), class: "inline-block px-4 py-2 bg-blue-800 hover:bg-blue-700 border border-blue-600 text-white transition-colors", data: { turbo_frame: "content_panel" } do %>
     ← Back to <%= @system.name %>
   <% end %>
 
   <div class="mt-8 text-sm text-gray-500">
-    <p>Keyboard: j/k to select commodity, b=buy, s=sell, c=compare, Esc=back</p>
+    <p>Keyboard: j/k to navigate, b=buy, s=sell, Esc=back</p>
   </div>
 </div>
+
+<script>
+  // Sync quantity inputs with hidden form fields
+  document.querySelectorAll('input[id^="qty_"]').forEach(input => {
+    input.addEventListener('change', function() {
+      const commodity = this.id.replace('qty_', '');
+      document.querySelectorAll(`input.qty-input[data-commodity="${commodity}"]`).forEach(hidden => {
+        hidden.value = this.value;
+      });
+    });
+  });
+</script>
