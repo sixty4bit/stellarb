@@ -113,6 +113,7 @@ class Building < ApplicationRecord
   scope :by_function, ->(function) { where(function: function) }
   scope :disabled, -> { where.not(disabled_at: nil) }
   scope :operational, -> { where(disabled_at: nil).where.not(status: 'destroyed') }
+  scope :under_construction, -> { where(status: 'under_construction') }
 
   # Disabled state (pip infestation)
   def disabled?
@@ -121,6 +122,17 @@ class Building < ApplicationRecord
 
   def operational?
     !disabled? && status != 'destroyed'
+  end
+
+  # Check if construction is complete and transition to active
+  # Called by before_action in BuildingsController
+  def check_construction_complete!
+    return unless status == "under_construction" && construction_ends_at.present?
+    return if construction_ends_at > Time.current
+
+    self.status = "active"
+    self.construction_ends_at = nil
+    save!
   end
 
   # ===========================================
