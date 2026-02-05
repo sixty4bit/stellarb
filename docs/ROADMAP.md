@@ -992,7 +992,7 @@ Run 1000 simulated games. Measure:
 | **Bankruptcy rate by day 10** | 10-25% | Too forgiving | Too punishing |
 | **Comeback rate** | 15-30% | No hope once behind | Luck > skill |
 | **Strategy diversity** | 3+ viable | Solved game | — |
-| **Decisions per day** | 2-5 | Too passive | Decision fatigue |
+| **Decisions per day** | 30-40 | Too passive | Decision fatigue |
 | **Near-death recoveries** | 10-20% | No tension | Fake difficulty |
 | **Dominant strategy usage** | <40% | — | Degenerate meta |
 
