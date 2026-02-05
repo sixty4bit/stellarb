@@ -3,6 +3,8 @@ class System < ApplicationRecord
   belongs_to :discovered_by, class_name: 'User', optional: true
   has_many :buildings, dependent: :destroy
   has_many :ships, foreign_key: 'current_system_id'
+  has_many :system_visits, dependent: :destroy
+  has_many :visitors, through: :system_visits, source: :user
 
   # Validations
   validates :x, presence: true, numericality: { in: 0..999_999 }
@@ -18,6 +20,59 @@ class System < ApplicationRecord
   before_validation :generate_short_id, on: :create
   before_validation :set_name, on: :create
   before_validation :set_properties, on: :create
+
+  # ===========================================
+  # System Discovery Logic
+  # ===========================================
+
+  # Generate a deterministic hash from coordinates
+  # @param x [Integer] X coordinate
+  # @param y [Integer] Y coordinate
+  # @param z [Integer] Z coordinate
+  # @return [String] SHA256 hex string
+  def self.coordinate_hash(x, y, z)
+    Digest::SHA256.hexdigest("#{x}|#{y}|#{z}")
+  end
+
+  # Peek at a system's procedurally generated data without persisting
+  # @param x [Integer] X coordinate
+  # @param y [Integer] Y coordinate
+  # @param z [Integer] Z coordinate
+  # @return [Hash] System data
+  def self.peek(x:, y:, z:)
+    ProceduralGeneration.generate_system(x, y, z)
+  end
+
+  # Discover (create) or retrieve a system at coordinates
+  # Only persists on first discovery - subsequent calls return existing record
+  # @param x [Integer] X coordinate
+  # @param y [Integer] Y coordinate
+  # @param z [Integer] Z coordinate
+  # @param user [User] The user discovering/visiting the system
+  # @return [System] The system record
+  def self.discover_at(x:, y:, z:, user:)
+    existing = find_by(x: x, y: y, z: z)
+    return existing if existing
+
+    # Get procedurally generated data
+    peeked = peek(x: x, y: y, z: z)
+
+    create!(
+      x: x,
+      y: y,
+      z: z,
+      name: peeked[:name],
+      discovered_by: user,
+      discovery_date: Time.current,
+      properties: {
+        star_type: peeked[:star_type],
+        planet_count: peeked[:planet_count],
+        hazard_level: peeked[:hazard_level],
+        mineral_distribution: peeked[:mineral_distribution],
+        base_prices: peeked[:base_prices]
+      }.merge(peeked[:special_properties] || {})
+    )
+  end
 
   # Check if this is The Cradle
   def is_cradle?
