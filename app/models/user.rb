@@ -1,10 +1,11 @@
 class User < ApplicationRecord
   include TripleId
 
-  # Custom Errors for Emigration
+  # Custom Errors
   class NotReadyForEmigrationError < StandardError; end
   class AlreadyEmigratedError < StandardError; end
   class InvalidHubError < StandardError; end
+  class InsufficientCreditsError < StandardError; end
 
   # Associations
   has_many :ships, dependent: :destroy
@@ -192,6 +193,30 @@ class User < ApplicationRecord
     return [] unless proving_ground?
 
     ProceduralGeneration::ReservedSystem.all_reserved_systems
+  end
+
+  # ===========================================
+  # Ship Purchase
+  # ===========================================
+
+  # Check if user can afford a ship
+  # @param hull_size [String] Ship hull size
+  # @param race [String] Ship race
+  # @return [Boolean]
+  def can_afford_ship?(hull_size:, race:)
+    cost = Ship.cost_for(hull_size: hull_size, race: race)
+    credits >= cost
+  end
+
+  # Deduct ship cost from user credits
+  # @param hull_size [String] Ship hull size
+  # @param race [String] Ship race
+  # @raise [InsufficientCreditsError] If user doesn't have enough credits
+  def deduct_ship_cost!(hull_size:, race:)
+    cost = Ship.cost_for(hull_size: hull_size, race: race)
+    raise InsufficientCreditsError, "Insufficient credits (need #{cost}, have #{credits.to_i})" if credits < cost
+
+    update!(credits: credits - cost)
   end
 
   # ===========================================
