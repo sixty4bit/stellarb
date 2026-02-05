@@ -9,6 +9,7 @@ module Onboardable
     profile_setup
     ships_tour
     navigation_tutorial
+    first_trade_run
     trade_routes
     workers_overview
   ].freeze
@@ -19,6 +20,7 @@ module Onboardable
       profile_setup: "profile_setup",
       ships_tour: "ships_tour",
       navigation_tutorial: "navigation_tutorial",
+      first_trade_run: "first_trade_run",
       trade_routes: "trade_routes",
       workers_overview: "workers_overview"
     }, default: :profile_setup
