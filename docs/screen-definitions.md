@@ -480,7 +480,7 @@ PlayerName
 │ │ CREW (4/5 slots):                                            │
 │ │ ─────────────────────────────────────────────────────────────│
 │ │   Nav. Zyx (Solari)     Skill: 81   Wage: 60/day             │
-│ │   Eng. Grak (Krog)      Skill: 91   Wage: 85/day  ⚠ Chaos    │
+│ │   Eng. Grak (Krog)      Skill: 91   Wage: 85/day             │
 │ │   Mar. Unit-7 (Myrm)    Skill: 55   Wage: 30/day             │
 │ │   Mar. Unit-8 (Myrm)    Skill: 52   Wage: 30/day             │
 │ │   [Empty Slot]                                                │
