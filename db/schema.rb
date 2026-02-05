@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_110845) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_05_142435) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -96,9 +96,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_110845) do
   end
 
   create_table "ships", force: :cascade do |t|
+    t.datetime "arrival_at"
     t.jsonb "cargo", default: {}
     t.datetime "created_at", null: false
     t.bigint "current_system_id"
+    t.bigint "destination_system_id"
     t.decimal "fuel", default: "0.0"
     t.string "hull_size"
     t.integer "location_x"
@@ -113,6 +115,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_110845) do
     t.bigint "user_id", null: false
     t.integer "variant_idx"
     t.index ["current_system_id"], name: "index_ships_on_current_system_id"
+    t.index ["destination_system_id"], name: "index_ships_on_destination_system_id"
     t.index ["short_id"], name: "index_ships_on_short_id", unique: true
     t.index ["user_id"], name: "index_ships_on_user_id"
   end
@@ -168,6 +171,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_110845) do
   add_foreign_key "routes", "ships"
   add_foreign_key "routes", "users"
   add_foreign_key "ships", "systems", column: "current_system_id"
+  add_foreign_key "ships", "systems", column: "destination_system_id"
   add_foreign_key "ships", "users"
   add_foreign_key "system_visits", "systems"
   add_foreign_key "system_visits", "users"

@@ -1,7 +1,23 @@
 class Ship < ApplicationRecord
+  # Travel result struct for returning success/failure with details
+  TravelResult = Struct.new(:success?, :error, keyword_init: true) do
+    def self.success
+      new(success?: true)
+    end
+
+    def self.failure(error)
+      new(success?: false, error: error)
+    end
+  end
+
+  # Constants
+  BASE_SPEED = 1.0  # Base travel speed (units per second)
+  MANEUVERABILITY_BASELINE = 50  # Standard maneuverability for speed calculations
+
   # Associations
   belongs_to :user
   belongs_to :current_system, class_name: 'System', optional: true
+  belongs_to :destination_system, class_name: 'System', optional: true
   has_many :hirings, as: :assignable, dependent: :destroy
   has_many :crew, through: :hirings, source: :hired_recruit
 
@@ -30,6 +46,70 @@ class Ship < ApplicationRecord
   scope :active, -> { where.not(status: 'destroyed') }
   scope :docked, -> { where(status: 'docked') }
   scope :in_transit, -> { where(status: 'in_transit') }
+
+  # Travel calculations
+  def fuel_efficiency
+    ship_attributes["fuel_efficiency"] || 1.0
+  end
+
+  def maneuverability
+    ship_attributes["maneuverability"] || MANEUVERABILITY_BASELINE
+  end
+
+  def fuel_required_for(destination)
+    return 0 if destination == current_system
+    distance = System.distance_between(current_system, destination)
+    distance * fuel_efficiency
+  end
+
+  def can_reach?(destination)
+    fuel >= fuel_required_for(destination)
+  end
+
+  def travel_time_to(destination)
+    return 0 if destination == current_system
+    distance = System.distance_between(current_system, destination)
+    speed_multiplier = maneuverability.to_f / MANEUVERABILITY_BASELINE
+    (distance / (BASE_SPEED * speed_multiplier)).ceil
+  end
+
+  def travel_to!(destination)
+    # Validate travel is possible
+    if status == "in_transit"
+      return TravelResult.failure("Ship is already in transit")
+    end
+
+    if destination == current_system || destination.id == current_system_id
+      return TravelResult.failure("Ship is already at this location")
+    end
+
+    fuel_needed = fuel_required_for(destination)
+    if fuel < fuel_needed
+      return TravelResult.failure("Insufficient fuel (need #{fuel_needed}, have #{fuel})")
+    end
+
+    # Initiate travel
+    travel_time = travel_time_to(destination)
+    self.fuel -= fuel_needed
+    self.status = "in_transit"
+    self.destination_system = destination
+    self.arrival_at = Time.current + travel_time.seconds
+    save!
+
+    TravelResult.success
+  end
+
+  def check_arrival!
+    return unless status == "in_transit" && arrival_at.present?
+    return if arrival_at > Time.current
+
+    # Arrive at destination
+    self.current_system = destination_system
+    self.destination_system = nil
+    self.arrival_at = nil
+    self.status = "docked"
+    save!
+  end
 
   private
 
