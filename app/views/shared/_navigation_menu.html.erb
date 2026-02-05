@@ -2,9 +2,7 @@
      data-controller="menu-highlight">
   <div class="mb-6">
     <%= link_to profile_path, data: { menu_item: "profile", turbo_frame: "content_panel" }, class: "block hover:bg-blue-800 rounded p-2 -m-2 transition-colors" do %>
-      <turbo-frame id="header_username">
-        <h1 class="text-orange-500 font-bold text-xl"><%= current_user.name %></h1>
-      </turbo-frame>
+      <%= render "shared/header_username", user: current_user %>
       <div class="text-sm text-lime-400">Credits: <%= number_with_delimiter(current_user.credits.to_i) %></div>
     <% end %>
   </div>
