@@ -81,6 +81,23 @@ class System < ApplicationRecord
     x == 0 && y == 0 && z == 0
   end
 
+  # ===========================================
+  # Guest Book (Visitor Logging)
+  # ===========================================
+
+  # Returns all visits to this system ordered by first visit (guest book style)
+  # @return [ActiveRecord::Relation<SystemVisit>]
+  def guest_book
+    system_visits.by_first_visit
+  end
+
+  # Returns recent visitors ordered by most recent visit
+  # @param limit [Integer] Maximum number of visitors to return
+  # @return [ActiveRecord::Relation<SystemVisit>]
+  def recent_visitors(limit: 10)
+    system_visits.by_last_visit.limit(limit)
+  end
+
   # Calculate 3D Euclidean distance between two systems
   def self.distance_between(system_a, system_b)
     dx = system_b.x - system_a.x

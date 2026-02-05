@@ -21,6 +21,18 @@ class User < ApplicationRecord
   # Callbacks
   before_validation :generate_short_id, on: :create
 
+  # ===========================================
+  # Travel Log (Visitor History)
+  # ===========================================
+
+  # Returns user's system visits ordered by most recent visit
+  # @param limit [Integer] Maximum number of entries to return (nil for all)
+  # @return [ActiveRecord::Relation<SystemVisit>]
+  def travel_log(limit: nil)
+    visits = system_visits.by_last_visit
+    limit ? visits.limit(limit) : visits
+  end
+
   private
 
   def generate_short_id

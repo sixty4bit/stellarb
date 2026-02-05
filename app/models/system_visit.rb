@@ -5,6 +5,11 @@ class SystemVisit < ApplicationRecord
   validates :first_visited_at, presence: true
   validates :last_visited_at, presence: true
   validates :visit_count, presence: true, numericality: { greater_than: 0 }
+  validates :user_id, uniqueness: { scope: :system_id, message: "has already visited this system" }
+
+  # Scopes for ordering
+  scope :by_first_visit, -> { order(first_visited_at: :asc) }
+  scope :by_last_visit, -> { order(last_visited_at: :desc) }
 
   # Record a new visit to a system
   def self.record_visit(user, system)
