@@ -12,7 +12,7 @@ module OnboardingHelper
     },
     "ships_tour" => {
       title: "Your Fleet Awaits",
-      description: "Every captain needs ships. Let's tour your fleet management screen where you can view, upgrade, and deploy your vessels.",
+      description: "Every captain needs ships. For your first vessel, we recommend the Myrmidon Scout — it's the cheapest ship (Myrmidon manufacturing is efficient!) and perfect for learning the ropes.",
       highlight: "[data-menu-item='ships']",
       icon: "🚀",
       action_text: "View Ships"
