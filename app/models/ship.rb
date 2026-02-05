@@ -209,6 +209,82 @@ class Ship < ApplicationRecord
 
   public
 
+  # ===========================================
+  # Refueling System
+  # ===========================================
+  
+  # Default fuel price if system doesn't have market data
+  DEFAULT_FUEL_PRICE = 100
+
+  # Get the current fuel price at the ship's current system
+  # @return [Integer] Price per unit of fuel
+  def current_fuel_price
+    return DEFAULT_FUEL_PRICE unless current_system.present?
+    
+    # Check system's base prices for fuel
+    base_price = current_system.base_prices["fuel"] || DEFAULT_FUEL_PRICE
+    
+    # Add any price delta from the market
+    delta = PriceDelta.find_by(system: current_system, commodity: "fuel")&.delta || 0
+    
+    (base_price + delta).to_i
+  end
+
+  # Calculate the cost to refuel a specific amount
+  # @param amount [Numeric] Amount of fuel to purchase
+  # @return [Integer] Total cost in credits
+  def refuel_cost_for(amount)
+    (amount * current_fuel_price).to_i
+  end
+
+  # Calculate fuel needed to reach full capacity
+  # @return [Numeric] Units of fuel needed
+  def fuel_needed_to_fill
+    fuel_capacity - fuel
+  end
+
+  # Refuel the ship by purchasing fuel from the current system's market
+  # @param amount [Numeric] Amount of fuel to purchase
+  # @param user [User] User paying for the fuel
+  # @return [TravelResult] Success/failure result
+  def refuel!(amount, user)
+    # Must be docked at a system
+    unless status == "docked" && current_system.present?
+      return TravelResult.failure("Ship must be docked at a system to refuel")
+    end
+
+    # Check if amount would exceed capacity
+    if fuel + amount > fuel_capacity
+      return TravelResult.failure("Cannot exceed fuel capacity (#{fuel_capacity})")
+    end
+
+    # Calculate cost
+    cost = refuel_cost_for(amount)
+    
+    # Check if user has enough credits
+    if user.credits < cost
+      return TravelResult.failure("Insufficient credits (need #{cost}, have #{user.credits.to_i})")
+    end
+
+    ActiveRecord::Base.transaction do
+      user.update!(credits: user.credits - cost)
+      self.fuel += amount
+      save!
+    end
+
+    TravelResult.success
+  end
+
+  # Refuel to full capacity
+  # @param user [User] User paying for the fuel
+  # @return [TravelResult] Success/failure result
+  def refuel_to_full!(user)
+    amount = fuel_needed_to_fill
+    return TravelResult.success if amount <= 0
+    
+    refuel!(amount, user)
+  end
+
   # Associations
   belongs_to :user
   belongs_to :current_system, class_name: 'System', optional: true
