@@ -74,6 +74,50 @@ class HiredRecruit < ApplicationRecord
     'dishonest' => 0.85
   }.freeze
 
+  # Employment History System (per ROADMAP Section 5.1.6)
+  # Every NPC comes with procedurally generated work history
+  # Outcomes are weighted by chaos factor
+
+  EMPLOYER_NAMES = [
+    "Stellaris Corp", "Frontier Mining Co", "Void Runners LLC",
+    "DeepCore Mining", "Titan Haulers", "Freeport Station",
+    "Orbital Dynamics", "Nova Shipping", "Asteroid Ventures",
+    "Colonial Authority", "Galactic Trade Union", "Nebula Freight",
+    "StarCore Industries", "Helix Manufacturing", "Quantum Logistics",
+    "Aether Refining", "Terminus Station", "Vanguard Security",
+    "Crescent Hauling", "Apex Contractors"
+  ].freeze
+
+  CLEAN_EXIT_OUTCOMES = [
+    "Contract completed",
+    "Promoted to Lead",
+    "Transferred internally",
+    "Company dissolved (economic)",
+    "Relocated with family",
+    "Retired honorably"
+  ].freeze
+
+  INCIDENT_OUTCOMES = [
+    "Creative differences",
+    "Mutual separation",
+    "Downsized",
+    "Contract not renewed",
+    "Personal reasons",
+    "Medical leave",
+    "Investigation pending",
+    "Performance review failed"
+  ].freeze
+
+  CATASTROPHE_OUTCOMES = [
+    "Reactor incident",
+    "Cargo loss",
+    "Navigation error",
+    "Sabotage suspected",
+    "Criminal investigation",
+    "Theft allegation",
+    "Negligence discharge"
+  ].freeze
+
   # Display name - use custom_name from hiring if set, otherwise class + race
   def name
     "#{npc_class.humanize} (#{race.humanize})"
@@ -175,6 +219,40 @@ class HiredRecruit < ApplicationRecord
     end.round(3)
   end
 
+  # ==========================================
+  # Employment History System
+  # ==========================================
+
+  # Generate procedural employment history based on chaos factor
+  # Creates 2-5 prior employment records
+  def generate_employment_history!
+    self.employment_history = generate_history_for_chaos(chaos_factor)
+    self.employment_history
+  end
+
+  # Add a new employment record to history
+  def add_employment_record(employer:, duration_months:, outcome:)
+    self.employment_history ||= []
+    self.employment_history << {
+      "employer" => employer,
+      "duration_months" => duration_months,
+      "outcome" => outcome
+    }
+    save!
+  end
+
+  # Format employment history as readable resume text
+  def formatted_resume
+    return "No prior employment" if employment_history.nil? || employment_history.empty?
+
+    lines = ["Prior Employment:"]
+    employment_history.each do |record|
+      duration = "#{record['duration_months']} month#{'s' unless record['duration_months'] == 1}"
+      lines << "• #{record['employer']} — #{duration} — #{record['outcome']}"
+    end
+    lines.join("\n")
+  end
+
   private
 
   # Generate quirks based on chaos factor using ROADMAP rules
@@ -237,6 +315,89 @@ class HiredRecruit < ApplicationRecord
       { positive: 1, neutral: 5, negative: 14 }  # ~5% / ~25% / ~70%
     else
       { positive: 1, neutral: 1, negative: 1 }
+    end
+  end
+
+  # ==========================================
+  # Employment History Generation (Private)
+  # ==========================================
+
+  # Generate employment history records based on chaos factor
+  def generate_history_for_chaos(chaos)
+    record_count = rand(2..5)
+    used_employers = []
+
+    record_count.times.map do
+      employer = select_unique_employer(used_employers, chaos)
+      used_employers << employer
+
+      duration = calculate_duration_for_chaos(chaos)
+      outcome = select_outcome_for_chaos(chaos)
+
+      {
+        "employer" => employer,
+        "duration_months" => duration,
+        "outcome" => outcome
+      }
+    end
+  end
+
+  # Select a unique employer, with chance of "gap" for high chaos
+  def select_unique_employer(used, chaos)
+    # High chaos: 15% chance of employment gap
+    if chaos > 60 && rand(100) < 15
+      return "Unlisted (gap)"
+    end
+
+    available = EMPLOYER_NAMES - used
+    available = EMPLOYER_NAMES if available.empty?
+    available.sample
+  end
+
+  # Calculate duration based on chaos factor
+  # High chaos = shorter tenures (red flag for hiring)
+  def calculate_duration_for_chaos(chaos)
+    case chaos
+    when 0..20
+      rand(8..36)   # 8-36 months (stable)
+    when 21..50
+      rand(4..24)   # 4-24 months (normal)
+    when 51..80
+      rand(2..14)   # 2-14 months (concerning)
+    when 81..100
+      rand(1..6)    # 1-6 months (red flag)
+    else
+      rand(4..18)
+    end
+  end
+
+  # Select outcome based on chaos factor (ROADMAP Section 5.1.6)
+  # Low chaos: 90% clean, 10% incident, 0% catastrophe
+  # High chaos: 10% clean, 50% incident, 40% catastrophe
+  def select_outcome_for_chaos(chaos)
+    weights = outcome_weights_for_chaos(chaos)
+    pool = []
+
+    weights[:clean].times { pool.concat(CLEAN_EXIT_OUTCOMES) }
+    weights[:incident].times { pool.concat(INCIDENT_OUTCOMES) }
+    weights[:catastrophe].times { pool.concat(CATASTROPHE_OUTCOMES) }
+
+    pool.sample
+  end
+
+  # Outcome probability weights by chaos level
+  def outcome_weights_for_chaos(chaos)
+    case chaos
+    when 0..20
+      { clean: 18, incident: 2, catastrophe: 0 }  # 90% / 10% / 0%
+    when 21..50
+      { clean: 14, incident: 5, catastrophe: 1 }  # 70% / 25% / 5%
+    when 51..80
+      { clean: 8, incident: 9, catastrophe: 3 }   # 40% / 45% / 15%
+    when 81..100
+      { clean: 2, incident: 10, catastrophe: 8 }  # 10% / 50% / 40%
+    else
+      { clean: 10, incident: 5, catastrophe: 1 }
     end
   end
 end
