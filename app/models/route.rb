@@ -45,4 +45,39 @@ class Route < ApplicationRecord
     self.profit_per_hour = total_profit / hours_active
     save!
   end
+
+  # ===========================================
+  # Tutorial Support Methods
+  # ===========================================
+
+  # Check if route has any stops defined
+  # @return [Boolean]
+  def has_stops?
+    stops.is_a?(Array) && stops.any?
+  end
+
+  # Check if route is profitable
+  # @return [Boolean]
+  def profitable?
+    total_profit.present? && total_profit > 0
+  end
+
+  # Check if all stops are within The Cradle (0,0,0)
+  # @return [Boolean]
+  def within_cradle?
+    return false unless has_stops?
+
+    system_ids = stops.map { |stop| stop["system_id"] || stop[:system_id] }.compact
+    return false if system_ids.empty?
+
+    systems = System.where(id: system_ids)
+    systems.any? && systems.all?(&:is_cradle?)
+  end
+
+  # Check if route qualifies for tutorial completion
+  # Must be: active, profitable, and have stops
+  # @return [Boolean]
+  def qualifies_for_tutorial?
+    status == "active" && profitable? && has_stops?
+  end
 end
