@@ -47,14 +47,64 @@ class ShipsController < ApplicationController
 
   def new
     @ship = current_user.ships.build
-    # TODO: Generate available ship types based on current system
+    @current_system = System.find_by(id: params[:system_id])
+    @purchasable_types = Ship.purchasable_types
+    @user_credits = current_user.credits
+
+    @breadcrumbs = [
+      { name: current_user.name, path: root_path },
+      { name: "Ships", path: ships_path },
+      { name: "Purchase Ship" }
+    ]
   end
 
   def create
     @ship = current_user.ships.build(ship_params)
-    if @ship.save
-      redirect_to @ship, notice: "Ship purchased successfully!"
-    else
+    @current_system = System.find_by(id: params[:system_id])
+
+    # Set required defaults
+    @ship.current_system = @current_system if @current_system
+    @ship.variant_idx ||= 0
+    @ship.fuel ||= 100.0
+
+    # Validate params before cost check to avoid ArgumentError
+    unless Ship::HULL_SIZES.include?(@ship.hull_size)
+      @ship.errors.add(:hull_size, "is not a valid hull size")
+      setup_new_view_vars
+      render :new, status: :unprocessable_entity
+      return
+    end
+
+    unless Ship::RACES.include?(@ship.race)
+      @ship.errors.add(:race, "is not a valid race")
+      setup_new_view_vars
+      render :new, status: :unprocessable_entity
+      return
+    end
+
+    # Validate affordability before attempting save
+    unless current_user.can_afford_ship?(hull_size: @ship.hull_size, race: @ship.race)
+      @ship.errors.add(:base, "Insufficient credits to purchase this ship")
+      setup_new_view_vars
+      render :new, status: :unprocessable_entity
+      return
+    end
+
+    ActiveRecord::Base.transaction do
+      # Deduct cost from user
+      current_user.deduct_ship_cost!(hull_size: @ship.hull_size, race: @ship.race)
+
+      if @ship.save
+        redirect_to @ship, notice: "Ship purchased successfully!"
+      else
+        # Rollback will restore credits
+        raise ActiveRecord::Rollback
+      end
+    end
+
+    # If we get here without redirecting, save failed
+    unless performed?
+      setup_new_view_vars
       render :new, status: :unprocessable_entity
     end
   end
@@ -86,5 +136,15 @@ class ShipsController < ApplicationController
 
   def ship_params
     params.require(:ship).permit(:name, :race, :hull_size)
+  end
+
+  def setup_new_view_vars
+    @purchasable_types = Ship.purchasable_types
+    @user_credits = current_user.credits
+    @breadcrumbs = [
+      { name: current_user.name, path: root_path },
+      { name: "Ships", path: ships_path },
+      { name: "Purchase Ship" }
+    ]
   end
 end

@@ -1,0 +1,81 @@
+<turbo-frame id="content_panel">
+<%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
+
+<div class="max-w-2xl">
+  <h1 class="text-2xl font-bold text-orange-500 mb-2">Purchase Ship</h1>
+  
+  <% if @current_system %>
+    <p class="text-gray-400 mb-4">Location: <span class="text-white"><%= @current_system.name %></span></p>
+  <% end %>
+  
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-6">
+    <span class="text-gray-400">Your Credits:</span>
+    <span class="text-lime-400 font-bold ml-2"><%= number_with_delimiter(@user_credits.to_i) %></span>
+  </div>
+
+  <%= form_with model: @ship, local: true, class: "space-y-6" do |f| %>
+    <% if @ship.errors.any? %>
+      <div class="bg-red-900 border border-red-600 p-4">
+        <h2 class="text-red-400 font-bold mb-2"><%= pluralize(@ship.errors.count, "error") %> prevented purchase:</h2>
+        <ul class="list-disc list-inside text-sm">
+          <% @ship.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= hidden_field_tag :system_id, @current_system&.id %>
+
+    <div>
+      <%= f.label :name, class: "block text-sm text-gray-400 mb-1" %>
+      <%= f.text_field :name,
+          class: "w-full bg-blue-950 border border-blue-700 px-4 py-2 focus:border-orange-500 focus:outline-none",
+          placeholder: "Name your ship" %>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <%= f.label :race, class: "block text-sm text-gray-400 mb-1" %>
+        <%= f.select :race,
+            Ship::RACES.map { |r| [r.humanize, r] },
+            { prompt: "Select race" },
+            class: "w-full bg-blue-950 border border-blue-700 px-4 py-2 focus:border-orange-500 focus:outline-none" %>
+      </div>
+
+      <div>
+        <%= f.label :hull_size, "Hull Size", class: "block text-sm text-gray-400 mb-1" %>
+        <%= f.select :hull_size,
+            Ship::HULL_SIZES.map { |h| ["#{Ship::SHIP_TYPE_NAMES[h]} (#{number_with_delimiter(Ship::SHIP_COSTS[h][:base_credits])} cr)", h] },
+            { prompt: "Select hull size" },
+            class: "w-full bg-blue-950 border border-blue-700 px-4 py-2 focus:border-orange-500 focus:outline-none" %>
+      </div>
+    </div>
+
+    <!-- Ship Type Reference -->
+    <div class="bg-blue-950 border border-blue-800 p-4">
+      <h3 class="text-sm font-bold text-gray-300 mb-3">Ship Types & Costs</h3>
+      <div class="grid grid-cols-1 gap-2 text-sm">
+        <% Ship::HULL_SIZES.each do |hull_size| %>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400"><%= Ship::SHIP_TYPE_NAMES[hull_size] %></span>
+            <span class="text-lime-400"><%= number_with_delimiter(Ship::SHIP_COSTS[hull_size][:base_credits]) %> credits</span>
+          </div>
+        <% end %>
+      </div>
+      <p class="text-xs text-gray-500 mt-3">* Prices may vary by race (Myrmidon -10%, Solari +10%, Krog +15%)</p>
+    </div>
+
+    <div class="flex gap-4">
+      <%= f.submit "Purchase Ship",
+          class: "px-6 py-2 bg-orange-800 hover:bg-orange-700 border border-orange-600 transition-colors cursor-pointer" %>
+      
+      <%= link_to ships_path,
+          class: "px-6 py-2 bg-blue-800 hover:bg-blue-700 border border-blue-600 transition-colors",
+          data: { turbo_frame: "content_panel" } do %>
+        Cancel
+      <% end %>
+    </div>
+  <% end %>
+</div>
+</turbo-frame>
