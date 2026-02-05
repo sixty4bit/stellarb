@@ -3,13 +3,18 @@
 <% hiring = @worker.hirings.find { |h| h.user_id == current_user.id } %>
 
 <div class="max-w-4xl">
+  <%# Header %>
   <div class="flex items-center justify-between mb-6">
     <div>
-      <h1 class="text-2xl font-bold text-orange-500"><%= @worker.npc_class.humanize %></h1>
-      <div class="text-sm text-gray-400">
-        <%= @worker.race.humanize %> ·
-        <span class="text-<%= @worker.rarity_tier == 'legendary' ? 'yellow' : @worker.rarity_tier == 'rare' ? 'purple' : @worker.rarity_tier == 'uncommon' ? 'sky' : 'gray' %>-400">
+      <h1 class="text-2xl font-bold text-orange-500"><%= @worker.npc_class.humanize %> #<%= @worker.id %></h1>
+      <div class="flex items-center gap-3 mt-2">
+        <span class="text-xs bg-<%= rarity_color(@worker.rarity_tier) %>-800 text-white px-2 py-0.5 rounded">
           <%= @worker.rarity_tier&.upcase || 'COMMON' %>
+        </span>
+        <span class="text-gray-400"><%= @worker.race.humanize %></span>
+        <span class="text-gray-500">·</span>
+        <span class="text-<%= hiring&.assignable.present? ? 'lime' : 'orange' %>-400">
+          <%= hiring&.assignable.present? ? 'Assigned' : 'Unassigned' %>
         </span>
       </div>
     </div>
@@ -18,63 +23,98 @@
     <% end %>
   </div>
 
-  <!-- Stats -->
+  <%# Stats Panel %>
   <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
     <h2 class="text-lime-400 font-bold mb-3">Statistics</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div>
         <div class="text-gray-400 text-sm">Skill Level</div>
-        <div class="text-white text-2xl font-bold"><%= @worker.skill %></div>
+        <div class="text-<%= skill_color(@worker.skill) %>-400 text-2xl font-bold"><%= @worker.skill %></div>
       </div>
       <div>
         <div class="text-gray-400 text-sm">Chaos Factor</div>
-        <div class="text-<%= @worker.chaos_factor > 50 ? 'orange' : @worker.chaos_factor > 25 ? 'yellow' : 'lime' %>-400 text-2xl font-bold">
+        <div class="text-<%= chaos_color(@worker.chaos_factor) %>-400 text-2xl font-bold">
           <%= @worker.chaos_factor %>
         </div>
       </div>
       <div>
-        <div class="text-gray-400 text-sm">Wage</div>
-        <div class="text-white text-2xl font-bold"><%= hiring&.wage || @worker.calculate_wage %> cr/day</div>
+        <div class="text-gray-400 text-sm">Daily Wage</div>
+        <div class="text-orange-400 text-2xl font-bold"><%= hiring&.wage || @worker.calculate_wage %> cr</div>
       </div>
       <div>
-        <div class="text-gray-400 text-sm">Status</div>
-        <div class="text-<%= hiring&.assignable.present? ? 'lime' : 'orange' %>-400 text-lg">
-          <%= hiring&.assignable.present? ? 'Assigned' : 'Unassigned' %>
+        <div class="text-gray-400 text-sm">Effectiveness</div>
+        <div class="text-<%= effectiveness_color(@worker.total_effectiveness) %>-400 text-2xl font-bold">
+          <%= (@worker.total_effectiveness * 100).round %>%
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Traits/Quirks -->
+  <%# Aging Status %>
   <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
-    <h2 class="text-lime-400 font-bold mb-3">Traits & Quirks</h2>
-    <% if @worker.stats.is_a?(Hash) && @worker.stats.any? %>
-      <div class="flex flex-wrap gap-2">
-        <% @worker.stats.each do |trait, value| %>
-          <span class="px-3 py-1 bg-blue-800 text-gray-300 rounded text-sm">
-            <%= trait.to_s.humanize %>: <%= (value * 100).round %>%
-          </span>
+    <h2 class="text-lime-400 font-bold mb-3">Aging & Lifespan</h2>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div>
+        <div class="text-gray-400 text-sm">Age</div>
+        <div class="text-white text-xl font-bold"><%= @worker.age_days || 0 %> days</div>
+      </div>
+      <div>
+        <div class="text-gray-400 text-sm">Expected Lifespan</div>
+        <div class="text-white text-xl font-bold"><%= @worker.lifespan_days || '—' %> days</div>
+      </div>
+      <div>
+        <div class="text-gray-400 text-sm">Days Remaining</div>
+        <div class="text-<%= days_remaining_color(@worker.days_remaining) %>-400 text-xl font-bold">
+          <%= @worker.days_remaining %> days
+        </div>
+      </div>
+    </div>
+    <% if @worker.elderly? %>
+      <div class="mt-3 p-2 bg-orange-900/50 border border-orange-700 rounded text-sm text-orange-300">
+        ⚠️ This worker is elderly and may have reduced effectiveness.
+        <% if @worker.past_lifespan? %>
+          They have exceeded their expected lifespan and may retire soon.
         <% end %>
       </div>
-    <% else %>
-      <p class="text-gray-500">No notable traits.</p>
     <% end %>
   </div>
 
-  <!-- Employment History -->
+  <%# Quirks %>
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+    <h2 class="text-lime-400 font-bold mb-3">Quirks</h2>
+    <% quirks = @worker.quirks %>
+    <% if quirks.any? %>
+      <div class="flex flex-wrap gap-2">
+        <% quirks.each do |quirk| %>
+          <span class="px-3 py-1 rounded text-sm <%= quirk_badge_class(quirk) %>">
+            <%= quirk.humanize %>
+          </span>
+        <% end %>
+      </div>
+      <div class="mt-3 text-sm text-gray-400">
+        Performance modifier from quirks: 
+        <span class="text-<%= @worker.performance_modifier >= 1.0 ? 'lime' : 'red' %>-400 font-bold">
+          <%= @worker.performance_modifier >= 1.0 ? '+' : '' %><%= ((@worker.performance_modifier - 1.0) * 100).round %>%
+        </span>
+      </div>
+    <% else %>
+      <p class="text-gray-500">No notable quirks.</p>
+    <% end %>
+  </div>
+
+  <%# Employment History %>
   <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
     <h2 class="text-lime-400 font-bold mb-3">Employment History</h2>
     <% if @worker.employment_history.is_a?(Array) && @worker.employment_history.any? %>
       <div class="space-y-3">
         <% @worker.employment_history.each do |job| %>
           <div class="border-l-2 border-blue-700 pl-4 py-1">
-            <div class="text-white font-bold"><%= job["employer"] || job[:employer] %></div>
-            <div class="text-sm text-gray-400">
-              <span><%= job["duration_months"] || job[:duration_months] %> months</span>
-              <span class="mx-2">·</span>
-              <span class="text-<%= (job["outcome"] || job[:outcome]).to_s.downcase.include?("incident") || (job["outcome"] || job[:outcome]).to_s.downcase.include?("difference") ? 'orange' : 'gray' %>-400">
-                <%= job["outcome"] || job[:outcome] %>
-              </span>
+            <div class="flex items-center justify-between">
+              <span class="text-white font-bold"><%= job["employer"] || job[:employer] %></span>
+              <span class="text-gray-500 text-sm"><%= job["duration_months"] || job[:duration_months] %> months</span>
+            </div>
+            <div class="text-sm mt-1 text-<%= outcome_color(job["outcome"] || job[:outcome]) %>-400">
+              <%= job["outcome"] || job[:outcome] %>
             </div>
           </div>
         <% end %>
@@ -84,28 +124,59 @@
     <% end %>
   </div>
 
-  <!-- Assignment -->
+  <%# Current Assignment %>
   <% if hiring&.assignable.present? %>
     <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
       <h2 class="text-lime-400 font-bold mb-3">Current Assignment</h2>
       <p class="text-white">
-        Assigned to: 
-        <span class="text-orange-400"><%= hiring.assignable.name rescue 'Unknown Asset' %></span>
-        (<%= hiring.assignable.class.name %>)
+        <span class="text-gray-400">Assigned to:</span>
+        <span class="text-orange-400 font-bold ml-2"><%= hiring.assignable.name rescue 'Unknown Asset' %></span>
+        <span class="text-gray-500 ml-2">(<%= hiring.assignable.class.name %>)</span>
+      </p>
+      <p class="text-sm text-gray-400 mt-2">
+        Since <%= hiring.hired_at.strftime('%b %d, %Y') %> · 
+        <%= pluralize(((Time.current - hiring.hired_at) / 1.day).round, 'day') %> employed
       </p>
     </div>
   <% end %>
 
-  <!-- Actions -->
-  <div class="flex gap-4 mt-6">
-    <%= link_to "Assign to Asset", "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
-    <%= link_to "Fire", fire_worker_path(@worker),
-        method: :post,
-        data: { confirm: "Are you sure you want to fire this worker? This cannot be undone." },
-        class: "px-4 py-2 bg-red-800 text-white hover:bg-red-700 rounded transition-colors" %>
+  <%# Risk Assessment %>
+  <% if @worker.chaos_factor >= 50 %>
+    <div class="bg-orange-900/50 border border-orange-500 p-4 mb-4">
+      <h2 class="text-lg font-bold text-orange-400 mb-2">⚠️ Risk Assessment</h2>
+      <p class="text-gray-300 text-sm">
+        This worker has a <strong>high chaos factor (<%= @worker.chaos_factor %>)</strong>.
+        They may cause incidents or behave unpredictably. Monitor their performance closely.
+      </p>
+    </div>
+  <% end %>
+
+  <%# Actions %>
+  <div class="flex items-center justify-between border-t border-blue-700 pt-6">
+    <div class="text-sm text-gray-400">
+      Employed since: <%= hiring&.hired_at&.strftime('%b %d, %Y') || 'Unknown' %>
+    </div>
+    <div class="flex gap-3">
+      <% if hiring&.assignable.present? %>
+        <%= button_to "Unassign", "#",
+            class: "px-4 py-2 bg-blue-800 text-gray-300 hover:text-white rounded transition-colors",
+            disabled: true %>
+      <% else %>
+        <%= link_to "#",
+            class: "px-4 py-2 bg-blue-800 text-gray-300 hover:text-white rounded transition-colors" do %>
+          <span class="text-lime-400">a</span> Assign to Asset
+        <% end %>
+      <% end %>
+      <%= button_to fire_worker_path(@worker),
+          method: :post,
+          form: { data: { turbo_confirm: "Are you sure you want to fire #{@worker.npc_class.humanize}? This cannot be undone." } },
+          class: "px-4 py-2 bg-red-800 text-white hover:bg-red-700 rounded transition-colors" do %>
+        <span class="text-white/70">f</span> Fire
+      <% end %>
+    </div>
   </div>
 
   <div class="mt-8 text-sm text-gray-500">
-    <p>Keyboard: a=assign, f=fire, Esc=back</p>
+    <p>Keyboard: a to assign, f to fire, q to go back</p>
   </div>
 </div>

@@ -4,7 +4,7 @@
   <h1 class="text-2xl font-bold mb-1 text-orange-500">Workers</h1>
   <div class="text-sm text-gray-400 mb-6">Your employed NPCs</div>
 
-  <!-- Quick Actions -->
+  <%# Quick Actions %>
   <div class="mb-6">
     <%= link_to recruiter_workers_path,
         class: "px-4 py-2 bg-orange-800 text-white hover:bg-orange-700 rounded transition-colors",
@@ -14,7 +14,7 @@
   </div>
 
   <% if @workers.any? %>
-    <!-- Unassigned Workers Warning -->
+    <%# Unassigned Workers Warning %>
     <% if @unassigned_workers&.any? %>
       <div class="bg-orange-900 border border-orange-600 p-4 mb-6">
         <p class="text-orange-300">
@@ -32,9 +32,10 @@
             class: "block bg-blue-900 border border-blue-700 p-4 hover:border-orange-500 transition-colors",
             data: { turbo_frame: "content_panel" } do %>
           <div class="flex items-center justify-between">
+            <%# Worker Name & Rarity %>
             <div>
               <span class="font-bold text-white"><%= worker.npc_class.humanize %></span>
-              <span class="text-xs bg-<%= worker.rarity_tier == 'legendary' ? 'yellow' : worker.rarity_tier == 'rare' ? 'purple' : worker.rarity_tier == 'uncommon' ? 'blue' : 'gray' %>-800 text-white px-2 py-0.5 ml-2 rounded">
+              <span class="text-xs bg-<%= rarity_color(worker.rarity_tier) %>-800 text-white px-2 py-0.5 ml-2 rounded">
                 <%= worker.rarity_tier&.upcase || 'COMMON' %>
               </span>
               <% if !assigned %>
@@ -43,20 +44,49 @@
                 <span class="text-xs text-lime-400 ml-2">[ACTIVE]</span>
               <% end %>
             </div>
+
+            <%# Skill Level %>
             <div class="text-sm">
               <span class="text-gray-400">Skill: </span>
-              <span class="text-white"><%= worker.skill %></span>
+              <span class="text-<%= skill_color(worker.skill) %>-400 font-bold"><%= worker.skill %></span>
             </div>
           </div>
-          <div class="text-sm text-gray-400 mt-2">
-            <span>Race: <%= worker.race.humanize %></span>
-            <span class="ml-4">Wage: <%= hiring&.wage || worker.calculate_wage %> cr/day</span>
+
+          <%# Worker Details %>
+          <div class="flex items-center justify-between text-sm text-gray-400 mt-2">
+            <div>
+              <span><%= worker.race.humanize %></span>
+              <span class="ml-4">Wage: <span class="text-orange-400"><%= hiring&.wage || worker.calculate_wage %> cr/day</span></span>
+              <% if worker.chaos_factor > 50 %>
+                <span class="ml-4 text-<%= chaos_color(worker.chaos_factor) %>-400">⚠ Chaos: <%= worker.chaos_factor %></span>
+              <% end %>
+            </div>
+
+            <%# Assignment Status %>
             <% if assigned %>
-              <span class="ml-4 text-lime-400">Assigned to: <%= hiring.assignable.name rescue 'Unknown' %></span>
+              <span class="text-lime-400">
+                <span class="text-gray-500">→</span> <%= hiring.assignable.name rescue 'Unknown' %>
+              </span>
             <% end %>
           </div>
+
+          <%# Age/Lifespan Warning (if elderly) %>
+          <% if worker.elderly? %>
+            <div class="mt-2 text-xs text-<%= days_remaining_color(worker.days_remaining) %>-400">
+              ⏳ <%= worker.days_remaining %> days remaining (effectiveness: <%= (worker.age_effectiveness_modifier * 100).round %>%)
+            </div>
+          <% end %>
         <% end %>
       <% end %>
+    </div>
+
+    <%# Summary Stats %>
+    <div class="mt-6 p-4 bg-blue-900/50 border border-blue-800 rounded">
+      <div class="flex justify-between text-sm">
+        <span class="text-gray-400">Total Workers: <span class="text-white"><%= @workers.count %></span></span>
+        <span class="text-gray-400">Assigned: <span class="text-lime-400"><%= @workers.count - (@unassigned_workers&.count || 0) %></span></span>
+        <span class="text-gray-400">Total Daily Wages: <span class="text-orange-400"><%= @workers.sum { |w| w.hirings.find { |h| h.user_id == current_user.id }&.wage || w.calculate_wage } %> cr</span></span>
+      </div>
     </div>
   <% else %>
     <div class="bg-blue-900 border border-blue-700 p-8 text-center">
@@ -66,6 +96,6 @@
   <% end %>
 
   <div class="mt-8 text-sm text-gray-500">
-    <p>Keyboard: j/k to navigate, Enter to view details, r for recruiter, f to fire, a to assign</p>
+    <p>Keyboard: j/k to navigate, Enter to view details, r for recruiter</p>
   </div>
 </div>
