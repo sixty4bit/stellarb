@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_145127) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_05_153040) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -108,6 +108,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_145127) do
     t.index ["uuid"], name: "index_incidents_on_uuid", unique: true
   end
 
+  create_table "player_hubs", force: :cascade do |t|
+    t.integer "active_buy_orders", default: 0, null: false
+    t.boolean "certified", default: false, null: false
+    t.datetime "certified_at"
+    t.datetime "created_at", null: false
+    t.integer "economic_liquidity", default: 0, null: false
+    t.integer "immigration_count", default: 0, null: false
+    t.bigint "owner_id", null: false
+    t.integer "security_rating", default: 0, null: false
+    t.bigint "system_id", null: false
+    t.integer "tax_rate", default: 5, null: false
+    t.datetime "updated_at", null: false
+    t.index ["certified", "security_rating"], name: "index_player_hubs_on_certified_and_security_rating"
+    t.index ["certified"], name: "index_player_hubs_on_certified"
+    t.index ["owner_id"], name: "index_player_hubs_on_owner_id"
+    t.index ["system_id"], name: "index_player_hubs_on_system_id", unique: true
+  end
+
   create_table "price_deltas", force: :cascade do |t|
     t.string "commodity", null: false
     t.datetime "created_at", null: false
@@ -156,6 +174,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_145127) do
     t.jsonb "employment_history", default: []
     t.datetime "expires_at"
     t.integer "level_tier"
+    t.string "name"
     t.string "npc_class"
     t.string "race"
     t.integer "skill"
@@ -254,14 +273,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_145127) do
     t.datetime "created_at", null: false
     t.decimal "credits", default: "500.0"
     t.string "email"
+    t.boolean "emigrated", default: false, null: false
+    t.datetime "emigrated_at"
+    t.bigint "emigration_hub_id"
     t.datetime "last_sign_in_at"
     t.integer "level_tier", default: 1
     t.string "name"
+    t.integer "phase", default: 1, null: false
     t.string "short_id"
     t.integer "sign_in_count", default: 0
     t.datetime "updated_at", null: false
     t.string "uuid", limit: 36
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["emigrated"], name: "index_users_on_emigrated"
+    t.index ["phase"], name: "index_users_on_phase"
     t.index ["short_id"], name: "index_users_on_short_id", unique: true
     t.index ["uuid"], name: "index_users_on_uuid", unique: true
   end
@@ -289,6 +314,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_145127) do
   add_foreign_key "hirings", "hired_recruits"
   add_foreign_key "hirings", "users"
   add_foreign_key "incidents", "hired_recruits"
+  add_foreign_key "player_hubs", "systems"
+  add_foreign_key "player_hubs", "users", column: "owner_id"
   add_foreign_key "price_deltas", "systems"
   add_foreign_key "quest_progresses", "quests"
   add_foreign_key "quest_progresses", "users"
@@ -301,6 +328,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_145127) do
   add_foreign_key "system_visits", "users"
   add_foreign_key "systems", "users", column: "discovered_by_id"
   add_foreign_key "systems", "users", column: "owner_id"
+  add_foreign_key "users", "player_hubs", column: "emigration_hub_id", on_delete: :nullify
   add_foreign_key "warp_gates", "systems", column: "system_a_id"
   add_foreign_key "warp_gates", "systems", column: "system_b_id"
 end
