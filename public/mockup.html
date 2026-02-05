@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>StellArb - Stellar Arbitrage</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background: #0a0a0f;
+      font: 14px/1.6 'Courier New', monospace;
+      color: #e0e0e0;
+    }
+    
+    a { color: #4a9eff; text-decoration: none; }
+    a:hover { color: #7bb8ff; text-decoration: underline; }
+    
+    #header {
+      background: linear-gradient(180deg, #1a1a2e 0%, #0a0a0f 100%);
+      padding: 12px 20px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    #header h1 {
+      color: #4a9eff;
+      font-size: 24px;
+      text-shadow: 0 0 10px rgba(74, 158, 255, 0.5);
+    }
+    
+    .nav-links a {
+      margin-left: 20px;
+      color: #888;
+    }
+    
+    #container {
+      display: flex;
+      min-height: calc(100vh - 60px);
+    }
+    
+    #actions {
+      width: 220px;
+      background: #12121a;
+      border-left: 1px solid #333;
+      order: 2;
+    }
+    
+    #content {
+      flex: 1;
+      padding: 20px;
+    }
+    
+    /* Status Bar */
+    #status-bar {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      padding: 12px 16px;
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    
+    #status-bar .stat {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    #status-bar .label {
+      color: #666;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    
+    #status-bar .value {
+      color: #4a9eff;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    
+    #status-bar .value.negative { color: #ff4a4a; }
+    #status-bar .value.location { color: #4aff4a; }
+    
+    .action-btn {
+      background: #333;
+      color: #4a9eff;
+      border: none;
+      padding: 2px 8px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+    .action-btn:hover { background: #444; }
+    
+    /* Messages */
+    #messages {
+      margin-bottom: 20px;
+    }
+    
+    .message {
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      border-left: 3px solid;
+    }
+    
+    .message.info {
+      background: rgba(74, 158, 255, 0.1);
+      border-color: #4a9eff;
+    }
+    
+    .message.alert {
+      background: rgba(255, 165, 0, 0.1);
+      border-color: orange;
+      color: orange;
+    }
+    
+    .message.danger {
+      background: rgba(255, 74, 74, 0.1);
+      border-color: #ff4a4a;
+      color: #ff6b6b;
+    }
+    
+    /* Trade Floor */
+    #trade-floor {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .trade-panel {
+      flex: 1;
+      border: 1px solid #333;
+      background: #12121a;
+    }
+    
+    .trade-panel h2 {
+      background: #1a1a2e;
+      padding: 10px 16px;
+      font-size: 14px;
+      color: #4aff4a;
+      border-bottom: 1px solid #333;
+    }
+    
+    .trade-panel ul {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .trade-panel li {
+      padding: 10px 16px;
+      border-bottom: 1px solid #222;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .trade-panel li:hover {
+      background: #1a1a2e;
+    }
+    
+    .item-name { color: #e0e0e0; }
+    .item-price { color: #4a9eff; margin-left: 10px; }
+    .item-qty { color: #888; font-size: 12px; }
+    .special { color: orange; }
+    
+    /* Status Section */
+    .status-section {
+      padding: 12px 16px;
+      border-bottom: 1px solid #222;
+    }
+    
+    .status-section h3 {
+      color: #666;
+      font-size: 11px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    
+    /* Actions Panel */
+    #actions .panel-header {
+      background: #1a1a2e;
+      padding: 12px 16px;
+      border-bottom: 1px solid #333;
+    }
+    
+    #actions .ship-name {
+      color: #4a9eff;
+      font-weight: bold;
+    }
+    
+    #actions .ship-id {
+      color: #666;
+      font-size: 12px;
+    }
+    
+    #actions ul {
+      list-style: none;
+    }
+    
+    #actions li {
+      border-bottom: 1px solid #222;
+    }
+    
+    #actions li a {
+      display: block;
+      padding: 10px 16px;
+      color: #e0e0e0;
+    }
+    
+    #actions li a:hover {
+      background: #1a1a2e;
+      text-decoration: none;
+    }
+    
+    #actions li .distance {
+      float: right;
+      color: #666;
+      font-size: 12px;
+    }
+    
+    #actions li.current {
+      background: #1a2e1a;
+    }
+    
+    #actions li.current a {
+      color: #4aff4a;
+    }
+    
+    /* Section Headers */
+    .section-header {
+      background: #1a1a2e;
+      padding: 8px 16px;
+      color: #666;
+      font-size: 11px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #333;
+    }
+    
+    /* Footer Status */
+    .footer-status {
+      padding: 12px 16px;
+      border-top: 1px solid #333;
+      font-size: 12px;
+      color: #666;
+    }
+    
+    /* Keyboard hint */
+    kbd {
+      background: #333;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 11px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <h1>⭐ STELLARB</h1>
+  <div class="nav-links">
+    <a href="#">New Game</a>
+    <a href="#">High Scores</a>
+    <a href="#">About</a>
+    <span style="color: #666;">|</span>
+    <span style="color: #4aff4a;">SpaceTrucker42</span>
+  </div>
+</div>
+
+<div id="container">
+  
+  <div id="content">
+    
+    <div id="status-bar">
+      <div class="stat">
+        <span class="label">Credits</span>
+        <span class="value">$45,230</span>
+      </div>
+      <div class="stat">
+        <span class="label">Bank</span>
+        <span class="value">$120,500</span>
+        <button class="action-btn">+</button>
+        <button class="action-btn">-</button>
+      </div>
+      <div class="stat">
+        <span class="label">Loan</span>
+        <span class="value negative">$8,750</span>
+        <button class="action-btn">Pay</button>
+      </div>
+      <div class="stat">
+        <span class="label">Day</span>
+        <span class="value">47</span>
+      </div>
+      <div class="stat" style="margin-left: auto;">
+        <span class="label">Location</span>
+        <span class="value location">Vigby <kbd>sy-vig</kbd></span>
+      </div>
+    </div>
+    
+    <div id="messages">
+      <div class="message alert">
+        📢 Iron prices crashed at Chug! Down 40% from yesterday.
+      </div>
+      <div class="message danger">
+        ⚠️ Your loan shark wants his money. Interest: 15%/day.
+      </div>
+    </div>
+    
+    <div id="trade-floor">
+      
+      <div class="trade-panel">
+        <h2>📦 BUY — Market at Vigby</h2>
+        <ul>
+          <li>
+            <div>
+              <span class="item-name">Iron</span>
+              <span class="item-price">$12/t</span>
+            </div>
+            <a href="#" class="action-btn">buy</a>
+          </li>
+          <li>
+            <div>
+              <span class="item-name">Gold</span>
+              <span class="item-price">$155/t</span>
+            </div>
+            <a href="#" class="action-btn">buy</a>
+          </li>
+          <li>
+            <div>
+              <span class="item-name">Titanium</span>
+              <span class="item-price">$28/t</span>
+            </div>
+            <a href="#" class="action-btn">buy</a>
+          </li>
+          <li>
+            <div>
+              <span class="item-name special">Stellarium !</span>
+              <span class="item-price">$2,400/t</span>
+            </div>
+            <a href="#" class="action-btn">buy</a>
+          </li>
+          <li>
+            <div>
+              <span class="item-name">Copper</span>
+              <span class="item-price">$8/t</span>
+            </div>
+            <a href="#" class="action-btn">buy</a>
+          </li>
+          <li>
+            <div>
+              <span class="item-name">Fuel</span>
+              <span class="item-price">$7/u</span>
+            </div>
+            <a href="#" class="action-btn">buy</a>
+          </li>
+        </ul>
+      </div>
+      
+      <div class="trade-panel">
+        <h2>💰 SELL — Your Cargo</h2>
+        <ul>
+          <li>
+            <div>
+              <span class="item-name">Iron</span>
+              <span class="item-qty">(200t)</span>
+              <span class="item-price">→ $10/t</span>
+            </div>
+            <a href="#" class="action-btn">sell</a>
+          </li>
+          <li>
+            <div>
+              <span class="item-name">Gold</span>
+              <span class="item-qty">(50t)</span>
+              <span class="item-price">→ $150/t</span>
+            </div>
+            <a href="#" class="action-btn">sell</a>
+          </li>
+          <li>
+            <div>
+              <span class="item-name">Titanium</span>
+              <span class="item-qty">(100t)</span>
+              <span class="item-price">→ $25/t</span>
+            </div>
+            <a href="#" class="action-btn">sell</a>
+          </li>
+        </ul>
+        
+        <div class="status-section">
+          <h3>Cargo Status</h3>
+          <div>Capacity: <strong>500t</strong></div>
+          <div>Used: <strong>350t</strong> (70%)</div>
+          <div>Available: <strong>150t</strong></div>
+        </div>
+      </div>
+      
+    </div>
+    
+  </div>
+  
+  <div id="actions">
+    <div class="panel-header">
+      <div class="ship-name">🚀 Yamato</div>
+      <div class="ship-id">sh-yam • Cruiser</div>
+      <div style="color: #666; font-size: 12px; margin-top: 4px;">
+        Fuel: 78/100 <a href="#" style="font-size: 11px;">Upgrade</a>
+      </div>
+    </div>
+    
+    <div class="section-header">Travel To</div>
+    <ul>
+      <li class="current">
+        <a href="#">Vigby <span class="distance">here</span></a>
+      </li>
+      <li>
+        <a href="#">Chug <span class="distance">2 fuel</span></a>
+      </li>
+      <li>
+        <a href="#">Szaps <span class="distance">3 fuel</span></a>
+      </li>
+      <li>
+        <a href="#">Unknown-7a <span class="distance">3 fuel</span></a>
+      </li>
+      <li>
+        <a href="#">The Cradle <span class="distance">5 fuel</span></a>
+      </li>
+    </ul>
+    
+    <div class="section-header">Routes</div>
+    <ul>
+      <li>
+        <a href="#">rt-vcs <span class="distance">$34/hr</span></a>
+      </li>
+      <li>
+        <a href="#">rt-abm <span class="distance">$89/hr</span></a>
+      </li>
+    </ul>
+    
+    <div class="footer-status">
+      <kbd>j</kbd><kbd>k</kbd> navigate
+      <kbd>Enter</kbd> select
+      <kbd>?</kbd> help
+    </div>
+  </div>
+  
+</div>
+
+</body>
+</html>
