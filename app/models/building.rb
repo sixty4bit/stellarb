@@ -1,4 +1,6 @@
 class Building < ApplicationRecord
+  include TripleId
+
   # Associations
   belongs_to :user
   belongs_to :system

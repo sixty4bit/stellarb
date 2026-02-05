@@ -1,4 +1,6 @@
 class Ship < ApplicationRecord
+  include TripleId
+
   # Travel result struct for returning success/failure with details
   TravelResult = Struct.new(:success?, :error, keyword_init: true) do
     def self.success
