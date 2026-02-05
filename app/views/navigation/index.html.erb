@@ -3,75 +3,146 @@
 <div class="max-w-6xl">
   <h2 class="text-2xl font-bold mb-4 text-orange-500">Navigation</h2>
 
+  <% if @ship.nil? %>
+    <div class="bg-red-900 border border-red-700 rounded p-4 mb-6">
+      <p class="text-red-300">⚠ No operational ship available. Acquire or repair a ship to navigate.</p>
+    </div>
+  <% end %>
+
   <!-- Current Location -->
   <div class="bg-blue-900 border border-blue-700 rounded p-4 mb-6">
     <h3 class="text-lg font-semibold text-lime-400 mb-2">Current Location</h3>
     <div class="grid grid-cols-2 gap-4 text-sm">
       <div>
         <span class="text-gray-400">System:</span>
-        <span class="text-white ml-2"><%= @current_system[:name] %></span>
+        <span class="text-white ml-2"><%= @current_system.name %></span>
       </div>
       <div>
         <span class="text-gray-400">Coordinates:</span>
-        <span class="text-white ml-2">(<%= @current_system[:coordinates][:x] %>, <%= @current_system[:coordinates][:y] %>, <%= @current_system[:coordinates][:z] %>)</span>
+        <span class="text-white ml-2">(<%= @current_system.x %>, <%= @current_system.y %>, <%= @current_system.z %>)</span>
       </div>
       <div>
         <span class="text-gray-400">Star Type:</span>
-        <span class="text-white ml-2"><%= @current_system[:star_type].humanize %></span>
+        <span class="text-white ml-2"><%= @current_system.properties&.dig("star_type")&.humanize || "Unknown" %></span>
       </div>
       <div>
         <span class="text-gray-400">Hazard Level:</span>
-        <span class="text-white ml-2"><%= @current_system[:hazard_level] %>%</span>
+        <span class="text-white ml-2"><%= @current_system.properties&.dig("hazard_level") || 0 %>%</span>
       </div>
     </div>
+
+    <% if @ship %>
+      <div class="mt-4 pt-4 border-t border-blue-700">
+        <div class="flex items-center justify-between text-sm">
+          <div>
+            <span class="text-gray-400">Ship:</span>
+            <span class="text-white ml-2"><%= @ship.name %></span>
+            <span class="text-gray-500 ml-1">(<%= @ship.hull_size.humanize %>)</span>
+          </div>
+          <div>
+            <span class="text-gray-400">Fuel:</span>
+            <span class="<%= @ship.fuel < 10 ? 'text-red-400' : 'text-lime-400' %> ml-2"><%= @ship.fuel.round(1) %></span>
+          </div>
+          <div>
+            <span class="text-gray-400">Status:</span>
+            <span class="<%= @ship.status == 'docked' ? 'text-lime-400' : 'text-orange-400' %> ml-2"><%= @ship.status.humanize %></span>
+          </div>
+        </div>
+      </div>
+    <% end %>
   </div>
 
-  <!-- Nearby Systems -->
+  <!-- Warp Gates (Instant Travel) -->
+  <% if @warp_destinations.any? %>
+    <div class="bg-blue-900 border border-purple-600 rounded p-4 mb-6">
+      <h3 class="text-lg font-semibold text-purple-400 mb-2">⚡ Warp Gates</h3>
+      <p class="text-gray-400 text-xs mb-3">Instant travel via warp network. Fixed fuel cost: <%= WarpGate::WARP_FUEL_COST %></p>
+      <div class="space-y-2">
+        <% @warp_destinations.each do |dest| %>
+          <div class="flex items-center justify-between p-2 bg-blue-800 rounded">
+            <div>
+              <span class="text-white"><%= dest[:system].name %></span>
+              <span class="text-gray-500 text-sm ml-2">(<%= dest[:distance] %> LY)</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="text-sm">
+                <span class="text-gray-400">Fuel:</span>
+                <span class="<%= dest[:can_reach] ? 'text-purple-400' : 'text-red-400' %> ml-1"><%= dest[:fuel_cost] %></span>
+              </div>
+              <% if dest[:can_reach] %>
+                <%= form_with url: warp_navigation_index_path, method: :post, class: "inline" do |f| %>
+                  <%= f.hidden_field :destination_id, value: dest[:system].id %>
+                  <%= f.hidden_field :intent, value: "trade" %>
+                  <%= f.submit "Warp →", class: "px-3 py-1 bg-purple-700 hover:bg-purple-600 text-white text-sm rounded cursor-pointer" %>
+                <% end %>
+              <% else %>
+                <span class="px-3 py-1 bg-gray-700 text-gray-500 text-sm rounded">Low Fuel</span>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Nearby Systems (Conventional Travel) -->
   <div class="bg-blue-900 border border-blue-700 rounded p-4 mb-6">
-    <h3 class="text-lg font-semibold text-lime-400 mb-2">Nearby Systems</h3>
+    <h3 class="text-lg font-semibold text-lime-400 mb-2">🚀 Reachable Systems</h3>
     <% if @nearby_systems.any? %>
+      <p class="text-gray-400 text-xs mb-3">Conventional travel. Fuel cost varies by distance.</p>
       <div class="space-y-2">
-        <% @nearby_systems.each do |system| %>
-          <div class="flex items-center justify-between p-2 hover:bg-blue-800 rounded cursor-pointer">
+        <% @nearby_systems.each do |dest| %>
+          <div class="flex items-center justify-between p-2 hover:bg-blue-800 rounded <%= dest[:can_reach] ? '' : 'opacity-50' %>">
             <div>
-              <span class="text-white"><%= system[:name] %></span>
-              <span class="text-gray-500 text-sm ml-2">(<%= system[:distance] %> LY)</span>
+              <span class="text-white"><%= dest[:system].name %></span>
+              <span class="text-gray-500 text-sm ml-2">(<%= dest[:distance] %> LY)</span>
             </div>
-            <div class="text-sm">
-              <span class="text-gray-400">Fuel cost:</span>
-              <span class="text-orange-500 ml-1"><%= system[:fuel_cost] %></span>
+            <div class="flex items-center gap-4">
+              <div class="text-sm">
+                <span class="text-gray-400">Fuel:</span>
+                <span class="<%= dest[:can_reach] ? 'text-orange-400' : 'text-red-400' %> ml-1"><%= dest[:fuel_cost] %></span>
+              </div>
+              <div class="text-sm">
+                <span class="text-gray-400">ETA:</span>
+                <span class="text-gray-300 ml-1"><%= dest[:travel_time] %></span>
+              </div>
+              <% if dest[:can_reach] %>
+                <%= form_with url: warp_navigation_index_path, method: :post, class: "inline" do |f| %>
+                  <%= f.hidden_field :destination_id, value: dest[:system].id %>
+                  <%= f.hidden_field :intent, value: "trade" %>
+                  <%= f.submit "Travel →", class: "px-3 py-1 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded cursor-pointer" %>
+                <% end %>
+              <% else %>
+                <span class="px-3 py-1 bg-gray-700 text-gray-500 text-sm rounded">Out of Range</span>
+              <% end %>
             </div>
           </div>
         <% end %>
       </div>
     <% else %>
-      <p class="text-gray-500">No systems within fuel range. Upgrade your ship or refuel to explore further.</p>
+      <p class="text-gray-500">No known systems within sensor range. Explore to discover new systems.</p>
     <% end %>
   </div>
 
-  <!-- Active Routes -->
-  <div class="bg-blue-900 border border-blue-700 rounded p-4">
-    <h3 class="text-lg font-semibold text-lime-400 mb-2">Active Routes</h3>
-    <% if @active_routes.any? %>
-      <div class="space-y-2">
-        <% @active_routes.each do |route| %>
-          <div class="flex items-center justify-between p-2 hover:bg-blue-800 rounded">
-            <div>
-              <span class="text-white"><%= route[:name] %></span>
-              <span class="text-gray-500 text-sm ml-2">→ <%= route[:stops].join(" → ") %></span>
-            </div>
-            <div class="text-sm">
-              <span class="text-lime-400"><%= route[:profit_per_hour] %> cr/hr</span>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    <% else %>
-      <p class="text-gray-500">No active trade routes. Create routes from the Ships → Trading menu.</p>
-    <% end %>
-  </div>
+  <!-- Ship Status / Travel Intent -->
+  <% if @ship&.status == 'in_transit' %>
+    <div class="bg-yellow-900 border border-yellow-700 rounded p-4 mb-6">
+      <h3 class="text-lg font-semibold text-yellow-400 mb-2">🛸 In Transit</h3>
+      <p class="text-gray-300">
+        En route to <strong class="text-white"><%= @ship.destination_system&.name || "Unknown" %></strong>
+      </p>
+      <% if @ship.arrival_at %>
+        <p class="text-sm text-gray-400 mt-2">
+          ETA: <%= distance_of_time_in_words(Time.current, @ship.arrival_at) %>
+        </p>
+      <% end %>
+    </div>
+  <% end %>
 
   <div class="mt-6 text-sm text-gray-500">
-    <p>Press <span class="text-lime-400">w</span> to warp • <span class="text-lime-400">s</span> to scan • <span class="text-lime-400">r</span> to manage routes</p>
+    <p>
+      <span class="text-purple-400">⚡ Warp</span> = instant via gate •
+      <span class="text-orange-400">🚀 Travel</span> = conventional flight
+    </p>
   </div>
 </div>
