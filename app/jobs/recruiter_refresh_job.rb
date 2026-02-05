@@ -7,6 +7,23 @@ class RecruiterRefreshJob < ApplicationJob
   MIN_PER_CLASS = 10
   POOL_MULTIPLIER = 0.3
 
+  # Idempotent startup method - safe to call on every server boot
+  # Checks pool health, refreshes if needed, ensures job is scheduled
+  def self.ensure_pool_ready
+    job = new
+    job.send(:cleanup_expired_recruits)
+
+    if Recruit.pool_needs_refresh?
+      # Pool is empty or stale, generate fresh recruits
+      job.send(:active_tiers).each do |tier|
+        job.send(:generate_pool_for_tier, tier)
+      end
+    end
+
+    # Always schedule next run to ensure rotation continues
+    job.send(:schedule_next_run)
+  end
+
   def perform
     # Step 1: Clean up expired recruits
     cleanup_expired_recruits
