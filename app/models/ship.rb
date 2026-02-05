@@ -481,6 +481,9 @@ class Ship < ApplicationRecord
 
     # Arrive at destination
     self.current_system = destination_system
+    self.location_x = destination_system.x
+    self.location_y = destination_system.y
+    self.location_z = destination_system.z
     self.destination_system = nil
     self.arrival_at = nil
 

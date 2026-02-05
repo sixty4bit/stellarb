@@ -68,7 +68,7 @@ class ShipsController < ApplicationController
     # Set required defaults
     @ship.current_system = @current_system
     @ship.variant_idx ||= 0
-    @ship.fuel ||= 100.0
+    @ship.fuel = @ship.fuel_capacity  # Start fully fueled
 
     # Validate params before cost check to avoid ArgumentError
     unless Ship::HULL_SIZES.include?(@ship.hull_size)
