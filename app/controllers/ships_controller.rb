@@ -59,7 +59,10 @@ class ShipsController < ApplicationController
   end
 
   def create
-    @ship = current_user.ships.build(ship_params)
+    # Build ship without attaching to user association yet
+    # (prevents validation issues when updating user credits)
+    @ship = Ship.new(ship_params)
+    @ship.user_id = current_user.id
     @current_system = System.find_by(id: params[:system_id])
 
     # Set required defaults
