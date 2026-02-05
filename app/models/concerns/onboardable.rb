@@ -99,9 +99,15 @@ module Onboardable
 
   private
 
+  NAVIGATION_TUTORIAL_REWARD = 500
+
   # Called when user completes navigation tutorial
-  # Creates an inbox message celebrating their progress
+  # Awards credits and creates an inbox message celebrating their progress
   def on_navigation_tutorial_complete!
+    # Award credits
+    update!(credits: credits + NAVIGATION_TUTORIAL_REWARD)
+
+    # Create congratulatory inbox message
     messages.create!(
       title: "Navigation Training Complete!",
       from: "Navigation Academy",
@@ -110,6 +116,8 @@ module Onboardable
         Congratulations, pilot!
 
         You've mastered the basics of stellar navigation. The galaxy is now truly open to you.
+
+        🎉 REWARD: #{NAVIGATION_TUTORIAL_REWARD} credits have been added to your account!
 
         Your navigation skills allow you to:
         • Plot courses between star systems

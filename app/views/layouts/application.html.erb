@@ -26,8 +26,10 @@
 
   <body class="bg-blue-950 text-white">
     <% if current_user %>
+      <% if defined?(ActionCable) %>
       <!-- Turbo Stream subscription for inbox updates -->
       <%= turbo_stream_from "inbox_unread_badge_user_#{current_user.id}" %>
+      <% end %>
 
       <!-- Main Game Layout -->
       <div class="flex h-screen overflow-hidden" data-controller="keyboard-navigation">

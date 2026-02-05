@@ -49,7 +49,10 @@ class Message < ApplicationRecord
   end
 
   # Broadcasts an update to the user's unread badge via Turbo Streams
+  # Gracefully handles missing ActionCable in test environment
   def broadcast_unread_badge
+    return unless defined?(ActionCable)
+
     broadcast_replace_later_to(
       broadcast_unread_badge_target,
       target: "inbox_unread_badge",
