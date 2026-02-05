@@ -1,0 +1,60 @@
+<div>
+  <h1 class="text-2xl font-bold text-orange-500 mb-1">About</h1>
+  <div class="text-sm text-gray-400 mb-6">Player Statistics</div>
+
+  <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
+    <h2 class="text-lg font-bold mb-4">Commander Profile</h2>
+    <dl class="space-y-2">
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Name:</dt>
+        <dd class="text-lime-400"><%= current_user.name %></dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Level Tier:</dt>
+        <dd><%= current_user.level_tier %></dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Credits:</dt>
+        <dd class="text-orange-500"><%= number_with_delimiter(current_user.credits.to_i) %></dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Play Time:</dt>
+        <dd><%= @stats[:playtime] %></dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
+    <h2 class="text-lg font-bold mb-4">Fleet Statistics</h2>
+    <dl class="space-y-2">
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Ships:</dt>
+        <dd><%= @stats[:ships] %></dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Buildings:</dt>
+        <dd><%= @stats[:buildings] %></dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Systems Discovered:</dt>
+        <dd><%= @stats[:systems_discovered] %></dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Workers Hired:</dt>
+        <dd><%= @stats[:workers] %></dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="bg-blue-900 border border-blue-700 p-6">
+    <h2 class="text-lg font-bold mb-4">Game Information</h2>
+    <p class="text-sm text-gray-400 mb-2">StellArb v1.0.0</p>
+    <p class="text-sm mb-4">
+      A massive multiplayer online strategy game that bridges the gap between
+      fast-paced trading and logistical depth.
+    </p>
+    <p class="text-xs text-gray-500">
+      Press ? for keyboard shortcuts
+    </p>
+  </div>
+</div>

@@ -1,31 +1,149 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "Stellarb" %></title>
+    <title><%= content_for(:title) || "StellArb" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Stellarb">
-    <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
     <%= yield :head %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
-
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
+
+    <style>
+      /* Terminal-style monospace font */
+      body {
+        font-family: 'Courier New', Courier, monospace;
+      }
+    </style>
   </head>
 
-  <body>
-    <main class="container mx-auto mt-28 px-5 flex">
-      <%= yield %>
-    </main>
+  <body class="bg-blue-950 text-white">
+    <% if current_user %>
+      <!-- Main Game Layout -->
+      <div class="flex h-screen overflow-hidden">
+        <!-- Left Menu -->
+        <nav class="w-64 bg-blue-900 border-r-2 border-orange-500 p-4 overflow-y-auto">
+          <div class="mb-6">
+            <h1 class="text-orange-500 font-bold text-xl"><%= current_user.name %></h1>
+            <div class="text-sm text-lime-400">Credits: <%= number_with_delimiter(current_user.credits.to_i) %></div>
+          </div>
+
+          <ul class="space-y-2" data-controller="menu-navigation">
+            <%= link_to inbox_index_path,
+                class: "block px-3 py-2 hover:bg-blue-800 transition-colors #{'bg-blue-800' if @active_menu == :inbox}",
+                data: { turbo_frame: "content_panel" } do %>
+              <span class="<%= 'text-orange-500' if @active_menu == :inbox %>">Inbox</span>
+            <% end %>
+
+            <%= link_to "#",
+                class: "block px-3 py-2 hover:bg-blue-800 transition-colors #{'bg-blue-800' if @active_menu == :chat}" do %>
+              <span class="<%= 'text-orange-500' if @active_menu == :chat %>">Chat</span>
+            <% end %>
+
+            <%= link_to "#",
+                class: "block px-3 py-2 hover:bg-blue-800 transition-colors #{'bg-blue-800' if @active_menu == :navigation}" do %>
+              <span class="<%= 'text-orange-500' if @active_menu == :navigation %>">Navigation</span>
+            <% end %>
+
+            <li class="group">
+              <a href="#" class="block px-3 py-2 hover:bg-blue-800 transition-colors">
+                <span>Systems</span>
+              </a>
+              <ul class="pl-6 mt-1 space-y-1 hidden group-hover:block">
+                <li><a href="#" class="block px-3 py-1 hover:bg-blue-800 text-sm">Buildings</a></li>
+              </ul>
+            </li>
+
+            <li class="group">
+              <a href="#" class="block px-3 py-2 hover:bg-blue-800 transition-colors">
+                <span>Ships</span>
+              </a>
+              <ul class="pl-6 mt-1 space-y-1 hidden group-hover:block">
+                <li><a href="#" class="block px-3 py-1 hover:bg-blue-800 text-sm">Trading</a></li>
+                <li><a href="#" class="block px-3 py-1 hover:bg-blue-800 text-sm">Combat</a></li>
+              </ul>
+            </li>
+
+            <%= link_to "#",
+                class: "block px-3 py-2 hover:bg-blue-800 transition-colors #{'bg-blue-800' if @active_menu == :workers}" do %>
+              <span class="<%= 'text-orange-500' if @active_menu == :workers %>">Workers</span>
+            <% end %>
+
+            <%= link_to about_path,
+                class: "block px-3 py-2 hover:bg-blue-800 transition-colors #{'bg-blue-800' if @active_menu == :about}",
+                data: { turbo_frame: "content_panel" } do %>
+              <span class="<%= 'text-orange-500' if @active_menu == :about %>">About</span>
+            <% end %>
+
+            <div class="mt-8 pt-4 border-t border-blue-700">
+              <%= button_to "Sign Out", sessions_path, method: :delete,
+                  class: "block w-full text-left px-3 py-2 hover:bg-blue-800 transition-colors text-red-400" %>
+            </div>
+          </ul>
+        </nav>
+
+        <!-- Right Content Panel -->
+        <main class="flex-1 overflow-y-auto">
+          <turbo-frame id="content_panel" class="block p-6">
+            <%= yield %>
+          </turbo-frame>
+        </main>
+      </div>
+
+      <!-- Keyboard shortcuts help (hidden by default) -->
+      <div id="keyboard-help" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-blue-900 border-2 border-orange-500 p-6 max-w-md">
+          <h2 class="text-orange-500 font-bold mb-4">Keyboard Shortcuts</h2>
+          <dl class="space-y-2 text-sm">
+            <div class="flex">
+              <dt class="w-20 text-lime-400">j/k</dt>
+              <dd>Navigate up/down</dd>
+            </div>
+            <div class="flex">
+              <dt class="w-20 text-lime-400">Enter</dt>
+              <dd>Select</dd>
+            </div>
+            <div class="flex">
+              <dt class="w-20 text-lime-400">Esc/q</dt>
+              <dd>Go back</dd>
+            </div>
+            <div class="flex">
+              <dt class="w-20 text-lime-400">H</dt>
+              <dd>Home (Inbox)</dd>
+            </div>
+            <div class="flex">
+              <dt class="w-20 text-lime-400">?</dt>
+              <dd>Show this help</dd>
+            </div>
+          </dl>
+          <button class="mt-4 text-orange-500" onclick="document.getElementById('keyboard-help').classList.add('hidden')">
+            Press any key to close
+          </button>
+        </div>
+      </div>
+    <% else %>
+      <!-- Login layout -->
+      <main class="container mx-auto mt-28 px-5 max-w-md">
+        <%= yield %>
+      </main>
+    <% end %>
+
+    <!-- Flash messages -->
+    <% if flash.any? %>
+      <div class="fixed top-4 right-4 space-y-2 z-50">
+        <% flash.each do |type, msg| %>
+          <div class="bg-<%= type == 'notice' ? 'green' : 'red' %>-800 border border-<%= type == 'notice' ? 'green' : 'red' %>-600 text-white px-4 py-2 rounded shadow-lg">
+            <%= msg %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
   </body>
 </html>

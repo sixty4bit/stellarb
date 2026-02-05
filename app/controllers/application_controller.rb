@@ -4,4 +4,23 @@ class ApplicationController < ActionController::Base
 
   # Changes to the importmap will invalidate the etag for HTML responses
   stale_when_importmap_changes
+
+  before_action :authenticate_user!
+
+  private
+
+  def authenticate_user!
+    redirect_to new_session_path unless current_user
+  end
+
+  def current_user
+    @current_user ||= User.find_by(id: session[:user_id]) if session[:user_id]
+  end
+
+  helper_method :current_user
+
+  # Set the active menu item for navigation highlighting
+  def set_active_menu(item)
+    @active_menu = item
+  end
 end

@@ -6,7 +6,7 @@ tags: [stellarb, game-design, roadmap]
 
 # **StellArb ROADMAP**
 Project Name: Stellar Arbitrage (Working Title)
-Version: 0.3
+Version: 1.0 (Consolidated)
 Date: February 4, 2026
 
 ---
@@ -15,16 +15,6 @@ Date: February 4, 2026
 
 ---
 
-## **TODO: Document Consolidation**
-
-- [ ] Merge all PRD content into this ROADMAP
-- [ ] Add success criteria (testable by agents) to every section
-- [ ] Delete `docs/PRD.md` after consolidation complete
-- [ ] Update brain/projects/stellarb-prd.md to point here
-
-**Rule:** Every feature section must have success criteria that an agent can verify (commands to run, numbers to check, checklists).
-
----
 
 ## **1. Executive Summary**
 A massive multiplayer online strategy game that bridges the gap between the fast-paced, high-stakes trading of *Dope Wars* and the logistical depth of *Eve Online*, without the "spreadsheet fatigue." The game features a text-based (Command Line Interface) environment where players manage automated fleets, maintain decaying assets, and build infrastructure in a persistent, shared economy.
@@ -42,6 +32,28 @@ A massive multiplayer online strategy game that bridges the gap between the fast
   * 3D Bubble: Players only see stars within their current fuel range.
   * Fog of War: Unknown sectors are pitch black until scanned or data is purchased.
   * Navigation: Players are provided a list of valid directional commands/vectors based on their ship's capabilities.
+
+### **2.1. Success Criteria**
+
+**Done when:**
+- [ ] Generate any coordinate (x,y,z) and get deterministic system properties
+- [ ] System at (0,0,0) always returns "The Cradle" with tutorial properties
+- [ ] Players can only see systems within their fuel range
+- [ ] Fog of War hides unvisited systems completely
+- [ ] Navigation shows only reachable destinations
+
+**Measured by:**
+| Metric | Target | Verify |
+|--------|--------|--------|
+| Coordinate space | 10^18 unique positions | `assert (0..999_999).size ** 3 == 10**18` |
+| Cradle special case | Always at 0,0,0 | `generate_system(0,0,0).name == "The Cradle"` |
+| Visibility range | Based on fuel | `visible_systems.all? { \|s\| s.distance <= ship.fuel_range }` |
+
+**Fails if:**
+- Player can see systems beyond fuel range
+- Unvisited systems show any data (must be pitch black)
+- The Cradle is not at coordinates (0,0,0)
+- Navigation suggests unreachable destinations
 
 ## **3. Core Gameplay Loop (The Career Path)**
 The three-phase journey from tutorial to the real game.
@@ -71,6 +83,31 @@ The three-phase journey from tutorial to the real game.
 * **The Real Game:**
   * The player is now thousands of light years from the Cradle.
   * **Goal:** Explore the *local neighborhood* of this new hub, find fresh resource nodes, and connect them to the Hub's economy via new Market Chains.
+
+### **3.4. Success Criteria**
+
+**Done when:**
+- [ ] New player spawns in The Cradle (0,0,0)
+- [ ] Tutorial quest teaches basic supply chain automation
+- [ ] Completing Phase 1 grants enough credits for exploration ship
+- [ ] Phase 2 introduces scanning and construction mechanics
+- [ ] Phase 3 presents exactly 5 remote hub options
+- [ ] Player is instantly transported to chosen hub
+- [ ] Cannot return to Cradle after emigration
+
+**Measured by:**
+| Phase | Completion Trigger | Reward |
+|-------|-------------------|---------|
+| Phase 1 | First profitable automated route | "The Grant" (10,000 credits) |
+| Phase 2 | First building constructed | "Colonial Ticket" unlock |
+| Phase 3 | Hub selection made | Instant transport to frontier |
+
+**Fails if:**
+- Player can skip tutorial phases
+- Grant money insufficient for basic exploration ship
+- Player can see more than 5 hub options
+- Player can travel back to Cradle after emigration
+- Tutorial doesn't teach all core mechanics
 
 ## **4. The Economy & Resources**
 
@@ -160,6 +197,31 @@ NPCs are the "Software" that runs the "Hardware" (Ships/Buildings). They are a f
 * **The Wage Spiral:** Higher skill NPCs demand exponentially higher wages. If you fail to pay, they don't just leave—they sabotage.
 * **Aging:** NPCs have a functional lifespan. A "Legendary Admiral" will eventually retire, forcing the player to scramble to find a replacement or watch their fleet efficiency plummet.
 * **Poaching:** Players can attempt to hire NPCs away from other players by offering higher wages (Market PvP).
+
+### **4.5. Success Criteria**
+
+**Done when:**
+- [ ] Base prices generated from system seed (no DB lookup)
+- [ ] Only price deltas stored in database
+- [ ] Minerals have specific planetary distribution patterns
+- [ ] NPCs appear in shared Recruiter pool by level tier
+- [ ] All players of same level see identical recruits
+- [ ] NPCs age and can retire/die
+- [ ] Wages scale exponentially with skill level
+
+**Measured by:**
+| Metric | Target | Verify |
+|--------|--------|--------|
+| Price calculation | Pure function | `base_price(seed) + delta_from_db` |
+| Recruiter pool | Shared by level | `Recruit.available_for(user1) == Recruit.available_for(user2)` |
+| NPC decay | Age increases daily | `npc.age_days > 0 after 24 hours` |
+| Wage scaling | Exponential | `skill_90_wage > skill_80_wage * 1.5` |
+
+**Fails if:**
+- Base prices require database lookup
+- Different players see different recruits at same level
+- NPCs don't age or decay
+- Linear wage scaling (should be exponential)
 
 ## **5. Infrastructure & Assets**
 
@@ -459,6 +521,179 @@ bin/rails runner "HiredRecruit.verify_copy_integrity!"
 * Function: Buildings provide passive income, storage, or resource processing.
 * Messaging: Buildings send status reports ("Storage Full", "Worker Strike", "Machinery Broken") to the player's Inbox.
 
+#### **5.2.1. Building Types & Functions**
+
+**Resource Extraction:**
+```ruby
+EXTRACTORS = {
+  mineral_mine: {
+    inputs: { energy: 10 },
+    outputs: { minerals: 20 },
+    staff: { engineer: 1, marine: 1 },
+    planet_requirement: :rocky,
+    tiers: 1..5
+  },
+  gas_harvester: {
+    inputs: { energy: 15 },
+    outputs: { gas: 30 },
+    staff: { engineer: 2 },
+    planet_requirement: :gas_giant,
+    tiers: 1..5
+  },
+  water_extractor: {
+    inputs: { energy: 5 },
+    outputs: { water: 50 },
+    staff: { engineer: 1 },
+    planet_requirement: :ice_or_ocean,
+    tiers: 1..3
+  }
+}
+```
+
+**Processing & Refinement:**
+```ruby
+REFINERIES = {
+  ore_refinery: {
+    inputs: { raw_ore: 100, energy: 20 },
+    outputs: { refined_metal: 30 },
+    staff: { engineer: 2, governor: 1 },
+    efficiency_range: 0.5..1.5  # Based on staff skill
+  },
+  chemical_plant: {
+    inputs: { gas: 50, water: 20, energy: 30 },
+    outputs: { chemicals: 40 },
+    staff: { engineer: 3 },
+    hazard_modifier: 1.5  # Higher breakdown chance
+  }
+}
+```
+
+**Infrastructure:**
+```ruby
+INFRASTRUCTURE = {
+  warehouse: {
+    storage: 10000,  # tons
+    decay_rate: 0.01,  # 1% per day without maintenance
+    staff: { governor: 1 },
+    defense_bonus: 0
+  },
+  habitat: {
+    population_support: 1000,
+    tax_generation: true,
+    staff: { governor: 2, marine: 1 },
+    morale_factors: [:food_supply, :entertainment, :security]
+  },
+  defense_platform: {
+    firepower: 100,
+    range: 10,  # grid units
+    staff: { marine: 3 },
+    activation: :battle_mode_only
+  }
+}
+```
+
+#### **5.2.2. Building State Machine**
+
+```ruby
+class Building < ApplicationRecord
+  state_machine initial: :constructing do
+    state :constructing do
+      # Requires construction materials in system
+      # Takes time based on tier
+    end
+
+    state :operational do
+      # Producing/processing at current efficiency
+      # Can receive upgrades
+    end
+
+    state :damaged do
+      # Reduced efficiency (T1-T3 failures)
+      # Can be repaired remotely
+    end
+
+    state :offline do
+      # Zero production (T4-T5 failures)
+      # Requires physical presence or towing
+    end
+
+    state :abandoned do
+      # No staff assigned
+      # Decays over time
+    end
+
+    state :destroyed do
+      # Permanent, creates salvage
+    end
+
+    event :complete_construction do
+      transition constructing: :operational
+    end
+
+    event :breakdown do
+      transition operational: :damaged,
+                 damaged: :offline
+    end
+
+    event :catastrophic_failure do
+      transition any => :offline
+    end
+
+    event :abandon do
+      transition [:operational, :damaged] => :abandoned
+    end
+
+    event :destroy do
+      transition any => :destroyed
+    end
+  end
+
+  def current_efficiency
+    base = 1.0
+    base *= 0.5 if damaged?
+    base *= staff_skill_modifier
+    base *= racial_bonus_modifier
+    base.clamp(0.1, 2.0)
+  end
+end
+```
+
+#### **5.2.3. Production Cycles**
+
+Buildings operate on hourly ticks:
+
+```ruby
+class ProductionJob < ApplicationJob
+  def perform
+    Building.operational.find_each do |building|
+      # Check staff morale/presence
+      next if building.on_strike?
+
+      # Check input availability
+      inputs_available = building.check_inputs
+      next unless inputs_available
+
+      # Calculate output with efficiency
+      base_output = building.base_output
+      actual_output = base_output * building.current_efficiency
+
+      # Add randomness based on NPC chaos
+      chaos_modifier = building.chaos_modifier
+      actual_output *= rand(1 - chaos_modifier..1 + chaos_modifier)
+
+      # Deduct inputs, add outputs
+      building.consume_inputs!
+      building.produce_outputs!(actual_output)
+
+      # Roll for breakdown
+      if rand < building.breakdown_chance
+        building.breakdown!
+      end
+    end
+  end
+end
+```
+
 ### **5.3. System Ownership Mechanics**
 
 #### **5.3.1. Discovery vs. Dominion**
@@ -515,6 +750,27 @@ Once the Beacon is built, the Server monitors the system for a 7-day probationar
   * **Active Presence:** If a player has a ship or building currently in the system, they see "Live Data."
 * **Gameplay Loop:** This forces players to actively explore nearby systems to find arbitrage opportunities. You cannot simply query the database for "Cheapest Iron"; you must go look for it.
 
+### **6.2. Success Criteria**
+
+**Done when:**
+- [ ] Market data only visible for visited systems
+- [ ] Unvisited systems show no price data
+- [ ] Last known prices shown with timestamp for visited systems
+- [ ] Live data only for systems with active player presence
+- [ ] No global price search available
+
+**Measured by:**
+| Metric | Target | Verify |
+|--------|--------|--------|
+| Data visibility | Visit required | `unvisited_system.market_data == nil` |
+| Price staleness | Timestamp shown | `visited_system.price_timestamp != nil` |
+| Live updates | Presence required | `live_prices if player.assets_in_system?` |
+
+**Fails if:**
+- Players can see prices without visiting
+- Global price search exists
+- Market data updates without player presence
+
 ## **7. User Interface (UI)**
 * Style: Text-based, CLI-inspired. **Rendered as HTML, not ASCII art.**
 * Feedback: "Just commands and information." No 3D rendering.
@@ -531,6 +787,26 @@ Once the Beacon is built, the Server monitors the system for a 7-day probationar
 ## **8. Technical Considerations**
 * Database: Light schema. Only stores "Deltas" and Player Asset States.
 * Asset Table: Needs flexible schema to handle procedurally generated attributes for thousands of unique ship/building types.
+
+### **8.1. Success Criteria**
+
+**Done when:**
+- [ ] Database stores only player actions and deltas
+- [ ] System properties never stored (always generated)
+- [ ] Assets table uses JSONB for procedural attributes
+- [ ] Schema supports 10,000+ unique asset types without migration
+
+**Measured by:**
+| Metric | Target | Verify |
+|--------|--------|--------|
+| DB size | <1GB for 10k players | Monitor after load test |
+| Asset flexibility | Any attribute combo | `Asset.create!(attributes: {any: "data"})` |
+| Query performance | <5ms for lookups | `EXPLAIN ANALYZE` on key queries |
+
+**Fails if:**
+- Procedural data stored in database
+- Schema changes needed for new asset types
+- Queries slow down with scale
 
 ## **9. Racial Archetypes (The Builders)**
 Assets are not generic; they are manufactured by specific civilizations. The "Manufacturer" attribute dictates the stat distribution and special abilities of Ships and Buildings.
@@ -564,6 +840,30 @@ Assets are not generic; they are manufactured by specific civilizations. The "Ma
 * **Description:** Never visually described. Text references always evade specifics (e.g., *"The small, furry nightmare,"* *"The cute menace,"* *"Those things"*).
 * **Behavior:** They are not built; they are an infestation. They randomly appear on ships/buildings that have low maintenance or visit "High Risk" bio-sectors.
 
+### **9.6. Success Criteria**
+
+**Done when:**
+- [ ] Each race has distinct statistical advantages
+- [ ] Vex ships: +20% cargo capacity vs global average
+- [ ] Solari ships: +20% sensor range vs global average
+- [ ] Krog ships: +20% hull points vs global average
+- [ ] Myrmidon ships: -20% cost vs global average
+- [ ] Racial buildings have unique resource requirements
+- [ ] Pips appear only as infestations, never built
+
+**Measured by:**
+| Race | Ship Bonus | Building Focus |
+|------|------------|----------------|
+| Vex | Cargo +20% | High income, high corruption |
+| Solari | Sensors +20% | High tech, high energy use |
+| Krog | Hull +20% | High durability, high pollution |
+| Myrmidon | Cost -20% | Efficient population support |
+
+**Fails if:**
+- Racial bonuses not statistically significant
+- All races play the same
+- Pips can be built/purchased
+
 ## **10. Asset & NPC Generation Targets**
 The procedural engine must meet the following quantitative targets to ensure a diverse ecosystem.
 
@@ -589,6 +889,36 @@ The procedural engine must meet the following quantitative targets to ensure a d
   * *Solari NPC:* +10 Science Skill / +5 Navigation / Trait: "Cold" (Low Morale impact).
   * *Krog NPC:* +10 Combat Skill / +5 Engineering / Trait: "Volatile" (High Strike chance).
   * *Myrmidon NPC:* +10 Agriculture / +5 Industry / Trait: "Hive Mind" (Must be hired in groups of 3+).
+
+### **10.4. Success Criteria**
+
+**Done when:**
+- [ ] 200 unique ship hulls generated (4 races × 5 sizes × 10 variants)
+- [ ] 100 unique buildings generated (4 races × 5 functions × 5 tiers)
+- [ ] Racial integrity maintained in generation
+- [ ] Building tiers follow power law scaling
+- [ ] NPC racial bonuses apply correctly
+
+**Measured by:**
+```ruby
+# Ship diversity test
+ships = generate_all_ship_variants
+assert ships.uniq.count == 200
+assert ships.group_by(&:race).all? { |race, ships| verify_racial_bonus(race, ships) }
+
+# Building tier scaling
+tiers = Building::TIERS
+tiers.each_cons(2) do |t1, t2|
+  assert t2.cost == t1.cost * 1.8
+  assert t2.output == t1.output * 2.5
+end
+```
+
+**Fails if:**
+- Duplicate ship variants generated
+- Racial bonuses not applied
+- Tier scaling incorrect
+- Missing any race/size/variant combination
 
 ## **11. Messaging & Notifications (The Inbox)**
 The Inbox is the primary feedback loop for the "Tycoon" layer. It is not just a chat log; it is an actionable dashboard.
@@ -631,6 +961,32 @@ System messages should use a slot-filling grammar to generate unique, often absu
   * *Inbox:* "The toilet was clogged. I destroyed it with a plasma grenade. Glory to the Empire!"
 * **Myrmidon (Hive):** Humor comes from a lack of individuality.
   * *Inbox:* "Unit #442 suggests we consume the passengers. They look high in protein. Awaiting consensus."
+
+### **11.4. Success Criteria**
+
+**Done when:**
+- [ ] Inbox displays messages in reverse chronological order
+- [ ] Critical messages have inline actionable commands
+- [ ] Messages can be filtered by category (Urgent, Trade, Personnel, Discovery)
+- [ ] Similar messages are grouped (e.g., "7 Ships arrived at Hub A")
+- [ ] Each race uses distinct voice/personality in messages
+- [ ] Mad Libs system generates unique complaint variations
+- [ ] Message throughput handles 50+ simultaneous reports
+
+**Measured by:**
+| Metric | Target | Verify |
+|--------|--------|--------|
+| Message display | <50ms | Load time for 100 messages |
+| Grouping threshold | 5+ similar | `"7 ships arrived"` not 7 separate messages |
+| Voice consistency | 100% | All Vex messages mention money/profit |
+| Mad Libs variety | 1000+ combos | Unique message generator test |
+
+**Fails if:**
+- Messages take >100ms to load
+- Racial personalities blend together
+- Same exact message appears repeatedly
+- Actionable messages lack inline commands
+- High-volume notifications crash the UI
 
 ## **12. Data Persistence & Schema Strategy**
 To manage the "Infinite" world while tracking granular player history, we employ a "Just-in-Time" realization strategy.
@@ -787,6 +1143,33 @@ Select intention: _
 - [ ] Battle mode triggers defense grid combat
 - [ ] Test: Enter trade → try switch → rejected; leave → re-enter battle → works
 
+### **13.5. Success Criteria**
+
+**Done when:**
+- [ ] Movement takes time based on distance (60s per grid baseline)
+- [ ] Fuel consumption scales with distance
+- [ ] Warp gates allow rapid travel between connected gates only
+- [ ] Navigation shows bookmarks, recent history, and reachable systems
+- [ ] System entry requires Trade/Battle mode selection
+- [ ] Mode locked while in system (must leave to change)
+- [ ] Warp gate fees distributed: X% burned, Y% maintenance, Z% profit
+
+**Measured by:**
+| Metric | Target | Verify |
+|--------|--------|--------|
+| Base travel speed | 60s/grid | `assert travel_time(1) == 60` |
+| Max travel speed | 10s/grid | With best engine + navigator |
+| Gate travel time | Same as 1 grid | Regardless of gate distance |
+| Navigation list | <5ms render | For 20 destinations |
+| Mode switching | Blocked in system | `in_system? && !can_switch_mode?` |
+
+**Fails if:**
+- Travel is instantaneous (no time cost)
+- Gates allow arbitrary distance jumps
+- Can switch modes without leaving system
+- Navigation shows unreachable destinations
+- Fuel not consumed during travel
+
 ## **14. Starter Quests (Onboarding)**
 New players spawn in one of the 6 Core Galaxies. Each Galaxy has a "Flavor" and a specific NPC guide who introduces mechanics via "Petty Problems."
 
@@ -837,6 +1220,30 @@ New players spawn in one of the 6 Core Galaxies. Each Galaxy has a "Flavor" and 
   * *Context:* "We require more space. Deliver these construction drones."
   * *Task:* Transport `Drone Parts` to a construction site.
   * *Lesson:* Building/Infrastructure.
+
+### **14.5. Success Criteria**
+
+**Done when:**
+- [ ] Each galaxy has unique theme and NPC guide
+- [ ] Quest 1 teaches basic mechanics (movement, trading)
+- [ ] Quest 2 introduces advanced mechanics per galaxy
+- [ ] All quests completable by new players
+- [ ] Quest rewards sufficient to progress
+- [ ] NPC dialogue matches racial personality
+
+**Measured by:**
+| Galaxy | Theme | Quest 1 Mechanic | Quest 2 Mechanic |
+|--------|-------|------------------|------------------|
+| Rusty Belt | Industrial | Trading + Refining | Combat |
+| Neon Spire | Corporate | Timed delivery | Arbitrage |
+| Void Lab | Scientific | Scanning | Warp gates |
+| The Hive | Biological | Mining | Construction |
+
+**Fails if:**
+- Quest impossible for new player to complete
+- Rewards insufficient to continue
+- NPC personality doesn't match race
+- Tutorial doesn't teach stated mechanics
 
 ## **15. The "Catastrophe" Mechanic (Anti-Automation)**
 While standard breakdowns can be fixed by spending credits remotely, **Catastrophic Events** require the player to physically travel to the asset to resolve them.
@@ -905,6 +1312,33 @@ Since the **Chaos Factor (0-100)** is hidden, players must evaluate NPCs based o
     * `[Date]`: T1 Glitch (Air Conditioning)
     * `[Date]`: **T5 Catastrophe (Reactor Meltdown)**
 * **Strategy:** The player must decide: *"Is Zorg's Level 85 skill worth the risk that he might blow up my ship again?"*
+
+### **15.6. Success Criteria**
+
+**Done when:**
+- [ ] 1% of standard failures escalate to Pip catastrophes
+- [ ] Catastrophic failures require physical player presence to fix
+- [ ] Pip events generate unique, humorous descriptions
+- [ ] NPC Chaos Factor (0-100) hidden but affects failure severity
+- [ ] Service records show all incidents with timestamps
+- [ ] Severity tiers (T1-T5) have distinct costs and consequences
+- [ ] High-chaos NPCs have more incidents in their history
+
+**Measured by:**
+| Metric | Target | Verify |
+|--------|--------|--------|
+| Pip trigger rate | 1% of failures | Over 10k failure events |
+| Message variety | 100+ unique | No duplicate Pip descriptions |
+| Chaos correlation | r > 0.7 | Chaos Factor vs incident rate |
+| T5 recovery cost | 80% of new asset | Nearly cheaper to replace |
+| Remote fix | Impossible for Pips | Requires physical presence |
+
+**Fails if:**
+- All failures can be fixed remotely (no travel incentive)
+- Pip events use generic descriptions
+- Chaos Factor visible to players
+- Service records don't persist across employers
+- AFK players can maintain large fleets indefinitely
 
 ## **16. User Interface (Technical Guidance)**
 The CLI interface uses a hierarchical menu system with VI-style navigation.
@@ -1624,3 +2058,114 @@ end
 - Each parameter has min/max bounds (can't go negative, can't exceed sanity)
 - If same parameter oscillates 3x, lock it and move on
 - If 5 consecutive iterations make no progress, abort with :stuck
+
+## **18. Implementation Roadmap**
+
+### **18.1. Phase 0: Foundation (Week 1-2)**
+**Goal:** Rails app skeleton with core data models
+
+**Deliverables:**
+- [ ] Rails 8 app with PostgreSQL
+- [ ] User authentication (passwordless)
+- [ ] Core models: User, System, Ship, Building
+- [ ] Procedural generation engine (Section 5.1)
+- [ ] Basic CLI UI with Turbo/Stimulus
+
+**Success Gate:** Can generate and display a procedural system
+
+### **18.2. Phase 1: Core Loop (Week 3-4)**
+**Goal:** Minimum playable tutorial
+
+**Deliverables:**
+- [ ] The Cradle (0,0,0) tutorial system
+- [ ] Basic trading mechanics
+- [ ] Ship movement and fuel
+- [ ] Simple market with buy/sell
+- [ ] Inbox notifications
+
+**Success Gate:** Player can complete Phase 1 tutorial quest
+
+### **18.3. Phase 2: Economy (Week 5-6)**
+**Goal:** Dynamic economy and NPCs
+
+**Deliverables:**
+- [ ] NPC Recruiter system
+- [ ] Shared recruit pools by level
+- [ ] Employment and wages
+- [ ] Market price dynamics
+- [ ] Automated trading routes
+
+**Success Gate:** Player can hire NPCs and run profitable routes
+
+### **18.4. Phase 3: Expansion (Week 7-8)**
+**Goal:** Multi-system gameplay
+
+**Deliverables:**
+- [ ] System discovery mechanics
+- [ ] Building construction
+- [ ] System ownership (dominion)
+- [ ] Warp gate network
+- [ ] Resource extraction
+
+**Success Gate:** Player can discover, claim, and develop a system
+
+### **18.5. Phase 4: Conflict (Week 9-10)**
+**Goal:** PvP and asset decay
+
+**Deliverables:**
+- [ ] Combat system
+- [ ] Pip infestations
+- [ ] Asset breakdowns and maintenance
+- [ ] System defense grids
+- [ ] Trade vs Battle mode
+
+**Success Gate:** Combat and decay mechanics create tension
+
+### **18.6. Phase 5: Polish (Week 11-12)**
+**Goal:** Fun calibration and launch prep
+
+**Deliverables:**
+- [ ] All 18 UI screens complete
+- [ ] Performance optimization
+- [ ] Fun calibration (Section 17)
+- [ ] Starter quests for all 4 galaxies
+- [ ] End-game spawn hub mechanics
+
+**Success Gate:** Game passes fun metrics, ready for players
+
+### **18.7. Development Principles**
+
+**Test-Driven:**
+- Write tests for success criteria first
+- Each phase has automated gate tests
+- No phase proceeds until tests pass
+
+**Playable at Every Phase:**
+- Each phase delivers a complete loop
+- Always have a working game
+- Iterate based on play feedback
+
+**Performance First:**
+- Target <50ms for all operations
+- Profile and optimize each phase
+- Never compromise on speed
+
+### **18.8. Success Metrics**
+
+**Technical:**
+- [ ] All procedural generation <15ms
+- [ ] All UI updates <100ms
+- [ ] Support 10,000 concurrent players
+- [ ] <1GB database for 10k players
+
+**Gameplay:**
+- [ ] 30-50% win rate
+- [ ] 20-30 day average game length
+- [ ] 3+ viable strategies
+- [ ] 30-40 meaningful decisions per day
+
+**Launch Criteria:**
+- [ ] All 18 screens implemented
+- [ ] All success criteria passing
+- [ ] Fun calibration converged
+- [ ] Human playtest approval
