@@ -13,6 +13,85 @@ class Building < ApplicationRecord
   FUNCTIONS = %w[extraction refining logistics civic defense].freeze
   STATUSES = %w[active inactive destroyed under_construction].freeze
 
+  # ===========================================
+  # Building Costs Configuration
+  # ===========================================
+  # Base credits cost for each function type by tier
+  # Costs scale with building complexity and capability
+  BUILDING_COSTS = {
+    "extraction" => { 1 => 1000, 2 => 3000, 3 => 8000, 4 => 20000, 5 => 50000 },
+    "refining" => { 1 => 1500, 2 => 4500, 3 => 12000, 4 => 30000, 5 => 75000 },
+    "logistics" => { 1 => 1200, 2 => 3600, 3 => 9600, 4 => 24000, 5 => 60000 },
+    "civic" => { 1 => 800, 2 => 2400, 3 => 6400, 4 => 16000, 5 => 40000 },
+    "defense" => { 1 => 2000, 2 => 6000, 3 => 16000, 4 => 40000, 5 => 100000 }
+  }.freeze
+
+  # Racial cost modifiers (percentage adjustment)
+  RACIAL_COST_MODIFIERS = {
+    "vex" => 1.0,        # Standard pricing
+    "solari" => 1.1,     # Premium for advanced tech
+    "krog" => 1.15,      # Premium for fortified construction
+    "myrmidon" => 0.9    # Discount due to efficient construction
+  }.freeze
+
+  # Function display names
+  FUNCTION_NAMES = {
+    "extraction" => "Extraction Facility",
+    "refining" => "Refinery",
+    "logistics" => "Logistics Hub",
+    "civic" => "Civic Center",
+    "defense" => "Defense Platform"
+  }.freeze
+
+  # ===========================================
+  # Building Cost Calculations
+  # ===========================================
+
+  # Calculate the cost for a building with given function, tier, and race
+  # @param function [String] One of FUNCTIONS
+  # @param tier [Integer] 1-5
+  # @param race [String] One of RACES
+  # @return [Integer] Total credits cost
+  def self.cost_for(function:, tier:, race:)
+    validate_building_params!(function: function, tier: tier, race: race)
+
+    base_cost = BUILDING_COSTS[function][tier]
+    modifier = RACIAL_COST_MODIFIERS[race]
+    (base_cost * modifier).round
+  end
+
+  # Return all constructable building configurations
+  # @return [Array<Hash>] Array of building type configurations
+  def self.constructable_types
+    types = []
+    FUNCTIONS.each do |function|
+      RACES.each do |race|
+        (1..5).each do |tier|
+          types << {
+            function: function,
+            race: race,
+            tier: tier,
+            cost: cost_for(function: function, tier: tier, race: race),
+            name: "#{race.capitalize} #{FUNCTION_NAMES[function]} (Tier #{tier})"
+          }
+        end
+      end
+    end
+    types
+  end
+
+  private_class_method def self.validate_building_params!(function:, tier:, race:)
+    unless FUNCTIONS.include?(function)
+      raise ArgumentError, "Invalid function: #{function}. Must be one of: #{FUNCTIONS.join(', ')}"
+    end
+    unless (1..5).include?(tier)
+      raise ArgumentError, "Invalid tier: #{tier}. Must be 1-5"
+    end
+    unless RACES.include?(race)
+      raise ArgumentError, "Invalid race: #{race}. Must be one of: #{RACES.join(', ')}"
+    end
+  end
+
   # Validations
   validates :name, presence: true
   validates :short_id, presence: true, uniqueness: true
