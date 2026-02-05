@@ -1,0 +1,87 @@
+<%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
+
+<div class="max-w-6xl">
+  <h1 class="text-2xl font-bold mb-1 text-orange-500">Recruiter</h1>
+  <div class="text-sm text-gray-400 mb-6">Available NPCs for hire (Level <%= current_user.level_tier %> pool)</div>
+
+  <%# Pool Refresh Timer %>
+  <% if @next_refresh %>
+    <div class="bg-blue-900 border border-blue-700 p-4 mb-6">
+      <div class="flex items-center justify-between">
+        <span class="text-gray-400">Pool refreshes in:</span>
+        <span class="text-lime-400 font-mono"><%= distance_of_time_in_words_to_now(@next_refresh) %></span>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @recruits.any? %>
+    <div class="space-y-3">
+      <% @recruits.each do |recruit| %>
+        <div class="bg-blue-900 border border-blue-700 p-4 hover:border-orange-500 transition-colors">
+          <%# Header: Class, Rarity, Race %>
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <span class="font-bold text-white"><%= recruit.npc_class.humanize %></span>
+              <span class="text-xs bg-<%= rarity_color(recruit.rarity_tier) %>-800 text-white px-2 py-0.5 ml-2 rounded">
+                <%= recruit.rarity_tier.upcase %>
+              </span>
+              <span class="text-gray-400 ml-2">(<%= recruit.race.humanize %>)</span>
+            </div>
+            <div class="text-sm">
+              <span class="text-gray-400">Skill: </span>
+              <span class="text-<%= skill_color(recruit.skill) %>-400 font-bold">
+                <%= recruit.skill %>
+              </span>
+            </div>
+          </div>
+
+          <%# Employment History Preview %>
+          <div class="mb-3 text-sm">
+            <span class="text-gray-500">Employment history:</span>
+            <% if recruit.employment_history.is_a?(Array) && recruit.employment_history.any? %>
+              <% last_job = recruit.employment_history.last %>
+              <span class="text-gray-400 ml-2">
+                <%= last_job["employer"] || last_job[:employer] %> —
+                <span class="text-<%= outcome_color(last_job["outcome"] || last_job[:outcome]) %>-400">
+                  <%= last_job["outcome"] || last_job[:outcome] %>
+                </span>
+              </span>
+            <% else %>
+              <span class="text-gray-500 ml-2">No prior employment</span>
+            <% end %>
+          </div>
+
+          <%# Hiring Info %>
+          <div class="flex items-center justify-between mt-4 pt-3 border-t border-blue-700">
+            <div class="text-sm">
+              <span class="text-gray-400">Hire cost:</span>
+              <span class="text-orange-400 font-bold ml-1"><%= recruit.base_wage * 2 %> cr</span>
+              <span class="text-gray-500 ml-2">(2 weeks advance)</span>
+            </div>
+            <div class="flex gap-2">
+              <%= link_to recruiter_path(recruit), class: "px-3 py-1 bg-blue-800 text-gray-300 hover:text-white rounded text-sm", data: { turbo_frame: "content_panel" } do %>
+                View Resume
+              <% end %>
+              <%= button_to "Hire", hire_recruiter_path(recruit),
+                  method: :post,
+                  class: "px-4 py-1 bg-lime-800 text-white hover:bg-lime-700 rounded text-sm font-bold" %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="bg-blue-900 border border-blue-700 p-8 text-center">
+      <p class="text-gray-400">No recruits available at your level.</p>
+      <p class="text-sm text-gray-500 mt-2">Check back later when the pool refreshes.</p>
+    </div>
+  <% end %>
+
+  <%= link_to workers_path, class: "block mt-6 text-sky-400 hover:text-sky-300", data: { turbo_frame: "content_panel" } do %>
+    ← Back to Workers
+  <% end %>
+
+  <div class="mt-8 text-sm text-gray-500">
+    <p>Keyboard: j/k to navigate, Enter to view resume, h to hire, c to compare</p>
+  </div>
+</div>

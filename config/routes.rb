@@ -79,6 +79,12 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :recruiters, only: [:index, :show] do
+    member do
+      post :hire
+    end
+  end
+
   get :about, to: 'about#index'
 
   # Authentication (passwordless)

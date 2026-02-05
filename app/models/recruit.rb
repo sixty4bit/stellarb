@@ -60,6 +60,18 @@ class Recruit < ApplicationRecord
 
   scope :expired, -> { where("expires_at <= ?", Time.current) }
 
+  # Display name for UI
+  def display_name
+    name.presence || "#{npc_class.humanize} (#{race.humanize})"
+  end
+
+  # Check if this recruit is available for a specific user
+  def available_for?(user)
+    level_tier == user.level_tier &&
+      available_at <= Time.current &&
+      expires_at > Time.current
+  end
+
   # Class method to generate a new recruit with all attributes populated
   # Can optionally specify npc_class to generate a specific class
   def self.generate!(level_tier:, npc_class: nil)
