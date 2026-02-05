@@ -118,6 +118,20 @@ class HiredRecruit < ApplicationRecord
     "Negligence discharge"
   ].freeze
 
+  # ==========================================
+  # Aging System Constants (ROADMAP Section 4.4.3)
+  # ==========================================
+
+  # Lifespan range in game-days
+  # Game target is 20-30 days (stellarb-a7q.2)
+  # NPCs should last longer than a game but be finite
+  BASE_LIFESPAN_MIN = 30   # Minimum lifespan for lowest skill
+  BASE_LIFESPAN_MAX = 100  # Maximum base lifespan
+  SKILL_LIFESPAN_BONUS = 0.8  # Per skill point bonus to lifespan
+
+  # Elderly threshold (percentage of lifespan)
+  ELDERLY_THRESHOLD = 0.8  # 80% of lifespan = elderly
+
   # Display name - use custom_name from hiring if set, otherwise class + race
   def name
     "#{npc_class.humanize} (#{race.humanize})"
@@ -128,6 +142,11 @@ class HiredRecruit < ApplicationRecord
   validates :npc_class, presence: true, inclusion: { in: NPC_CLASSES }
   validates :skill, presence: true, numericality: { in: 1..100 }
   validates :chaos_factor, presence: true, numericality: { in: 0..100 }
+  validates :age_days, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :lifespan_days, numericality: { greater_than: 0 }, allow_nil: true
+
+  # Callbacks
+  before_create :generate_lifespan
 
   # Create from a Recruit (immutable copy)
   def self.create_from_recruit!(recruit, hiring_user)
@@ -251,6 +270,38 @@ class HiredRecruit < ApplicationRecord
       lines << "• #{record['employer']} — #{duration} — #{record['outcome']}"
     end
     lines.join("\n")
+  end
+
+  # ==========================================
+  # Aging System (ROADMAP Section 4.4.3)
+  # ==========================================
+
+  # Calculate age as a percentage of lifespan (0.0 to 1.0+)
+  # Returns 1.0 if lifespan is 0 to avoid division by zero
+  def age_percentage
+    return 1.0 if lifespan_days.nil? || lifespan_days <= 0
+    (age_days || 0).to_f / lifespan_days
+  end
+
+  # Returns true if NPC is past 80% of their lifespan
+  # Elderly NPCs may have reduced effectiveness (see decay formula)
+  def elderly?
+    age_percentage >= ELDERLY_THRESHOLD
+  end
+
+  # Returns true if NPC has exceeded their expected lifespan
+  # These NPCs are at high risk of retirement/death
+  def past_lifespan?
+    return true if lifespan_days.nil? || lifespan_days <= 0
+    (age_days || 0) > lifespan_days
+  end
+
+  # Calculate days remaining until expected lifespan
+  # Returns 0 if already past lifespan
+  def days_remaining
+    return 0 if lifespan_days.nil?
+    remaining = lifespan_days - (age_days || 0)
+    [remaining, 0].max
   end
 
   private
