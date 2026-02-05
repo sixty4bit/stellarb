@@ -78,4 +78,39 @@ class ProfileControllerTest < ActionDispatch::IntegrationTest
     patch profile_path, params: { user: { name: "Hacker" } }
     assert_redirected_to new_session_path
   end
+
+  # =========================================
+  # TURBO STREAM
+  # =========================================
+
+  test "update via turbo_stream returns turbo_stream response" do
+    patch profile_path,
+          params: { user: { name: "New Name" } },
+          as: :turbo_stream
+
+    assert_response :success
+    assert_equal "text/vnd.turbo-stream.html", response.media_type
+  end
+
+  test "update via turbo_stream updates header username" do
+    patch profile_path,
+          params: { user: { name: "Captain Rex" } },
+          as: :turbo_stream
+
+    assert_response :success
+    # Should contain turbo-stream action to replace header_username
+    assert_includes response.body, 'turbo-stream action="replace" target="header_username"'
+    assert_includes response.body, "Captain Rex"
+  end
+
+  test "update via turbo_stream updates content panel" do
+    patch profile_path,
+          params: { user: { name: "Admiral Ackbar" } },
+          as: :turbo_stream
+
+    assert_response :success
+    # Should contain turbo-stream action to replace content_panel
+    assert_includes response.body, 'turbo-stream action="replace" target="content_panel"'
+    assert_includes response.body, "Profile updated successfully"
+  end
 end
