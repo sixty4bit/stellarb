@@ -1,0 +1,109 @@
+<%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
+
+<div class="max-w-6xl">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-orange-500 mb-2"><%= @building.name %></h1>
+    <div class="text-sm text-gray-400">
+      <%= @building.function.humanize %> • Tier <%= @building.tier %> • <%= @building.race.humanize %>
+      <span class="text-xs text-<%= @building.status == 'active' ? 'lime' : 'orange' %>-400 ml-2">
+        [<%= @building.status.upcase %>]
+      </span>
+    </div>
+  </div>
+
+  <!-- Building Stats -->
+  <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-lime-400 mb-4">Building Stats</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+      <div>
+        <span class="text-gray-400 block">Output Rate</span>
+        <span class="text-white"><%= @building.building_attributes&.dig('output_rate') || '-' %>/hr</span>
+      </div>
+      <div>
+        <span class="text-gray-400 block">Storage</span>
+        <span class="text-white"><%= number_with_delimiter(@building.building_attributes&.dig('storage_capacity') || 0) %></span>
+      </div>
+      <div>
+        <span class="text-gray-400 block">Durability</span>
+        <span class="text-white"><%= @building.building_attributes&.dig('durability') || '-' %></span>
+      </div>
+      <div>
+        <span class="text-gray-400 block">Maintenance</span>
+        <span class="text-orange-400"><%= @building.building_attributes&.dig('maintenance_rate') || '-' %> cr/day</span>
+      </div>
+      <div>
+        <span class="text-gray-400 block">Staff Slots</span>
+        <span class="text-white">
+          <%= @building.staff.count %>/<%= @building.building_attributes&.dig('staff_slots', 'max') || '?' %>
+        </span>
+      </div>
+      <div>
+        <span class="text-gray-400 block">Hardpoints</span>
+        <span class="text-white"><%= @building.building_attributes&.dig('hardpoints') || 0 %></span>
+      </div>
+      <div>
+        <span class="text-gray-400 block">Power</span>
+        <span class="text-yellow-400"><%= @building.building_attributes&.dig('power_consumption') || '-' %> MW</span>
+      </div>
+      <div>
+        <span class="text-gray-400 block">Location</span>
+        <%= link_to @building.system.name, system_path(@building.system),
+            class: "text-lime-400 hover:underline",
+            data: { turbo_frame: "content_panel" } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Staff -->
+  <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-lime-400 mb-4">Assigned Staff</h2>
+    <% if @building.staff.any? %>
+      <div class="space-y-2">
+        <% @building.staff.each do |worker| %>
+          <div class="flex items-center justify-between p-2 hover:bg-blue-800 rounded">
+            <span class="text-white"><%= worker.race.humanize %> <%= worker.npc_class.humanize %></span>
+            <span class="text-sm text-gray-400">Skill: <%= worker.skill %></span>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-gray-500">No staff assigned. Visit Workers to hire and assign crew.</p>
+    <% end %>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex gap-4 flex-wrap">
+    <%= link_to buildings_path,
+        class: "px-4 py-2 bg-blue-800 hover:bg-blue-700 border border-blue-600 transition-colors",
+        data: { turbo_frame: "content_panel" } do %>
+      ← Back to Buildings
+    <% end %>
+    
+    <% if @building.status == 'active' %>
+      <%= button_to repair_building_path(@building),
+          method: :post,
+          class: "px-4 py-2 bg-green-800 hover:bg-green-700 border border-green-600 transition-colors",
+          data: { turbo_frame: "content_panel" } do %>
+        Repair
+      <% end %>
+      
+      <%= button_to upgrade_building_path(@building),
+          method: :post,
+          class: "px-4 py-2 bg-orange-800 hover:bg-orange-700 border border-orange-600 transition-colors",
+          data: { turbo_frame: "content_panel" } do %>
+        Upgrade
+      <% end %>
+    <% end %>
+    
+    <%= button_to demolish_building_path(@building),
+        method: :delete,
+        class: "px-4 py-2 bg-red-800 hover:bg-red-700 border border-red-600 transition-colors",
+        data: { confirm: "Are you sure you want to demolish #{@building.name}?", turbo_frame: "content_panel" } do %>
+      Demolish
+    <% end %>
+  </div>
+
+  <div class="mt-8 text-sm text-gray-500">
+    <p>Keyboard: Esc to go back, r to repair, u to upgrade</p>
+  </div>
+</div>

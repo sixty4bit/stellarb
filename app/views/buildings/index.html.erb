@@ -1,0 +1,63 @@
+<%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
+
+<div class="max-w-6xl">
+  <h1 class="text-2xl font-bold mb-1 text-orange-500">Buildings</h1>
+  <div class="text-sm text-gray-400 mb-6">Your constructed facilities</div>
+
+  <!-- Filters -->
+  <div class="flex gap-4 mb-6">
+    <%= link_to buildings_path,
+        class: "px-3 py-1 text-sm #{params[:type].blank? ? 'bg-orange-800 text-white' : 'bg-blue-800 text-gray-300'} rounded transition-colors",
+        data: { turbo_frame: "content_panel" } do %>
+      All
+    <% end %>
+    <% Building::FUNCTIONS.each do |fn| %>
+      <%= link_to buildings_path(type: fn),
+          class: "px-3 py-1 text-sm #{params[:type] == fn ? 'bg-orange-800 text-white' : 'bg-blue-800 text-gray-300'} rounded transition-colors",
+          data: { turbo_frame: "content_panel" } do %>
+        <%= fn.humanize %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <% if @buildings.any? %>
+    <div class="space-y-2">
+      <% @buildings.each do |building| %>
+        <%= link_to building_path(building),
+            class: "block bg-blue-900 border border-blue-700 p-4 hover:border-orange-500 transition-colors",
+            data: { turbo_frame: "content_panel" } do %>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="font-bold text-white"><%= building.name %></span>
+              <span class="text-xs bg-blue-800 text-gray-300 px-2 py-0.5 ml-2 rounded">
+                T<%= building.tier %>
+              </span>
+              <span class="text-xs text-<%= building.status == 'active' ? 'lime' : 'orange' %>-400 ml-2">
+                [<%= building.status.upcase %>]
+              </span>
+            </div>
+            <div class="text-sm">
+              <span class="text-gray-400"><%= building.function.humanize %></span>
+            </div>
+          </div>
+          <div class="text-sm text-gray-400 mt-2">
+            <span>System: <%= building.system.name %></span>
+            <span class="ml-4">Race: <%= building.race.humanize %></span>
+            <% if building.staff.any? %>
+              <span class="ml-4 text-lime-400">Staff: <%= building.staff.count %></span>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="bg-blue-900 border border-blue-700 p-8 text-center">
+      <p class="text-gray-400">No buildings constructed yet.</p>
+      <p class="text-sm text-gray-500 mt-2">Visit a System to construct new buildings.</p>
+    </div>
+  <% end %>
+
+  <div class="mt-8 text-sm text-gray-500">
+    <p>Keyboard: j/k to navigate, Enter to view details, n to construct new</p>
+  </div>
+</div>

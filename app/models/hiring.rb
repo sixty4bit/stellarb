@@ -11,7 +11,7 @@ class Hiring < ApplicationRecord
     deceased: "deceased",
     retired: "retired",
     striking: "striking"
-  }, _suffix: true
+  }, suffix: true
 
   # Validations
   validates :status, presence: true

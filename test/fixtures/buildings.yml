@@ -1,0 +1,31 @@
+mining_facility:
+  user: pilot
+  system: cradle
+  name: Alpha Mine
+  short_id: bl-ext1
+  race: vex
+  function: extraction
+  tier: 1
+  status: active
+  building_attributes:
+    staff_slots:
+      min: 2
+      max: 5
+    output_rate: 20
+    storage_capacity: 1000
+
+defense_platform:
+  user: pilot
+  system: cradle
+  name: Sentinel Tower
+  short_id: bl-def1
+  race: krog
+  function: defense
+  tier: 2
+  status: active
+  building_attributes:
+    staff_slots:
+      min: 3
+      max: 6
+    hardpoints: 4
+    durability: 1500
