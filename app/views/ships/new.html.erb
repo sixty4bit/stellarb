@@ -52,6 +52,25 @@
       </div>
     </div>
 
+    <!-- Tutorial Recommendation: Show for new players with no ships -->
+    <% if current_user&.ships&.reload&.empty? %>
+      <div class="bg-lime-900/30 border border-lime-700 p-4" data-testid="tutorial-recommendation">
+        <h3 class="text-sm font-bold text-lime-400 mb-2">💡 Recommended for New Traders</h3>
+        <p class="text-sm text-gray-300 mb-2">
+          For your first ship, we recommend the <strong class="text-lime-300">Myrmidon Scout</strong>:
+        </p>
+        <ul class="text-sm text-gray-400 list-disc list-inside space-y-1">
+          <li><strong class="text-lime-300">Cheapest option</strong> — Myrmidon ships cost 10% less</li>
+          <li><strong class="text-lime-300">Perfect for learning</strong> — Scout class is nimble and fuel-efficient</li>
+          <li><strong class="text-lime-300">Low crew requirement</strong> — Just 1-2 crew needed to operate</li>
+        </ul>
+        <p class="text-xs text-gray-500 mt-3">
+          Cost: <span class="text-lime-400"><%= number_with_delimiter(Ship.cost_for(hull_size: "scout", race: "myrmidon")) %> credits</span>
+          (cheapest ship in the fleet!)
+        </p>
+      </div>
+    <% end %>
+
     <!-- Ship Type Reference -->
     <div class="bg-blue-950 border border-blue-800 p-4">
       <h3 class="text-sm font-bold text-gray-300 mb-3">Ship Types & Costs</h3>
