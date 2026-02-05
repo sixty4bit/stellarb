@@ -24,9 +24,21 @@ module OnboardingHelper
       icon: "🗺️",
       action_text: "Explore Navigation"
     },
+    "first_trade_run" => {
+      title: "Your First Trade Run",
+      description: "Time to make some credits! Here's how to complete your first trade:\n\n" \
+                   "1. Buy cheap goods at one station (try Mira Station for ore)\n" \
+                   "2. Travel to another system (Verdant Gardens pays more for ore)\n" \
+                   "3. Sell your cargo for profit\n\n" \
+                   "Pro tip: The Talos Arm systems near The Cradle have different specialties — " \
+                   "buy what's cheap and sell where it's expensive!",
+      highlight: "[data-menu-item='navigation']",
+      icon: "💸",
+      action_text: "Start Trading"
+    },
     "trade_routes" => {
       title: "Trade Routes: Your Path to Profit",
-      description: "This is the key to success. Set up automated trade routes to earn credits while you're away. A profitable route is your first milestone!",
+      description: "Once you've done manual trades, automate them! Set up trade routes to earn credits while you're away. A profitable route is your first milestone!",
       highlight: "[data-menu-item='routes']",
       icon: "💰",
       action_text: "Create Trade Route"
