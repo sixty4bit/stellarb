@@ -21,13 +21,76 @@ class MarketController < ApplicationController
   end
 
   def buy
-    # TODO: Implement buy logic
-    redirect_to system_market_index_path(@system), notice: "Purchase complete!"
+    ship = current_user.ships.find(params[:ship_id])
+    commodity = params[:commodity]
+    quantity = params[:quantity].to_i
+    
+    # Get price for this commodity
+    market_item = generate_market_data.find { |m| m[:commodity] == commodity }
+    unless market_item
+      redirect_to system_market_index_path(@system), alert: "Unknown commodity: #{commodity}"
+      return
+    end
+    
+    price = market_item[:buy_price]
+    total_cost = price * quantity
+    
+    # Check credits
+    if current_user.credits < total_cost
+      redirect_to system_market_index_path(@system), alert: "Insufficient credits (need #{total_cost}, have #{current_user.credits.to_i})"
+      return
+    end
+    
+    # Check cargo space
+    if ship.available_cargo_space < quantity
+      redirect_to system_market_index_path(@system), alert: "Insufficient cargo space (need #{quantity}, have #{ship.available_cargo_space})"
+      return
+    end
+    
+    # Execute purchase
+    ActiveRecord::Base.transaction do
+      current_user.update!(credits: current_user.credits - total_cost)
+      ship.add_cargo!(commodity, quantity)
+    end
+    
+    redirect_to system_market_index_path(@system), notice: "Purchased #{quantity} #{commodity} for #{total_cost} credits"
   end
 
   def sell
-    # TODO: Implement sell logic
-    redirect_to system_market_index_path(@system), notice: "Sale complete!"
+    ship = current_user.ships.find(params[:ship_id])
+    commodity = params[:commodity]
+    quantity = params[:quantity].to_i
+    
+    # Get price for this commodity
+    market_item = generate_market_data.find { |m| m[:commodity] == commodity }
+    unless market_item
+      redirect_to system_market_index_path(@system), alert: "Unknown commodity: #{commodity}"
+      return
+    end
+    
+    # Check if we have this commodity
+    cargo_qty = ship.cargo_quantity_for(commodity)
+    if cargo_qty == 0
+      redirect_to system_market_index_path(@system), alert: "You don't have any #{commodity} to sell"
+      return
+    end
+    
+    # Check if we have enough
+    if cargo_qty < quantity
+      redirect_to system_market_index_path(@system), alert: "Insufficient #{commodity} in cargo (have #{cargo_qty}, need #{quantity})"
+      return
+    end
+    
+    price = market_item[:sell_price]
+    total_income = price * quantity
+    
+    # Execute sale
+    ActiveRecord::Base.transaction do
+      current_user.update!(credits: current_user.credits + total_income)
+      ship.remove_cargo!(commodity, quantity)
+    end
+    
+    redirect_to system_market_index_path(@system), notice: "Sold #{quantity} #{commodity} for #{total_income} credits"
   end
 
   private
