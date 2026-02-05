@@ -9,6 +9,7 @@ class Route < ApplicationRecord
   validates :status, inclusion: { in: %w[active paused completed] }
 
   before_validation :generate_short_id, on: :create
+  after_commit :check_tutorial_completion, on: [:create, :update]
 
   # Scopes
   scope :active, -> { where(status: "active") }
@@ -79,5 +80,14 @@ class Route < ApplicationRecord
   # @return [Boolean]
   def qualifies_for_tutorial?
     status == "active" && profitable? && has_stops?
+  end
+
+  private
+
+  # Callback: Check if this route's creation/update completes the tutorial
+  # Called after commit to ensure data is persisted
+  # @return [Boolean] whether the route qualifies for tutorial completion
+  def check_tutorial_completion
+    qualifies_for_tutorial?
   end
 end
