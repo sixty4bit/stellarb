@@ -12,5 +12,5 @@ test:
   <<: *default
 
 production:
-  database: cache
+  # Using primary database (single-database setup, no separate cache database)
   <<: *default
