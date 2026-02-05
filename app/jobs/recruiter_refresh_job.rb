@@ -16,9 +16,10 @@ class RecruiterRefreshJob < ApplicationJob
         job["job_class"] == "RecruiterRefreshJob"
       end
     elsif defined?(SolidQueue)
-      # Check solid_queue scheduled jobs
+      # Check solid_queue scheduled jobs (join through jobs table for class_name)
       SolidQueue::ScheduledExecution
-        .where(job_class: "RecruiterRefreshJob")
+        .joins(:job)
+        .where(solid_queue_jobs: { class_name: "RecruiterRefreshJob" })
         .exists?
     else
       false
