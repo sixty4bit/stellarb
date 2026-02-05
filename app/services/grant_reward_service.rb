@@ -9,6 +9,29 @@ class GrantRewardService
     @user = user
   end
 
+  # Full grant award orchestration - credits, notification, and phase unlock
+  # Only works for users in the cradle phase
+  # @return [Hash] Result with :success, :credits_awarded, :new_phase, :message, or :error
+  def award!
+    unless user.cradle?
+      return {
+        success: false,
+        error: "Grant can only be awarded to users in the cradle phase"
+      }
+    end
+
+    credits = award_credits!
+    message = send_notification!
+    unlock_phase2!
+
+    {
+      success: true,
+      credits_awarded: credits,
+      new_phase: user.tutorial_phase,
+      message: message
+    }
+  end
+
   # Award the grant credits to the user's account
   # @return [Integer] The amount of credits awarded
   def award_credits!
@@ -30,6 +53,16 @@ class GrantRewardService
       category: "reward",
       body: notification_body(grant_amount, breakdown)
     )
+  end
+
+  # Unlock Phase 2 (The Proving Ground) for the user
+  # Advances from cradle to proving_ground. Idempotent.
+  # @return [Boolean] true if successful
+  def unlock_phase2!
+    return true unless user.cradle?
+
+    user.advance_tutorial_phase!
+    true
   end
 
   private
