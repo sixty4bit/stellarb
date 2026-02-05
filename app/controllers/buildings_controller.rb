@@ -40,15 +40,68 @@ class BuildingsController < ApplicationController
 
   def new
     @building = current_user.buildings.build
-    @current_system = System.find(params[:system_id]) if params[:system_id]
-    # TODO: Generate available building types based on system
+    @current_system = System.find_by(id: params[:system_id])
+    @constructable_types = Building.constructable_types
+    @user_credits = current_user.credits
+
+    @breadcrumbs = [
+      { name: current_user.name, path: root_path },
+      { name: "Buildings", path: buildings_path },
+      { name: "New Building" }
+    ]
   end
 
   def create
     @building = current_user.buildings.build(building_params)
-    if @building.save
-      redirect_to @building, notice: "Building construction started!"
-    else
+
+    # Set status to under_construction for new buildings
+    @building.status = "under_construction"
+
+    # Validate params before cost check to avoid ArgumentError
+    unless Building::FUNCTIONS.include?(@building.function)
+      @building.errors.add(:function, "is not a valid function")
+      setup_new_view_vars
+      render :new, status: :unprocessable_entity
+      return
+    end
+
+    unless Building::RACES.include?(@building.race)
+      @building.errors.add(:race, "is not a valid race")
+      setup_new_view_vars
+      render :new, status: :unprocessable_entity
+      return
+    end
+
+    unless @building.tier.present? && (1..5).include?(@building.tier.to_i)
+      @building.errors.add(:tier, "must be between 1 and 5")
+      setup_new_view_vars
+      render :new, status: :unprocessable_entity
+      return
+    end
+
+    # Validate affordability before attempting save
+    unless current_user.can_afford_building?(function: @building.function, tier: @building.tier, race: @building.race)
+      @building.errors.add(:base, "Insufficient credits to construct this building")
+      setup_new_view_vars
+      render :new, status: :unprocessable_entity
+      return
+    end
+
+    ActiveRecord::Base.transaction do
+      # Deduct cost from user
+      current_user.deduct_building_cost!(function: @building.function, tier: @building.tier, race: @building.race)
+
+      if @building.save
+        redirect_to @building, notice: "Building construction started!"
+      else
+        # Rollback will restore credits
+        raise ActiveRecord::Rollback
+      end
+    end
+
+    # If we get here without redirecting, save failed
+    unless performed?
+      setup_new_view_vars
       render :new, status: :unprocessable_entity
     end
   end
@@ -80,5 +133,16 @@ class BuildingsController < ApplicationController
 
   def building_params
     params.require(:building).permit(:name, :system_id, :race, :function, :tier)
+  end
+
+  def setup_new_view_vars
+    @current_system = System.find_by(id: params.dig(:building, :system_id))
+    @constructable_types = Building.constructable_types
+    @user_credits = current_user.credits
+    @breadcrumbs = [
+      { name: current_user.name, path: root_path },
+      { name: "Buildings", path: buildings_path },
+      { name: "New Building" }
+    ]
   end
 end

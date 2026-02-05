@@ -1,12 +1,17 @@
 <turbo-frame id="content_panel">
-<%= render 'shared/breadcrumbs', breadcrumbs: [
-  { name: current_user.name, path: root_path },
-  { name: 'Buildings', path: buildings_path },
-  { name: 'New Building' }
-] %>
+<%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
 
 <div class="max-w-2xl">
-  <h1 class="text-2xl font-bold text-orange-500 mb-6">Construct New Building</h1>
+  <h1 class="text-2xl font-bold text-orange-500 mb-2">Construct New Building</h1>
+  
+  <% if @current_system %>
+    <p class="text-gray-400 mb-4">Location: <span class="text-white"><%= @current_system.name %></span></p>
+  <% end %>
+  
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-6">
+    <span class="text-gray-400">Your Credits:</span>
+    <span class="text-lime-400 font-bold ml-2"><%= number_with_delimiter(@user_credits.to_i) %></span>
+  </div>
 
   <%= form_with model: @building, local: true, class: "space-y-6" do |f| %>
     <% if @building.errors.any? %>
@@ -32,7 +37,7 @@
       <%= f.collection_select :system_id,
           current_user.visited_systems,
           :id, :name,
-          { prompt: "Select a system" },
+          { prompt: "Select a system", selected: @current_system&.id },
           class: "w-full bg-blue-950 border border-blue-700 px-4 py-2 focus:border-orange-500 focus:outline-none" %>
     </div>
 
@@ -60,6 +65,20 @@
           (1..5).map { |t| ["Tier #{t}", t] },
           { prompt: "Select tier" },
           class: "w-full bg-blue-950 border border-blue-700 px-4 py-2 focus:border-orange-500 focus:outline-none" %>
+    </div>
+
+    <!-- Building Cost Reference -->
+    <div class="bg-blue-950 border border-blue-800 p-4">
+      <h3 class="text-sm font-bold text-gray-300 mb-3">Building Costs by Function (Tier 1)</h3>
+      <div class="grid grid-cols-1 gap-2 text-sm">
+        <% Building::FUNCTIONS.each do |function| %>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400"><%= Building::FUNCTION_NAMES[function] %></span>
+            <span class="text-lime-400"><%= number_with_delimiter(Building::BUILDING_COSTS[function][1]) %> credits</span>
+          </div>
+        <% end %>
+      </div>
+      <p class="text-xs text-gray-500 mt-3">* Higher tiers cost more. Prices vary by race (Myrmidon -10%, Solari +10%, Krog +15%)</p>
     </div>
 
     <div class="flex gap-4">
