@@ -6,6 +6,7 @@ class Building < ApplicationRecord
   belongs_to :system
   has_many :hirings, as: :assignable, dependent: :destroy
   has_many :staff, through: :hirings, source: :hired_recruit
+  has_many :incidents, as: :asset, dependent: :destroy
 
   # Constants
   RACES = %w[vex solari krog myrmidon].freeze
@@ -27,6 +28,17 @@ class Building < ApplicationRecord
   # Scopes
   scope :active, -> { where(status: 'active') }
   scope :by_function, ->(function) { where(function: function) }
+  scope :disabled, -> { where.not(disabled_at: nil) }
+  scope :operational, -> { where(disabled_at: nil).where.not(status: 'destroyed') }
+
+  # Disabled state (pip infestation)
+  def disabled?
+    disabled_at.present?
+  end
+
+  def operational?
+    !disabled? && status != 'destroyed'
+  end
 
   private
 
