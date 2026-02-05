@@ -1,9 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Onboarding overlay controller
-// Handles keyboard navigation and menu item highlighting
+// Onboarding sidebar controller
+// Handles keyboard navigation, menu item highlighting, and sidebar interactions
+// Works with non-blocking sidebar layout that lets users see the actual UI
 export default class extends Controller {
-  static targets = ["backdrop", "content", "continueButton"]
+  static targets = ["content", "continueButton"]
   static values = {
     step: String,
     highlight: String
@@ -12,6 +13,9 @@ export default class extends Controller {
   connect() {
     this.bindKeyboardEvents()
     this.highlightMenuItem()
+    
+    // Small delay to ensure DOM is ready, then scroll highlighted item into view
+    setTimeout(() => this.ensureHighlightVisible(), 100)
   }
 
   disconnect() {
@@ -25,6 +29,11 @@ export default class extends Controller {
   }
 
   onKeyDown(event) {
+    // Only handle if not typing in an input
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+      return
+    }
+
     switch(event.key) {
       case 'Enter':
         event.preventDefault()
@@ -51,13 +60,6 @@ export default class extends Controller {
     }
   }
 
-  focusOverlay() {
-    // Clicking backdrop refocuses the overlay (doesn't dismiss it)
-    if (this.hasContentTarget) {
-      this.contentTarget.focus()
-    }
-  }
-
   highlightMenuItem() {
     if (!this.highlightValue) return
 
@@ -77,9 +79,17 @@ export default class extends Controller {
 
       // Store reference for cleanup
       this.highlightedElement = menuItem
+    }
+  }
 
-      // Scroll into view if needed, with offset for sidebar
-      menuItem.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  ensureHighlightVisible() {
+    if (this.highlightedElement) {
+      // Scroll into view with some breathing room
+      this.highlightedElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center',
+        inline: 'nearest'
+      })
     }
   }
 
@@ -96,9 +106,10 @@ export default class extends Controller {
 
     if (this.highlightedElement) {
       this.highlightedElement.classList.remove(...highlightClasses)
+      this.highlightedElement = null
     }
 
-    // Also remove any leftover highlights
+    // Also remove any leftover highlights (defensive cleanup)
     document.querySelectorAll('.onboarding-highlight').forEach(el => {
       el.classList.remove(...highlightClasses)
     })
@@ -108,5 +119,6 @@ export default class extends Controller {
     // When step changes, update the highlight
     this.removeHighlight()
     this.highlightMenuItem()
+    this.ensureHighlightVisible()
   }
 }
