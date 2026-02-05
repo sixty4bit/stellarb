@@ -17,8 +17,9 @@ class ApplicationController < ActionController::Base
   def require_profile_setup
     return unless current_user
     return if current_user.profile_completed?
-    return if controller_name == 'profile'  # Allow profile pages
-    return if controller_name == 'sessions' # Allow logout
+    return if controller_name == 'profile'    # Allow profile pages
+    return if controller_name == 'sessions'   # Allow logout
+    return if controller_name == 'onboarding' # Allow onboarding flow
 
     redirect_to edit_profile_path,
       notice: 'Welcome! Please set up your profile to continue.'
