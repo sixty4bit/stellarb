@@ -1,5 +1,6 @@
 class ShipsController < ApplicationController
   before_action :set_active_menu
+  before_action :check_ship_arrivals
   before_action :set_ship, only: [:show, :repair, :assign_crew, :set_navigation, :upgrade]
 
   def index
@@ -164,6 +165,10 @@ class ShipsController < ApplicationController
   end
 
   private
+
+  def check_ship_arrivals
+    current_user.ships.in_transit.find_each(&:check_arrival!)
+  end
 
   def set_active_menu(_unused = nil)
     @active_menu = :ships

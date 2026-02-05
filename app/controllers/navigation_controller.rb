@@ -1,5 +1,6 @@
 class NavigationController < ApplicationController
   before_action :set_active_menu
+  before_action :check_ship_arrivals
   before_action :set_ship
 
   def index
@@ -46,6 +47,10 @@ class NavigationController < ApplicationController
   end
 
   private
+
+  def check_ship_arrivals
+    current_user.ships.in_transit.find_each(&:check_arrival!)
+  end
 
   def set_active_menu
     super(:navigation)
