@@ -88,6 +88,127 @@ class Ship < ApplicationRecord
     end
   end
 
+  # ===========================================
+  # Ship Upgrade System
+  # ===========================================
+  
+  # Base costs for upgrading each attribute (per upgrade level)
+  UPGRADE_COSTS = {
+    "cargo_capacity" => { base: 200, per_level: 50 },
+    "fuel_efficiency" => { base: 300, per_level: 100 },
+    "maneuverability" => { base: 250, per_level: 75 },
+    "hardpoints" => { base: 500, per_level: 200 },
+    "hull_points" => { base: 400, per_level: 100 },
+    "sensor_range" => { base: 150, per_level: 50 }
+  }.freeze
+
+  # How much each attribute increases per upgrade
+  UPGRADE_AMOUNTS = {
+    "cargo_capacity" => 20,       # +20 cargo space
+    "fuel_efficiency" => -0.1,    # -0.1 fuel consumption (better efficiency)
+    "maneuverability" => 5,       # +5 maneuverability
+    "hardpoints" => 1,            # +1 hardpoint
+    "hull_points" => 15,          # +15 hull points
+    "sensor_range" => 2           # +2 sensor range
+  }.freeze
+
+  # Maximum upgrades per attribute by hull size
+  MAX_UPGRADES = {
+    "scout" => 3,
+    "frigate" => 4,
+    "transport" => 5,
+    "cruiser" => 6,
+    "titan" => 8
+  }.freeze
+
+  # Calculate upgrade cost for an attribute
+  # @param attribute [String] Attribute to upgrade
+  # @return [Integer] Credits cost
+  def upgrade_cost_for(attribute)
+    validate_upgradable_attribute!(attribute)
+    
+    current_upgrades = upgrade_count_for(attribute)
+    cost_config = UPGRADE_COSTS[attribute]
+    
+    (cost_config[:base] + (cost_config[:per_level] * current_upgrades)).round
+  end
+
+  # Get list of upgradable attributes with their current values and costs
+  # @return [Array<Hash>]
+  def upgradable_attributes
+    UPGRADE_COSTS.keys.map do |attr|
+      {
+        name: attr,
+        display_name: attr.humanize,
+        current_value: ship_attributes[attr],
+        cost: upgrade_cost_for(attr),
+        upgrade_amount: UPGRADE_AMOUNTS[attr],
+        current_upgrades: upgrade_count_for(attr),
+        max_upgrades: MAX_UPGRADES[hull_size],
+        can_upgrade: can_upgrade?(attr)
+      }
+    end
+  end
+
+  # Check if an attribute can be upgraded
+  # @param attribute [String] Attribute to check
+  # @return [Boolean]
+  def can_upgrade?(attribute)
+    upgrade_count_for(attribute) < MAX_UPGRADES[hull_size]
+  end
+
+  # Perform an upgrade on the ship
+  # @param attribute [String] Attribute to upgrade
+  # @param user [User] User paying for the upgrade
+  # @return [TravelResult] Success/failure result
+  def upgrade!(attribute, user)
+    # Validate attribute
+    unless UPGRADE_COSTS.key?(attribute)
+      return TravelResult.failure("Invalid attribute: #{attribute}")
+    end
+
+    # Check upgrade limit
+    unless can_upgrade?(attribute)
+      return TravelResult.failure("Maximum upgrade limit reached for #{attribute}")
+    end
+
+    # Check affordability
+    cost = upgrade_cost_for(attribute)
+    if user.credits < cost
+      return TravelResult.failure("Insufficient credits (need #{cost}, have #{user.credits.to_i})")
+    end
+
+    ActiveRecord::Base.transaction do
+      # Deduct credits
+      user.update!(credits: user.credits - cost)
+
+      # Apply upgrade
+      ship_attributes[attribute] = (ship_attributes[attribute] || 0) + UPGRADE_AMOUNTS[attribute]
+      
+      # Track upgrade count
+      ship_attributes["upgrades"] ||= {}
+      ship_attributes["upgrades"][attribute] = upgrade_count_for(attribute) + 1
+      
+      save!
+    end
+
+    TravelResult.success
+  end
+
+  private
+
+  def upgrade_count_for(attribute)
+    ship_attributes.dig("upgrades", attribute) || 0
+  end
+
+  def validate_upgradable_attribute!(attribute)
+    unless UPGRADE_COSTS.key?(attribute)
+      raise ArgumentError, "Invalid attribute: #{attribute}. Must be one of: #{UPGRADE_COSTS.keys.join(', ')}"
+    end
+  end
+
+  public
+
   # Associations
   belongs_to :user
   belongs_to :current_system, class_name: 'System', optional: true
