@@ -7,7 +7,8 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     @system = System.create!(x: 0, y: 0, z: 0, name: "Test System")
     @user = User.create!(
       email: "onboarding@test.com",
-      name: "OnboardUser"
+      name: "OnboardUser",
+      profile_completed_at: 1.day.ago
     )
     sign_in_as(@user)
   end
