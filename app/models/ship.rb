@@ -16,6 +16,78 @@ class Ship < ApplicationRecord
   BASE_SPEED = 1.0  # Base travel speed (units per second)
   MANEUVERABILITY_BASELINE = 50  # Standard maneuverability for speed calculations
 
+  # ===========================================
+  # Ship Costs Configuration
+  # ===========================================
+  # Base credits cost for each hull size
+  # Costs scale with ship complexity and capability
+  SHIP_COSTS = {
+    "scout" => { base_credits: 500 },
+    "frigate" => { base_credits: 1500 },
+    "transport" => { base_credits: 3000 },
+    "cruiser" => { base_credits: 7500 },
+    "titan" => { base_credits: 20000 }
+  }.freeze
+
+  # Racial cost modifiers (percentage adjustment)
+  RACIAL_COST_MODIFIERS = {
+    "vex" => 1.0,        # Standard pricing
+    "solari" => 1.1,     # Premium for advanced sensors
+    "krog" => 1.15,      # Premium for reinforced hulls
+    "myrmidon" => 0.9    # Discount due to efficient manufacturing
+  }.freeze
+
+  # Ship type display names
+  SHIP_TYPE_NAMES = {
+    "scout" => "Scout Vessel",
+    "frigate" => "Light Frigate",
+    "transport" => "Cargo Transport",
+    "cruiser" => "Battle Cruiser",
+    "titan" => "Capital Titan"
+  }.freeze
+
+  # ===========================================
+  # Ship Cost Calculations
+  # ===========================================
+
+  # Calculate the cost for a ship with given hull size and race
+  # @param hull_size [String] One of HULL_SIZES
+  # @param race [String] One of RACES
+  # @return [Integer] Total credits cost
+  def self.cost_for(hull_size:, race:)
+    validate_ship_params!(hull_size: hull_size, race: race)
+
+    base_cost = SHIP_COSTS[hull_size][:base_credits]
+    modifier = RACIAL_COST_MODIFIERS[race]
+    (base_cost * modifier).round
+  end
+
+  # Return all purchasable ship configurations
+  # @return [Array<Hash>] Array of ship type configurations
+  def self.purchasable_types
+    types = []
+    HULL_SIZES.each do |hull_size|
+      RACES.each do |race|
+        types << {
+          hull_size: hull_size,
+          race: race,
+          cost: cost_for(hull_size: hull_size, race: race),
+          name: "#{race.capitalize} #{SHIP_TYPE_NAMES[hull_size]}"
+        }
+      end
+    end
+    types
+  end
+
+  private_class_method def self.validate_ship_params!(hull_size:, race:)
+    unless HULL_SIZES.include?(hull_size)
+      raise ArgumentError, "Invalid hull_size: #{hull_size}. Must be one of: #{HULL_SIZES.join(', ')}"
+    end
+    unless RACES.include?(race)
+      raise ArgumentError, "Invalid race: #{race}. Must be one of: #{RACES.join(', ')}"
+    end
+  end
+
   # Associations
   belongs_to :user
   belongs_to :current_system, class_name: 'System', optional: true
