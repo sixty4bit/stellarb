@@ -27,6 +27,7 @@ class Ship < ApplicationRecord
   RACES = %w[vex solari krog myrmidon].freeze
   HULL_SIZES = %w[scout frigate transport cruiser titan].freeze
   STATUSES = %w[docked in_transit combat destroyed].freeze
+  INTENTS = %w[trade battle].freeze
 
   # Validations
   validates :name, presence: true
@@ -48,6 +49,8 @@ class Ship < ApplicationRecord
   scope :active, -> { where.not(status: 'destroyed') }
   scope :docked, -> { where(status: 'docked') }
   scope :in_transit, -> { where(status: 'in_transit') }
+  scope :trading, -> { where(system_intent: 'trade') }
+  scope :hostile, -> { where(system_intent: 'battle') }
 
   # Travel calculations
   def fuel_efficiency
@@ -75,7 +78,13 @@ class Ship < ApplicationRecord
     (distance / (BASE_SPEED * speed_multiplier)).ceil
   end
 
-  def travel_to!(destination)
+  def travel_to!(destination, intent: :trade)
+    # Validate intent
+    intent_str = intent.to_s
+    unless INTENTS.include?(intent_str)
+      return TravelResult.failure("Invalid intent '#{intent}'. Must be one of: #{INTENTS.join(', ')}")
+    end
+
     # Validate travel is possible
     if status == "in_transit"
       return TravelResult.failure("Ship is already in transit")
@@ -90,12 +99,16 @@ class Ship < ApplicationRecord
       return TravelResult.failure("Insufficient fuel (need #{fuel_needed}, have #{fuel})")
     end
 
-    # Initiate travel
+    # Clear current intent when leaving (unlocks intent)
+    clear_intent!
+
+    # Initiate travel with pending intent
     travel_time = travel_time_to(destination)
     self.fuel -= fuel_needed
     self.status = "in_transit"
     self.destination_system = destination
     self.arrival_at = Time.current + travel_time.seconds
+    self.pending_intent = intent_str
     save!
 
     TravelResult.success
@@ -109,7 +122,10 @@ class Ship < ApplicationRecord
     self.current_system = destination_system
     self.destination_system = nil
     self.arrival_at = nil
-    self.status = "docked"
+
+    # Apply the pending intent
+    apply_intent!(pending_intent || "trade")
+    self.pending_intent = nil
     save!
   end
 
@@ -124,7 +140,13 @@ class Ship < ApplicationRecord
     fuel >= warp_fuel_required_for(destination)
   end
 
-  def warp_to!(destination)
+  def warp_to!(destination, intent: :trade)
+    # Validate intent
+    intent_str = intent.to_s
+    unless INTENTS.include?(intent_str)
+      return TravelResult.failure("Invalid intent '#{intent}'. Must be one of: #{INTENTS.join(', ')}")
+    end
+
     # Validate warp is possible
     if status == "in_transit"
       return TravelResult.failure("Ship is already in transit")
@@ -149,15 +171,69 @@ class Ship < ApplicationRecord
       return TravelResult.failure("Insufficient fuel for warp (need #{fuel_needed}, have #{fuel})")
     end
 
-    # Execute instant warp
+    # Clear current intent when leaving
+    clear_intent!
+
+    # Execute instant warp and apply intent immediately
     self.fuel -= fuel_needed
     self.current_system = destination
+    apply_intent!(intent_str)
     save!
 
     TravelResult.success
   end
 
+  # Intent helper methods
+  def trading?
+    system_intent == "trade"
+  end
+
+  def hostile?
+    system_intent == "battle"
+  end
+
+  def under_defense_alert?
+    defense_engaged_at.present?
+  end
+
+  def change_intent!(new_intent)
+    # Intent is locked while present in a system
+    if system_intent.present?
+      return TravelResult.failure("Intent is locked while in system. Leave the system first.")
+    end
+
+    intent_str = new_intent.to_s
+    unless INTENTS.include?(intent_str)
+      return TravelResult.failure("Invalid intent '#{new_intent}'")
+    end
+
+    apply_intent!(intent_str)
+    save!
+    TravelResult.success
+  end
+
+  def clear_intent!
+    self.system_intent = nil
+    self.defense_engaged_at = nil
+  end
+
+  # Attribute for pending intent during transit
+  attr_accessor :pending_intent
+
   private
+
+  def apply_intent!(intent_str)
+    self.system_intent = intent_str
+
+    if intent_str == "battle"
+      # Battle intent triggers defense grid
+      self.defense_engaged_at = Time.current
+      self.status = "combat"
+    else
+      self.status = "docked"
+      self.defense_engaged_at = nil
+    end
+  end
 
   def generate_short_id
     return if short_id.present?

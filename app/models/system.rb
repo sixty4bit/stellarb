@@ -108,6 +108,15 @@ class System < ApplicationRecord
     WarpGate.connected?(self, other_system)
   end
 
+  # Ships by intent
+  def hostile_ships
+    ships.hostile
+  end
+
+  def trading_ships
+    ships.trading
+  end
+
   private
 
   def generate_short_id
