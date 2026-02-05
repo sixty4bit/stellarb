@@ -16,9 +16,9 @@ module ProceduralGeneration
 
     # Generate a star system at given coordinates
     # @param seed [String] Base seed string
-    # @param x [Integer] X coordinate (0-999999)
-    # @param y [Integer] Y coordinate (0-999999)
-    # @param z [Integer] Z coordinate (0-999999)
+    # @param x [Integer] X coordinate (0, 3, 6, or 9 - divisible by 3)
+    # @param y [Integer] Y coordinate (0, 3, 6, or 9 - divisible by 3)
+    # @param z [Integer] Z coordinate (0, 3, 6, or 9 - divisible by 3)
     # @return [Hash] System data with star_type, planets array, and other properties
     def self.call(seed:, x:, y:, z:)
       new(seed: seed, x: x, y: y, z: z).generate
@@ -50,7 +50,8 @@ module ProceduralGeneration
 
     def validate_coordinates!(x, y, z)
       [x, y, z].each do |coord|
-        raise ArgumentError, "Coordinate must be 0-999999" unless (0..999_999).include?(coord)
+        raise ArgumentError, "Coordinate must be in range 0-9" unless (0..9).include?(coord)
+        raise ArgumentError, "Coordinate must be divisible by 3" unless coord % 3 == 0
       end
     end
 
