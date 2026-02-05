@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 // VI-style keyboard navigation controller
+// Syncs with URL after Turbo Frame navigation
 export default class extends Controller {
   static targets = ["menuItem", "contentPanel"]
 
@@ -8,17 +9,29 @@ export default class extends Controller {
     this.selectedIndex = 0
     this.menuItems = this.menuItemTargets
     this.bindKeyboardEvents()
+    this.bindTurboEvents()
     this.highlightCurrentMenuItem()
   }
 
   disconnect() {
     document.removeEventListener("keydown", this.handleKeyDown)
+    document.removeEventListener("turbo:frame-load", this.boundHighlight)
+    document.removeEventListener("turbo:visit", this.boundHighlight)
+    window.removeEventListener("popstate", this.boundHighlight)
   }
 
   bindKeyboardEvents() {
     // Store bound function so we can remove it later
     this.handleKeyDown = this.onKeyDown.bind(this)
     document.addEventListener("keydown", this.handleKeyDown)
+  }
+
+  bindTurboEvents() {
+    // Re-sync selection after Turbo navigation
+    this.boundHighlight = this.highlightCurrentMenuItem.bind(this)
+    document.addEventListener("turbo:frame-load", this.boundHighlight)
+    document.addEventListener("turbo:visit", this.boundHighlight)
+    window.addEventListener("popstate", this.boundHighlight)
   }
 
   onKeyDown(event) {
@@ -84,11 +97,16 @@ export default class extends Controller {
     if (selectedItem) {
       const link = selectedItem.querySelector('a') || selectedItem
       if (link.href) {
-        // For Turbo Frame navigation
-        if (link.dataset.turboFrame) {
-          Turbo.visit(link.href, { frame: link.dataset.turboFrame })
+        // Use Turbo.visit with action: "advance" to update the URL
+        // This matches the behavior of clicking the link with data-turbo-action="advance"
+        const frameId = link.dataset.turboFrame
+        if (frameId) {
+          Turbo.visit(link.href, { 
+            frame: frameId,
+            action: "advance"
+          })
         } else {
-          link.click()
+          Turbo.visit(link.href, { action: "advance" })
         }
       }
     }
@@ -107,10 +125,14 @@ export default class extends Controller {
   goHome() {
     const homeLink = document.querySelector('a[href="/inbox"]')
     if (homeLink) {
-      if (homeLink.dataset.turboFrame) {
-        Turbo.visit(homeLink.href, { frame: homeLink.dataset.turboFrame })
+      const frameId = homeLink.dataset.turboFrame
+      if (frameId) {
+        Turbo.visit(homeLink.href, { 
+          frame: frameId,
+          action: "advance"
+        })
       } else {
-        homeLink.click()
+        Turbo.visit(homeLink.href, { action: "advance" })
       }
     }
   }
@@ -143,13 +165,22 @@ export default class extends Controller {
   highlightCurrentMenuItem() {
     // Find the menu item matching the current path
     const currentPath = window.location.pathname
+    
     this.menuItems.forEach((item, index) => {
       const link = item.querySelector('a')
-      if (link && link.pathname === currentPath) {
-        this.selectedIndex = index
-        this.updateSelection()
+      if (link) {
+        const linkPath = link.pathname
+        // Exact match or nested route (e.g., /ships/123 matches /ships)
+        const isMatch = currentPath === linkPath || 
+                       (linkPath !== '/' && currentPath.startsWith(linkPath + '/'))
+        
+        if (isMatch) {
+          this.selectedIndex = index
+        }
       }
     })
+    
+    this.updateSelection()
   }
 
   // Called by menu items on hover to update selection
