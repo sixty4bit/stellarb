@@ -113,6 +113,50 @@ class Ship < ApplicationRecord
     save!
   end
 
+  # Warp travel (instant via warp gates)
+  def warp_fuel_required_for(destination)
+    return 0 if destination == current_system
+    WarpGate::WARP_FUEL_COST
+  end
+
+  def can_warp_to?(destination)
+    return false unless current_system.warp_connected_to?(destination)
+    fuel >= warp_fuel_required_for(destination)
+  end
+
+  def warp_to!(destination)
+    # Validate warp is possible
+    if status == "in_transit"
+      return TravelResult.failure("Ship is already in transit")
+    end
+
+    if destination == current_system || destination.id == current_system_id
+      return TravelResult.failure("Ship is already at this location")
+    end
+
+    # Check for warp gate connection
+    gate = WarpGate.between(current_system, destination)
+    unless gate
+      return TravelResult.failure("No warp gate connects these systems")
+    end
+
+    unless gate.active?
+      return TravelResult.failure("Warp gate is offline")
+    end
+
+    fuel_needed = warp_fuel_required_for(destination)
+    if fuel < fuel_needed
+      return TravelResult.failure("Insufficient fuel for warp (need #{fuel_needed}, have #{fuel})")
+    end
+
+    # Execute instant warp
+    self.fuel -= fuel_needed
+    self.current_system = destination
+    save!
+
+    TravelResult.success
+  end
+
   private
 
   def generate_short_id
