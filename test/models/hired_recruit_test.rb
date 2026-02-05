@@ -215,6 +215,217 @@ class HiredRecruitTest < ActiveSupport::TestCase
     assert_includes hired.users, @user
   end
 
+  # ==========================================
+  # Task stellarb-9tv: Age/Lifespan Columns
+  # ==========================================
+
+  test "has age_days column with default of 0" do
+    recruit = HiredRecruit.new(
+      race: "vex",
+      npc_class: "engineer",
+      skill: 50,
+      chaos_factor: 20
+    )
+    assert_equal 0, recruit.age_days
+  end
+
+  test "has lifespan_days column" do
+    recruit = HiredRecruit.new(
+      race: "vex",
+      npc_class: "engineer",
+      skill: 50,
+      chaos_factor: 20
+    )
+    assert_respond_to recruit, :lifespan_days
+  end
+
+  test "validates lifespan_days is positive" do
+    recruit = HiredRecruit.new(
+      race: "vex",
+      npc_class: "engineer",
+      skill: 50,
+      chaos_factor: 20,
+      lifespan_days: -1
+    )
+    assert_not recruit.valid?
+    assert_includes recruit.errors[:lifespan_days], "must be greater than 0"
+  end
+
+  test "validates age_days is not negative" do
+    recruit = HiredRecruit.new(
+      race: "vex",
+      npc_class: "engineer",
+      skill: 50,
+      chaos_factor: 20,
+      age_days: -5
+    )
+    assert_not recruit.valid?
+    assert_includes recruit.errors[:age_days], "must be greater than or equal to 0"
+  end
+
+  test "generates lifespan on creation if not set" do
+    recruit = HiredRecruit.create!(
+      race: "vex",
+      npc_class: "engineer",
+      skill: 50,
+      chaos_factor: 20
+    )
+    assert_not_nil recruit.lifespan_days
+    assert recruit.lifespan_days > 0
+  end
+
+  # Lifespan should be in a reasonable range (game-days, not real days)
+  # ROADMAP specifies NPCs age and retire, so lifespan should be finite
+  # Target game length is 20-30 days per ROADMAP stellarb-a7q.2
+  # NPCs should last longer than a game but not forever
+  test "generated lifespan is in reasonable range" do
+    10.times do
+      recruit = HiredRecruit.create!(
+        race: "vex",
+        npc_class: "engineer",
+        skill: rand(1..100),
+        chaos_factor: rand(0..100)
+      )
+      # Lifespan between 30-180 game days seems reasonable
+      # (longer than average game, but finite)
+      assert recruit.lifespan_days >= 30, "Lifespan #{recruit.lifespan_days} too short"
+      assert recruit.lifespan_days <= 180, "Lifespan #{recruit.lifespan_days} too long"
+    end
+  end
+
+  # Higher skill NPCs should have longer lifespans on average
+  # (they're more valuable and should last longer)
+  test "skill affects lifespan generation" do
+    low_skill_lifespans = 20.times.map do
+      HiredRecruit.create!(
+        race: "solari",
+        npc_class: "navigator",
+        skill: 20,
+        chaos_factor: 50
+      ).lifespan_days
+    end
+
+    high_skill_lifespans = 20.times.map do
+      HiredRecruit.create!(
+        race: "solari",
+        npc_class: "navigator",
+        skill: 90,
+        chaos_factor: 50
+      ).lifespan_days
+    end
+
+    avg_low = low_skill_lifespans.sum / low_skill_lifespans.size.to_f
+    avg_high = high_skill_lifespans.sum / high_skill_lifespans.size.to_f
+
+    # High skill NPCs should live longer on average
+    assert avg_high > avg_low, "Expected high skill avg (#{avg_high}) > low skill avg (#{avg_low})"
+  end
+
+  # ==========================================
+  # Age Calculation Helpers
+  # ==========================================
+
+  test "age_percentage returns ratio of age to lifespan" do
+    recruit = HiredRecruit.new(
+      race: "krog",
+      npc_class: "marine",
+      skill: 50,
+      chaos_factor: 30,
+      age_days: 50,
+      lifespan_days: 100
+    )
+    assert_equal 0.5, recruit.age_percentage
+  end
+
+  test "age_percentage handles zero lifespan gracefully" do
+    recruit = HiredRecruit.new(
+      race: "krog",
+      npc_class: "marine",
+      skill: 50,
+      chaos_factor: 30,
+      age_days: 50,
+      lifespan_days: 0
+    )
+    # Should return 1.0 (fully aged) rather than divide by zero
+    assert_equal 1.0, recruit.age_percentage
+  end
+
+  test "elderly? returns true when past 80% of lifespan" do
+    recruit = HiredRecruit.new(
+      race: "myrmidon",
+      npc_class: "governor",
+      skill: 70,
+      chaos_factor: 25,
+      age_days: 85,
+      lifespan_days: 100
+    )
+    assert recruit.elderly?
+  end
+
+  test "elderly? returns false when under 80% of lifespan" do
+    recruit = HiredRecruit.new(
+      race: "myrmidon",
+      npc_class: "governor",
+      skill: 70,
+      chaos_factor: 25,
+      age_days: 50,
+      lifespan_days: 100
+    )
+    assert_not recruit.elderly?
+  end
+
+  test "past_lifespan? returns true when age exceeds lifespan" do
+    recruit = HiredRecruit.new(
+      race: "vex",
+      npc_class: "engineer",
+      skill: 40,
+      chaos_factor: 60,
+      age_days: 110,
+      lifespan_days: 100
+    )
+    assert recruit.past_lifespan?
+  end
+
+  test "past_lifespan? returns false when age under lifespan" do
+    recruit = HiredRecruit.new(
+      race: "vex",
+      npc_class: "engineer",
+      skill: 40,
+      chaos_factor: 60,
+      age_days: 90,
+      lifespan_days: 100
+    )
+    assert_not recruit.past_lifespan?
+  end
+
+  # ==========================================
+  # Days Remaining Helper
+  # ==========================================
+
+  test "days_remaining returns lifespan minus age" do
+    recruit = HiredRecruit.new(
+      race: "solari",
+      npc_class: "navigator",
+      skill: 65,
+      chaos_factor: 35,
+      age_days: 30,
+      lifespan_days: 100
+    )
+    assert_equal 70, recruit.days_remaining
+  end
+
+  test "days_remaining returns 0 when past lifespan" do
+    recruit = HiredRecruit.new(
+      race: "solari",
+      npc_class: "navigator",
+      skill: 65,
+      chaos_factor: 35,
+      age_days: 120,
+      lifespan_days: 100
+    )
+    assert_equal 0, recruit.days_remaining
+  end
+
   private
 
   def build_hired_recruit(overrides = {})
