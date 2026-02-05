@@ -11,6 +11,8 @@ class User < ApplicationRecord
   has_many :visited_systems, through: :system_visits, source: :system
   has_many :routes, dependent: :destroy
   has_many :flight_records, dependent: :destroy
+  has_many :player_quests, dependent: :destroy
+  has_many :quests, through: :player_quests
 
   # Validations
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
@@ -50,6 +52,50 @@ class User < ApplicationRecord
   # @return [Decimal] Total distance in game units
   def total_distance_traveled
     flight_records.sum(:distance)
+  end
+
+  # ===========================================
+  # Quest System
+  # ===========================================
+
+  # Start a quest for this user
+  # @param quest [Quest] The quest to start
+  # @return [PlayerQuest] The created progress record
+  def start_quest(quest)
+    raise ArgumentError, "Cannot start quest - not available" unless can_start_quest?(quest)
+
+    player_quests.create!(quest: quest)
+  end
+
+  # Check if user can start a specific quest
+  # @param quest [Quest] The quest to check
+  # @return [Boolean]
+  def can_start_quest?(quest)
+    return false if player_quests.exists?(quest: quest) # Already started/completed
+
+    # Quest 1 is always available
+    return true if quest.sequence == 1
+
+    # If this is quest 2, check if quest 1 in same galaxy is completed
+    quest1 = Quest.for_galaxy(quest.galaxy).find { |q| q.sequence == 1 }
+    return false unless quest1
+
+    progress = player_quests.find_by(quest: quest1)
+    progress&.completed?
+  end
+
+  # Get current active quest for this user
+  # @return [PlayerQuest, nil]
+  def active_quest
+    player_quests.active.first
+  end
+
+  # Check if user has completed all quests in a galaxy
+  # @param galaxy [String] Galaxy identifier
+  # @return [Boolean]
+  def completed_galaxy?(galaxy)
+    galaxy_quests = Quest.for_galaxy(galaxy)
+    galaxy_quests.all? { |q| player_quests.finished.exists?(quest: q) }
   end
 
   private
