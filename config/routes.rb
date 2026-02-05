@@ -88,6 +88,13 @@ Rails.application.routes.draw do
   # Emigration (Phase 3: Hub Selection)
   resource :emigration, only: [:show, :create], controller: 'emigration'
 
+  # Onboarding tutorial
+  scope :onboarding, controller: 'onboarding' do
+    post :advance, as: :advance_onboarding
+    post :skip, as: :skip_onboarding
+    post :reset, as: :reset_onboarding
+  end
+
   get :about, to: 'about#index'
 
   # Authentication (passwordless)
