@@ -142,6 +142,7 @@ class TutorialPhaseTest < ActiveSupport::TestCase
     refute user.can_leave_cradle?
 
     # Complete the tutorial objective
+    # Note: Creating a qualifying route now auto-advances the user from cradle
     user.routes.create!(
       name: "Tutorial Route",
       ship: ship,
@@ -150,6 +151,9 @@ class TutorialPhaseTest < ActiveSupport::TestCase
       total_profit: 100
     )
 
-    assert user.can_leave_cradle?
+    # User auto-advances to proving_ground, so they've already left the cradle
+    user.reload
+    assert user.proving_ground?, "User should auto-advance to proving_ground"
+    assert user.cradle_complete?, "Cradle should still be marked complete"
   end
 end

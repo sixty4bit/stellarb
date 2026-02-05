@@ -104,8 +104,21 @@ class Route < ApplicationRecord
 
   # Callback: Check if this route's creation/update completes the tutorial
   # Called after commit to ensure data is persisted
+  # Advances user tutorial phase if eligible
   # @return [Boolean] whether the route qualifies for tutorial completion
   def check_tutorial_completion
-    qualifies_for_tutorial?
+    return false unless qualifies_for_tutorial?
+
+    advance_user_tutorial_if_eligible
+    true
+  end
+
+  # Advance the user's tutorial phase if they're in cradle and this route qualifies
+  # Only advances from cradle -> proving_ground
+  def advance_user_tutorial_if_eligible
+    return unless user.cradle?
+    return unless meets_supply_chain_tutorial?
+
+    user.advance_tutorial_phase!
   end
 end
