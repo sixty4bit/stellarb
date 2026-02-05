@@ -479,11 +479,14 @@ class Ship < ApplicationRecord
     return unless status == "in_transit" && arrival_at.present?
     return if arrival_at > Time.current
 
+    # Store destination name before clearing
+    arrived_at_system = destination_system
+
     # Arrive at destination
-    self.current_system = destination_system
-    self.location_x = destination_system.x
-    self.location_y = destination_system.y
-    self.location_z = destination_system.z
+    self.current_system = arrived_at_system
+    self.location_x = arrived_at_system.x
+    self.location_y = arrived_at_system.y
+    self.location_z = arrived_at_system.z
     self.destination_system = nil
     self.arrival_at = nil
 
@@ -491,6 +494,19 @@ class Ship < ApplicationRecord
     apply_intent!(pending_intent || "trade")
     self.pending_intent = nil
     save!
+
+    # Send arrival notification to inbox
+    send_arrival_notification(arrived_at_system)
+  end
+
+  def send_arrival_notification(system)
+    Message.create!(
+      user: user,
+      title: "Arrival at #{system.name}",
+      body: "Your ship #{name} has arrived at #{system.name}.",
+      from: "Navigation System",
+      category: "travel"
+    )
   end
 
   # Warp travel (instant via warp gates)
