@@ -53,11 +53,18 @@ class Recruit < ApplicationRecord
       .where("available_at <= ? AND expires_at > ?", Time.current, Time.current)
   end
 
+  scope :available_for_tier, ->(tier) do
+    where(level_tier: tier)
+      .where("available_at <= ? AND expires_at > ?", Time.current, Time.current)
+  end
+
   scope :expired, -> { where("expires_at <= ?", Time.current) }
 
   # Class method to generate a new recruit with all attributes populated
-  def self.generate!(level_tier:)
+  # Can optionally specify npc_class to generate a specific class
+  def self.generate!(level_tier:, npc_class: nil)
     recruit = new(level_tier: level_tier)
+    recruit.npc_class = npc_class if npc_class.present?
     recruit.seed = SecureRandom.hex(16)
     recruit.populate_attributes!
     recruit.save!
