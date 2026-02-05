@@ -101,7 +101,17 @@ module ProceduralGeneration
     }.freeze
 
     class << self
-      # Generate a building with deterministic attributes
+      # Generate a building with deterministic attributes (keyword arguments)
+      # @param race [String] One of: vex, solari, krog, myrmidon
+      # @param function [Symbol] One of: extraction, refining, logistics, civic, defense
+      # @param tier [Integer] 1-5
+      # @param location_seed [String] Location-based seed for regional variation (optional)
+      # @return [Hash] Building attributes
+      def call(race:, function:, tier:, location_seed: "standard_location_seed")
+        generate(race, function, tier, location_seed)
+      end
+
+      # Generate a building with deterministic attributes (positional arguments)
       # @param race [String] One of: vex, solari, krog, myrmidon
       # @param function [Symbol] One of: extraction, refining, logistics, civic, defense
       # @param tier [Integer] 1-5
@@ -142,17 +152,23 @@ module ProceduralGeneration
         }
       end
 
-      # Generate all building variants for diversity testing
-      def generate_all_variants
+      # Generate all 100 building types (4 races x 5 functions x 5 tiers)
+      # @return [Array<Hash>] Array of 100 building definitions
+      def generate_all_types
         buildings = []
         RACES.each do |race|
           FUNCTIONS.each do |function|
             TIERS.each do |tier|
-              buildings << generate(race, function, tier, "standard_location_seed")
+              buildings << call(race: race, function: function, tier: tier)
             end
           end
         end
         buildings
+      end
+
+      # Legacy method for compatibility
+      def generate_all_variants
+        generate_all_types
       end
 
       # Verify tier scaling follows power law (Section 10.2)
