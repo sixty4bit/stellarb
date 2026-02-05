@@ -79,6 +79,18 @@ class System < ApplicationRecord
     x == 0 && y == 0 && z == 0
   end
 
+  # Calculate 3D Euclidean distance between two systems
+  def self.distance_between(system_a, system_b)
+    dx = system_b.x - system_a.x
+    dy = system_b.y - system_a.y
+    dz = system_b.z - system_a.z
+    Math.sqrt(dx**2 + dy**2 + dz**2)
+  end
+
+  def distance_to(other_system)
+    self.class.distance_between(self, other_system)
+  end
+
   private
 
   def generate_short_id
