@@ -63,10 +63,10 @@ class ShipsController < ApplicationController
     # (prevents validation issues when updating user credits)
     @ship = Ship.new(ship_params)
     @ship.user_id = current_user.id
-    @current_system = System.find_by(id: params[:system_id])
+    @current_system = System.find_by(id: params[:system_id]) || System.cradle
 
     # Set required defaults
-    @ship.current_system = @current_system if @current_system
+    @ship.current_system = @current_system
     @ship.variant_idx ||= 0
     @ship.fuel ||= 100.0
 

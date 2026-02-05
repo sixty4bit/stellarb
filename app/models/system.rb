@@ -79,6 +79,14 @@ class System < ApplicationRecord
     )
   end
 
+  # Find The Cradle system (origin point at 0,0,0)
+  # Creates it if it doesn't exist
+  def self.cradle
+    find_or_create_by!(x: 0, y: 0, z: 0) do |system|
+      system.name = "The Cradle"
+    end
+  end
+
   # Check if this is The Cradle
   def is_cradle?
     x == 0 && y == 0 && z == 0
