@@ -152,6 +152,12 @@ class User < ApplicationRecord
     cradle? && cradle_complete?
   end
 
+  # Check if user has a route that qualifies for supply chain tutorial
+  # @return [Boolean]
+  def has_qualifying_supply_chain?
+    routes.any?(&:meets_supply_chain_tutorial?)
+  end
+
   # ===========================================
   # Proving Ground (Phase 2)
   # ===========================================
