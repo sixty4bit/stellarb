@@ -132,6 +132,11 @@ class HiredRecruit < ApplicationRecord
   # Elderly threshold (percentage of lifespan)
   ELDERLY_THRESHOLD = 0.8  # 80% of lifespan = elderly
 
+  # Effectiveness decay constants
+  # NPCs start decaying at ELDERLY_THRESHOLD and decay more rapidly past lifespan
+  MINIMUM_EFFECTIVENESS = 0.3  # Floor - even ancient NPCs contribute something
+  DECAY_RATE = 0.5             # How quickly effectiveness drops (higher = steeper decay)
+
   # Display name - use custom_name from hiring if set, otherwise class + race
   def name
     "#{npc_class.humanize} (#{race.humanize})"
@@ -302,6 +307,47 @@ class HiredRecruit < ApplicationRecord
     return 0 if lifespan_days.nil?
     remaining = lifespan_days - (age_days || 0)
     [remaining, 0].max
+  end
+
+  # ==========================================
+  # Effectiveness Decay (ROADMAP Section 4.4.3)
+  # ==========================================
+
+  # Calculate age-based effectiveness modifier
+  # Returns 1.0 for young NPCs, decays after ELDERLY_THRESHOLD
+  # Formula: Uses a smooth decay curve that accelerates past lifespan
+  #
+  # @return [Float] Modifier between MINIMUM_EFFECTIVENESS and 1.0
+  def age_effectiveness_modifier
+    # Handle edge cases
+    return MINIMUM_EFFECTIVENESS if lifespan_days.nil? || lifespan_days <= 0
+
+    current_age = age_days || 0
+    age_ratio = current_age.to_f / lifespan_days
+
+    # No decay for young NPCs
+    return 1.0 if age_ratio < ELDERLY_THRESHOLD
+
+    # Calculate decay amount
+    # How far past the elderly threshold (0.0 = just became elderly, 0.2 = at lifespan, etc)
+    # Add small offset (0.02) so decay begins immediately AT threshold, not just after
+    decay_progress = age_ratio - ELDERLY_THRESHOLD + 0.02
+
+    # Use exponential decay: 1.0 * e^(-rate * progress)
+    # This gives smooth decay that accelerates as they age
+    # At 80%: ~0.95, At 100%: ~0.58, Past lifespan: drops toward minimum
+    raw_modifier = Math.exp(-DECAY_RATE * decay_progress * 5)  # *5 to scale decay rate
+
+    # Clamp between minimum and 1.0
+    raw_modifier.clamp(MINIMUM_EFFECTIVENESS, 1.0).round(3)
+  end
+
+  # Calculate total effectiveness combining age decay and quirks
+  # This is the final modifier to apply to NPC performance
+  #
+  # @return [Float] Combined modifier (age_effectiveness * quirk_performance)
+  def total_effectiveness
+    (age_effectiveness_modifier * performance_modifier).round(3)
   end
 
   private
