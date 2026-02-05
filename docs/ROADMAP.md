@@ -943,3 +943,204 @@ PlayerName > Ships > Trading
 * **Back:** `Esc` or `q` navigates up one level.
 * **Home:** A dedicated shortcut (e.g., `H`) returns to the root menu.
 
+
+## **17. Fun Calibration (Final Test Phase)**
+
+The final phase before launch. The agent tunes **data parameters only** — no code changes. If code changes are needed, a success criteria was missed earlier.
+
+### **17.1. Calibration Philosophy**
+* **Data, not code:** Adjust prices, rates, probabilities — not mechanics
+* **Simulation-driven:** Run automated playthroughs, measure outcomes
+* **Bounded iterations:** Maximum 50 calibration cycles to prevent infinite loops
+* **Human validation:** Final "is this fun?" requires a human playtest
+
+### **17.2. Tunable Parameters**
+
+```ruby
+# config/game_balance.yml
+economy:
+  starting_credits: 500
+  loan_interest_rate: 0.15          # 15% per day
+  bank_interest_rate: 0.02          # 2% per day
+  price_variance_min: 0.5           # Prices can drop to 50%
+  price_variance_max: 2.0           # Prices can spike to 200%
+  exotic_price_spike_chance: 0.05   # 5% chance of 5x price
+  
+progression:
+  days_per_game: 30
+  starting_cargo_capacity: 50
+  upgrade_cost_multiplier: 1.8
+  
+difficulty:
+  bankruptcy_threshold: -1000       # Game over if debt exceeds this
+  random_event_chance: 0.10         # 10% chance per travel
+  pip_infestation_chance: 0.01      # 1% chance per asset per day
+  
+travel:
+  base_fuel_cost: 1                 # Per coordinate
+  fuel_price_variance: 0.3          # ±30%
+```
+
+### **17.3. Fun Metrics (Measurable Proxies)**
+
+Run 1000 simulated games. Measure:
+
+| Metric | Target Range | Too Low = | Too High = |
+|--------|--------------|-----------|------------|
+| **Win rate** | 30-50% | Too hard | Too easy |
+| **Average game length** | 20-30 days | Dies too fast | Drags on |
+| **Bankruptcy rate by day 10** | 10-25% | Too forgiving | Too punishing |
+| **Comeback rate** | 15-30% | No hope once behind | Luck > skill |
+| **Strategy diversity** | 3+ viable | Solved game | — |
+| **Decisions per day** | 2-5 | Too passive | Decision fatigue |
+| **Near-death recoveries** | 10-20% | No tension | Fake difficulty |
+| **Dominant strategy usage** | <40% | — | Degenerate meta |
+
+### **17.4. Simulation Strategy Types**
+
+The calibration agent runs games using different AI strategies:
+
+```ruby
+STRATEGIES = {
+  aggressive_trader: "Buy max, sell immediately at any profit",
+  patient_trader: "Wait for 50%+ margins before selling", 
+  diversified: "Never put more than 30% in one commodity",
+  loan_shark: "Max loans, high risk high reward",
+  conservative: "Never take loans, slow steady growth",
+  explorer: "Prioritize discovering new systems",
+  random: "Random valid actions (baseline)"
+}
+```
+
+**Diversity check:** At least 3 strategies must have win rates within 15% of each other.
+
+### **17.5. Calibration Loop**
+
+```ruby
+class FunCalibrator
+  MAX_ITERATIONS = 50
+  GAMES_PER_ITERATION = 1000
+  
+  def calibrate!
+    iteration = 0
+    
+    while iteration < MAX_ITERATIONS
+      results = simulate_games(GAMES_PER_ITERATION)
+      metrics = calculate_metrics(results)
+      
+      if metrics_in_range?(metrics)
+        log "✓ Fun calibration complete after #{iteration} iterations"
+        return :success
+      end
+      
+      adjustments = calculate_adjustments(metrics)
+      
+      if adjustments.empty?
+        log "✗ No adjustments possible — may need design changes"
+        return :stuck
+      end
+      
+      apply_adjustments!(adjustments)
+      iteration += 1
+    end
+    
+    log "✗ Max iterations reached — manual review needed"
+    return :max_iterations
+  end
+  
+  private
+  
+  def calculate_adjustments(metrics)
+    adjustments = {}
+    
+    # Win rate too low? Make it easier
+    if metrics[:win_rate] < 0.30
+      adjustments[:starting_credits] = +100
+      adjustments[:loan_interest_rate] = -0.02
+    end
+    
+    # Win rate too high? Make it harder
+    if metrics[:win_rate] > 0.50
+      adjustments[:starting_credits] = -50
+      adjustments[:random_event_chance] = +0.02
+    end
+    
+    # Games too short? Slow down death spiral
+    if metrics[:avg_game_length] < 20
+      adjustments[:bankruptcy_threshold] = -500
+      adjustments[:loan_interest_rate] = -0.03
+    end
+    
+    # Dominant strategy? Nerf it
+    if metrics[:dominant_strategy_usage] > 0.40
+      # Adjust based on which strategy is dominant
+      adjustments[:price_variance_max] = +0.2  # More chaos
+    end
+    
+    adjustments
+  end
+end
+```
+
+### **17.6. Success Criteria**
+
+**Done when:**
+- [ ] Win rate: 30-50%
+- [ ] Average game length: 20-30 days
+- [ ] Bankruptcy by day 10: 10-25%
+- [ ] Comeback rate: 15-30%
+- [ ] At least 3 viable strategies (within 15% win rate)
+- [ ] Decisions per day: 2-5
+- [ ] No single strategy wins >40% more than others
+- [ ] Calibration completes in <50 iterations
+
+**Measured by:**
+```bash
+bin/rails runner "FunCalibrator.new.calibrate!"
+bin/rails runner "FunCalibrator.new.report_metrics"
+```
+
+**Fails if:**
+- Calibration hits 50 iterations without converging → needs design review
+- Any metric impossible to reach via data tuning → missing mechanic
+- All strategies converge to same behavior → game is "solved"
+
+**After automated calibration passes:**
+- [ ] Human playtest: "Did you want to play again?" (yes = fun)
+- [ ] Human playtest: "Was there a moment of tension?" (yes = engaging)
+- [ ] Human playtest: "Did your choices feel meaningful?" (yes = agency)
+
+### **17.7. Anti-Loop Safeguards**
+
+```ruby
+# Prevent oscillation
+class FunCalibrator
+  def apply_adjustments!(adjustments)
+    adjustments.each do |param, delta|
+      current = config[param]
+      new_value = current + delta
+      
+      # Clamp to sane bounds
+      new_value = new_value.clamp(PARAM_BOUNDS[param])
+      
+      # Prevent oscillation: don't reverse last change
+      if @last_adjustments[param] && 
+         @last_adjustments[param].sign != delta.sign
+        log "⚠ Skipping oscillating adjustment for #{param}"
+        next
+      end
+      
+      config[param] = new_value
+      @adjustment_history[param] << delta
+    end
+    
+    @last_adjustments = adjustments
+  end
+end
+```
+
+**Hard limits:**
+- Maximum 50 iterations total
+- Each parameter has min/max bounds (can't go negative, can't exceed sanity)
+- If same parameter oscillates 3x, lock it and move on
+- If 5 consecutive iterations make no progress, abort with :stuck
