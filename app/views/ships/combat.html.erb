@@ -1,0 +1,85 @@
+<%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
+
+<div class="max-w-6xl">
+  <h1 class="text-2xl font-bold mb-1 text-orange-500">Combat</h1>
+  <div class="text-sm text-gray-400 mb-6">Combat-ready vessels and battle logs</div>
+
+  <!-- Combat Stats -->
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-blue-900 border border-blue-700 p-4">
+      <div class="text-gray-400 text-sm">Combat Ships</div>
+      <div class="text-white text-2xl font-bold"><%= @ships.select { |s| (s.ship_attributes["hardpoints"] || 0) > 0 }.count %></div>
+    </div>
+    <div class="bg-blue-900 border border-blue-700 p-4">
+      <div class="text-gray-400 text-sm">Total Hardpoints</div>
+      <div class="text-white text-2xl font-bold"><%= @ships.sum { |s| s.ship_attributes["hardpoints"] || 0 } %></div>
+    </div>
+    <div class="bg-blue-900 border border-blue-700 p-4">
+      <div class="text-gray-400 text-sm">Recent Engagements</div>
+      <div class="text-white text-2xl font-bold"><%= @recent_battles.count %></div>
+    </div>
+  </div>
+
+  <!-- Combat-Ready Ships -->
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-6">
+    <h2 class="text-lime-400 font-bold mb-4">Combat-Ready Fleet</h2>
+    <% combat_ships = @ships.select { |s| (s.ship_attributes["hardpoints"] || 0) > 0 } %>
+    <% if combat_ships.any? %>
+      <div class="space-y-2">
+        <% combat_ships.each do |ship| %>
+          <%= link_to ship_path(ship),
+              class: "block border border-blue-600 p-3 hover:border-orange-500 transition-colors",
+              data: { turbo_frame: "content_panel" } do %>
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="font-bold text-white"><%= ship.name %></span>
+                <span class="text-xs bg-red-800 text-white px-2 py-0.5 ml-2 rounded">
+                  <%= ship.ship_attributes["hardpoints"] || 0 %> HP
+                </span>
+              </div>
+              <span class="text-<%= ship.status == 'combat' ? 'red' : 'gray' %>-400">
+                [<%= ship.status.upcase %>]
+              </span>
+            </div>
+            <div class="text-sm text-gray-500 mt-1">
+              Hull: <%= ship.ship_attributes["hull_points"] || 0 %> HP · 
+              Marines: <%= ship.crew.select { |c| c.npc_class == 'marine' rescue false }.count %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-gray-400">No combat-capable ships in fleet.</p>
+      <p class="text-sm text-gray-500 mt-2">Ships need hardpoints to engage in combat.</p>
+    <% end %>
+  </div>
+
+  <!-- Recent Battles -->
+  <div class="bg-blue-900 border border-blue-700 p-4">
+    <h2 class="text-lime-400 font-bold mb-4">Recent Engagements</h2>
+    <% if @recent_battles.any? %>
+      <div class="space-y-2">
+        <% @recent_battles.each do |battle| %>
+          <div class="border border-blue-600 p-3">
+            <div class="flex items-center justify-between">
+              <span class="text-white"><%= battle[:location] %></span>
+              <span class="text-<%= battle[:outcome] == 'victory' ? 'lime' : 'red' %>-400">
+                <%= battle[:outcome].upcase %>
+              </span>
+            </div>
+            <div class="text-sm text-gray-500 mt-1">
+              <%= battle[:date] %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-gray-400">No recent battles.</p>
+      <p class="text-sm text-gray-500 mt-2">Enter a system with hostile intent to engage defensive forces.</p>
+    <% end %>
+  </div>
+
+  <div class="mt-8 text-sm text-gray-500">
+    <p>Keyboard: j/k to navigate, Enter to view ship details</p>
+  </div>
+</div>

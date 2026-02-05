@@ -1,0 +1,53 @@
+<%= render 'shared/breadcrumbs', breadcrumbs: [
+  { name: current_user.name, path: root_path },
+  { name: "Ships", path: ships_path },
+  { name: "Routes", path: routes_path },
+  { name: "New Route" }
+] %>
+
+<div class="max-w-2xl">
+  <h1 class="text-2xl font-bold mb-1 text-orange-500">Create Trade Route</h1>
+  <div class="text-sm text-gray-400 mb-6">Set up an automated trading route</div>
+
+  <%= form_with model: @route, class: "space-y-6" do |form| %>
+    <% if @route.errors.any? %>
+      <div class="bg-red-900 border border-red-700 p-4">
+        <h2 class="text-red-400 font-bold mb-2">Errors</h2>
+        <ul class="list-disc list-inside text-sm text-red-300">
+          <% @route.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div>
+      <%= form.label :name, class: "block text-lime-400 font-bold mb-2" %>
+      <%= form.text_field :name,
+          class: "w-full bg-blue-900 border border-blue-700 text-white px-4 py-2 focus:border-orange-500 focus:outline-none",
+          placeholder: "e.g., Cradle-Alpha Ore Run" %>
+    </div>
+
+    <div>
+      <%= form.label :ship_id, "Assign Ship", class: "block text-lime-400 font-bold mb-2" %>
+      <%= form.collection_select :ship_id, @available_ships, :id, :name,
+          { include_blank: "Select a ship..." },
+          { class: "w-full bg-blue-900 border border-blue-700 text-white px-4 py-2 focus:border-orange-500 focus:outline-none" } %>
+      <p class="text-sm text-gray-500 mt-1">Only docked ships can be assigned to new routes.</p>
+    </div>
+
+    <!-- Stops will be configured after creation -->
+    <div class="bg-blue-900 border border-blue-700 p-4">
+      <h3 class="text-gray-400 font-bold mb-2">Route Stops</h3>
+      <p class="text-sm text-gray-500">Configure stops after creating the route.</p>
+    </div>
+
+    <div class="flex gap-4">
+      <%= form.submit "Create Route",
+          class: "px-6 py-2 bg-orange-800 text-white hover:bg-orange-700 rounded transition-colors cursor-pointer" %>
+      <%= link_to "Cancel", routes_path,
+          class: "px-6 py-2 bg-blue-800 text-white hover:bg-blue-700 rounded transition-colors",
+          data: { turbo_frame: "content_panel" } %>
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,64 @@
+<%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
+
+<div class="max-w-6xl">
+  <h1 class="text-2xl font-bold mb-1 text-orange-500">Routes</h1>
+  <div class="text-sm text-gray-400 mb-6">Your automated trading routes</div>
+
+  <!-- Quick Actions -->
+  <div class="mb-6">
+    <%= link_to new_route_path,
+        class: "px-4 py-2 bg-orange-800 text-white hover:bg-orange-700 rounded transition-colors",
+        data: { turbo_frame: "content_panel" } do %>
+      <span class="text-lime-400">n</span> New Route
+    <% end %>
+  </div>
+
+  <% if @routes.any? %>
+    <div class="space-y-2">
+      <% @routes.each do |route| %>
+        <%= link_to route_path(route),
+            class: "block bg-blue-900 border border-blue-700 p-4 hover:border-orange-500 transition-colors",
+            data: { turbo_frame: "content_panel" } do %>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="font-bold text-white"><%= route.name %></span>
+              <span class="text-xs text-<%= route.status == 'active' ? 'lime' : 'orange' %>-400 ml-2">
+                [<%= route.status.upcase %>]
+              </span>
+            </div>
+            <div class="text-sm">
+              <span class="text-lime-400">Profit: +<%= route.total_profit.round(0) %> cr</span>
+            </div>
+          </div>
+          <div class="text-sm text-gray-400 mt-2">
+            <% if route.ship %>
+              <span>Ship: <%= route.ship.name %></span>
+            <% else %>
+              <span class="text-orange-400">No ship assigned</span>
+            <% end %>
+            <span class="ml-4">Loops: <%= route.loop_count %></span>
+            <% if route.profit_per_hour && route.profit_per_hour > 0 %>
+              <span class="ml-4 text-lime-400"><%= route.profit_per_hour.round(0) %> cr/hr</span>
+            <% end %>
+          </div>
+          <% if route.stops.any? %>
+            <div class="text-xs text-gray-500 mt-2">
+              <% route.stops.each_with_index do |stop, i| %>
+                <%= stop["system"] || stop[:system] %><%= " → " unless i == route.stops.length - 1 %>
+              <% end %>
+            </div>
+          <% end %>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="bg-blue-900 border border-blue-700 p-8 text-center">
+      <p class="text-gray-400">No trading routes configured.</p>
+      <p class="text-sm text-gray-500 mt-2">Create a route to automate cargo runs between systems.</p>
+    </div>
+  <% end %>
+
+  <div class="mt-8 text-sm text-gray-500">
+    <p>Keyboard: j/k to navigate, Enter to view details, n for new route, d to delete</p>
+  </div>
+</div>

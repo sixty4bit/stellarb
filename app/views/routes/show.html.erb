@@ -1,0 +1,104 @@
+<%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
+
+<div class="max-w-6xl">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-orange-500"><%= @route.name %></h1>
+      <div class="text-sm text-gray-400">
+        Route <%= @route.short_id %> · 
+        <span class="text-<%= @route.status == 'active' ? 'lime' : 'orange' %>-400">
+          <%= @route.status.upcase %>
+        </span>
+      </div>
+    </div>
+    <%= link_to routes_path, class: "text-sky-400 hover:text-sky-300", data: { turbo_frame: "content_panel" } do %>
+      ← Back to Routes
+    <% end %>
+  </div>
+
+  <!-- Route Stats -->
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-blue-900 border border-blue-700 p-4">
+      <div class="text-gray-400 text-sm">Total Profit</div>
+      <div class="text-lime-400 text-2xl font-bold"><%= @route.total_profit.round(0) %> cr</div>
+    </div>
+    <div class="bg-blue-900 border border-blue-700 p-4">
+      <div class="text-gray-400 text-sm">Loop Count</div>
+      <div class="text-white text-2xl font-bold"><%= @route.loop_count %></div>
+    </div>
+    <div class="bg-blue-900 border border-blue-700 p-4">
+      <div class="text-gray-400 text-sm">Profit/Hour</div>
+      <div class="text-lime-400 text-2xl font-bold"><%= (@route.profit_per_hour || 0).round(0) %> cr</div>
+    </div>
+  </div>
+
+  <!-- Assigned Ship -->
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+    <h2 class="text-lime-400 font-bold mb-2">Assigned Ship</h2>
+    <% if @route.ship %>
+      <%= link_to ship_path(@route.ship),
+          class: "block hover:text-orange-400",
+          data: { turbo_frame: "content_panel" } do %>
+        <span class="text-white text-lg"><%= @route.ship.name %></span>
+        <span class="text-gray-400 ml-2">(<%= @route.ship.hull_size.humanize %>)</span>
+      <% end %>
+      <div class="text-sm text-gray-500 mt-1">
+        Cargo: <%= @route.ship.ship_attributes["cargo_capacity"] || 0 %> tons
+      </div>
+    <% else %>
+      <p class="text-orange-400">No ship assigned to this route.</p>
+      <%= link_to "Assign Ship", "#", class: "text-sky-400 hover:text-sky-300 text-sm" %>
+    <% end %>
+  </div>
+
+  <!-- Route Stops -->
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+    <h2 class="text-lime-400 font-bold mb-4">Route Stops</h2>
+    <% if @route.stops.any? %>
+      <div class="space-y-3">
+        <% @route.stops.each_with_index do |stop, i| %>
+          <div class="flex items-center">
+            <div class="w-8 h-8 rounded-full bg-blue-800 flex items-center justify-center text-white font-bold">
+              <%= i + 1 %>
+            </div>
+            <div class="ml-4 flex-1 border-b border-blue-700 pb-2">
+              <div class="text-white"><%= stop["system"] || stop[:system] %></div>
+              <div class="text-sm">
+                <span class="text-<%= (stop["action"] || stop[:action]) == 'buy' ? 'orange' : 'lime' %>-400">
+                  <%= (stop["action"] || stop[:action])&.upcase %>
+                </span>
+                <span class="text-gray-400 ml-2">
+                  <%= stop["commodity"] || stop[:commodity] %> × <%= stop["quantity"] || stop[:quantity] %>
+                </span>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-gray-400">No stops configured for this route.</p>
+    <% end %>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex gap-4 mt-6">
+    <% if @route.status == 'active' %>
+      <%= link_to "Pause", pause_route_path(@route), method: :post,
+          class: "px-4 py-2 bg-orange-800 text-white hover:bg-orange-700 rounded transition-colors" %>
+    <% else %>
+      <%= link_to "Resume", resume_route_path(@route), method: :post,
+          class: "px-4 py-2 bg-lime-800 text-white hover:bg-lime-700 rounded transition-colors" %>
+    <% end %>
+    <%= link_to "Edit Stops", "#",
+        class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
+    <%= link_to "Assign Ship", "#",
+        class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
+    <%= link_to "Delete", route_path(@route), method: :delete,
+        data: { confirm: "Are you sure you want to delete this route?" },
+        class: "px-4 py-2 bg-red-800 text-white hover:bg-red-700 rounded transition-colors" %>
+  </div>
+
+  <div class="mt-8 text-sm text-gray-500">
+    <p>Keyboard: e=edit stops, p=pause/resume, s=assign ship, d=delete, Esc=back</p>
+  </div>
+</div>

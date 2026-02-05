@@ -76,8 +76,8 @@ class ShipsController < ApplicationController
 
   private
 
-  def set_active_menu
-    super(:ships)
+  def set_active_menu(_unused = nil)
+    @active_menu = :ships
   end
 
   def set_ship
