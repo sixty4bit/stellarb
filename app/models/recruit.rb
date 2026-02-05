@@ -129,8 +129,16 @@ class Recruit < ApplicationRecord
         wage: hired_recruit.calculate_wage
       )
 
+      # Remove from pool by expiring immediately
+      expire!
+
       hiring
     end
+  end
+
+  # Remove recruit from the available pool
+  def expire!
+    update!(expires_at: Time.current)
   end
 
   # Calculate wage based on skill and rarity
