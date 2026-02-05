@@ -23,6 +23,7 @@ class Ship < ApplicationRecord
   has_many :hirings, as: :assignable, dependent: :destroy
   has_many :crew, through: :hirings, source: :hired_recruit
   has_many :flight_records, dependent: :destroy
+  has_many :incidents, as: :asset, dependent: :destroy
 
   # Constants
   RACES = %w[vex solari krog myrmidon].freeze
@@ -52,6 +53,17 @@ class Ship < ApplicationRecord
   scope :in_transit, -> { where(status: 'in_transit') }
   scope :trading, -> { where(system_intent: 'trade') }
   scope :hostile, -> { where(system_intent: 'battle') }
+  scope :disabled, -> { where.not(disabled_at: nil) }
+  scope :operational, -> { where(disabled_at: nil).where.not(status: 'destroyed') }
+
+  # Disabled state (pip infestation)
+  def disabled?
+    disabled_at.present?
+  end
+
+  def operational?
+    !disabled? && status != 'destroyed'
+  end
 
   # Travel calculations
   def fuel_efficiency

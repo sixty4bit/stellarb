@@ -10,13 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_143157) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_05_145127) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "buildings", force: :cascade do |t|
     t.jsonb "building_attributes", default: {}
     t.datetime "created_at", null: false
+    t.datetime "disabled_at"
     t.string "function"
     t.string "name"
     t.string "race"
@@ -27,6 +28,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_143157) do
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.string "uuid", limit: 36
+    t.index ["disabled_at"], name: "index_buildings_on_disabled_at", where: "(disabled_at IS NOT NULL)"
     t.index ["short_id"], name: "index_buildings_on_short_id", unique: true
     t.index ["system_id"], name: "index_buildings_on_system_id"
     t.index ["user_id"], name: "index_buildings_on_user_id"
@@ -87,6 +89,55 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_143157) do
     t.index ["uuid"], name: "index_hirings_on_uuid", unique: true
   end
 
+  create_table "incidents", force: :cascade do |t|
+    t.bigint "asset_id", null: false
+    t.string "asset_type", null: false
+    t.datetime "created_at", null: false
+    t.text "description", null: false
+    t.bigint "hired_recruit_id"
+    t.boolean "is_pip_infestation", default: false, null: false
+    t.datetime "resolved_at"
+    t.integer "severity", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", limit: 36
+    t.index ["asset_type", "asset_id", "resolved_at"], name: "index_incidents_on_asset_type_and_asset_id_and_resolved_at"
+    t.index ["asset_type", "asset_id"], name: "index_incidents_on_asset"
+    t.index ["hired_recruit_id", "created_at"], name: "index_incidents_on_hired_recruit_id_and_created_at"
+    t.index ["hired_recruit_id"], name: "index_incidents_on_hired_recruit_id"
+    t.index ["is_pip_infestation"], name: "index_incidents_on_is_pip_infestation", where: "((is_pip_infestation = true) AND (resolved_at IS NULL))"
+    t.index ["uuid"], name: "index_incidents_on_uuid", unique: true
+  end
+
+  create_table "quest_progresses", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.bigint "quest_id", null: false
+    t.datetime "started_at"
+    t.string "status", default: "in_progress", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["quest_id"], name: "index_quest_progresses_on_quest_id"
+    t.index ["user_id", "quest_id"], name: "index_quest_progresses_on_user_id_and_quest_id", unique: true
+    t.index ["user_id"], name: "index_quest_progresses_on_user_id"
+  end
+
+  create_table "quests", force: :cascade do |t|
+    t.text "context"
+    t.datetime "created_at", null: false
+    t.integer "credits_reward", default: 0
+    t.string "galaxy", null: false
+    t.json "mechanics_taught", default: []
+    t.string "name", null: false
+    t.integer "sequence", null: false
+    t.string "short_id", null: false
+    t.text "task"
+    t.datetime "updated_at", null: false
+    t.string "uuid", limit: 36
+    t.index ["galaxy", "sequence"], name: "index_quests_on_galaxy_and_sequence", unique: true
+    t.index ["short_id"], name: "index_quests_on_short_id", unique: true
+    t.index ["uuid"], name: "index_quests_on_uuid", unique: true
+  end
+
   create_table "recruits", force: :cascade do |t|
     t.datetime "available_at"
     t.jsonb "base_stats", default: {}
@@ -132,6 +183,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_143157) do
     t.bigint "current_system_id"
     t.datetime "defense_engaged_at"
     t.bigint "destination_system_id"
+    t.datetime "disabled_at"
     t.decimal "fuel", default: "0.0"
     t.string "hull_size"
     t.integer "location_x"
@@ -149,6 +201,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_143157) do
     t.integer "variant_idx"
     t.index ["current_system_id"], name: "index_ships_on_current_system_id"
     t.index ["destination_system_id"], name: "index_ships_on_destination_system_id"
+    t.index ["disabled_at"], name: "index_ships_on_disabled_at", where: "(disabled_at IS NOT NULL)"
     t.index ["short_id"], name: "index_ships_on_short_id", unique: true
     t.index ["user_id"], name: "index_ships_on_user_id"
     t.index ["uuid"], name: "index_ships_on_uuid", unique: true
@@ -225,6 +278,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_143157) do
   add_foreign_key "hired_recruits", "recruits", column: "original_recruit_id"
   add_foreign_key "hirings", "hired_recruits"
   add_foreign_key "hirings", "users"
+  add_foreign_key "incidents", "hired_recruits"
+  add_foreign_key "quest_progresses", "quests"
+  add_foreign_key "quest_progresses", "users"
   add_foreign_key "routes", "ships"
   add_foreign_key "routes", "users"
   add_foreign_key "ships", "systems", column: "current_system_id"
