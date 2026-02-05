@@ -1,0 +1,28 @@
+# Test route fixtures
+trade_route:
+  user: pilot
+  ship: hauler
+  name: Cradle Supply Run
+  short_id: rt-cra
+  status: active
+  loop_count: 15
+  total_profit: 1250.0
+  stops:
+    - system: cradle
+      action: buy
+      commodity: ore
+      quantity: 100
+    - system: alpha_centauri
+      action: sell
+      commodity: ore
+      quantity: 100
+
+paused_route:
+  user: pilot
+  ship: scout
+  name: Exploration Circuit
+  short_id: rt-exp
+  status: paused
+  loop_count: 3
+  total_profit: 0.0
+  stops: []

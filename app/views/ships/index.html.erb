@@ -1,0 +1,68 @@
+<%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
+
+<div class="max-w-6xl">
+  <h1 class="text-2xl font-bold mb-1 text-orange-500">Ships</h1>
+  <div class="text-sm text-gray-400 mb-6">Your fleet of vessels</div>
+
+  <!-- Navigation to Trading/Combat -->
+  <div class="flex gap-4 mb-6">
+    <%= link_to trading_ships_path,
+        class: "px-4 py-2 bg-blue-800 text-gray-300 hover:bg-orange-800 hover:text-white rounded transition-colors",
+        data: { turbo_frame: "content_panel" } do %>
+      <span class="text-lime-400">t</span> Trading
+    <% end %>
+    <%= link_to combat_ships_path,
+        class: "px-4 py-2 bg-blue-800 text-gray-300 hover:bg-orange-800 hover:text-white rounded transition-colors",
+        data: { turbo_frame: "content_panel" } do %>
+      <span class="text-lime-400">c</span> Combat
+    <% end %>
+  </div>
+
+  <% if @ships.any? %>
+    <div class="space-y-2">
+      <% @ships.each do |ship| %>
+        <%= link_to ship_path(ship),
+            class: "block bg-blue-900 border border-blue-700 p-4 hover:border-orange-500 transition-colors",
+            data: { turbo_frame: "content_panel" } do %>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="font-bold text-white"><%= ship.name %></span>
+              <span class="text-xs bg-blue-800 text-gray-300 px-2 py-0.5 ml-2 rounded">
+                <%= ship.hull_size.upcase %>
+              </span>
+              <span class="text-xs text-<%= ship.status == 'docked' ? 'lime' : ship.status == 'in_transit' ? 'sky' : 'orange' %>-400 ml-2">
+                [<%= ship.status.upcase %>]
+              </span>
+            </div>
+            <div class="text-sm">
+              <span class="text-gray-400"><%= ship.race.humanize %></span>
+            </div>
+          </div>
+          <div class="text-sm text-gray-400 mt-2">
+            <% if ship.current_system %>
+              <span>Location: <%= ship.current_system.name %></span>
+            <% elsif ship.destination_system %>
+              <span class="text-sky-400">→ <%= ship.destination_system.name %></span>
+              <% if ship.arrival_at %>
+                <span class="ml-2">ETA: <%= distance_of_time_in_words_to_now(ship.arrival_at) %></span>
+              <% end %>
+            <% end %>
+            <span class="ml-4">Fuel: <%= ship.fuel.round(1) %></span>
+            <% if ship.crew.any? %>
+              <span class="ml-4 text-lime-400">Crew: <%= ship.crew.count %></span>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="bg-blue-900 border border-blue-700 p-8 text-center">
+      <p class="text-gray-400">No ships in your fleet yet.</p>
+      <p class="text-sm text-gray-500 mt-2">Visit a Shipyard to purchase vessels.</p>
+    </div>
+  <% end %>
+
+  <div class="mt-8 text-sm text-gray-500">
+    <p>Keyboard: j/k to navigate, Enter to view details, t for trading, c for combat</p>
+  </div>
+</div>

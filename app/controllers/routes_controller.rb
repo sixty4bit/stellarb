@@ -3,7 +3,7 @@ class RoutesController < ApplicationController
   before_action :set_route, only: [:show, :destroy, :pause, :resume, :edit_stops]
 
   def index
-    @routes = current_user.routes.includes(:ships)
+    @routes = current_user.routes.includes(:ship)
 
     @breadcrumbs = [
       { name: current_user.name, path: root_path },

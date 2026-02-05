@@ -1,0 +1,106 @@
+<%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
+
+<div class="max-w-6xl">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-orange-500"><%= @ship.name %></h1>
+      <div class="text-sm text-gray-400">
+        <%= @ship.race.humanize %> <%= @ship.hull_size.humanize %> · 
+        <span class="text-<%= @ship.status == 'docked' ? 'lime' : @ship.status == 'in_transit' ? 'sky' : 'orange' %>-400">
+          <%= @ship.status.upcase %>
+        </span>
+      </div>
+    </div>
+    <%= link_to ships_path, class: "text-sky-400 hover:text-sky-300" do %>
+      ← Back to Ships
+    <% end %>
+  </div>
+
+  <!-- Location -->
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+    <h2 class="text-lime-400 font-bold mb-2">Location</h2>
+    <% if @ship.current_system %>
+      <p class="text-white">Docked at <span class="text-orange-400"><%= @ship.current_system.name %></span></p>
+      <p class="text-sm text-gray-400">Coordinates: (<%= @ship.current_system.x %>, <%= @ship.current_system.y %>, <%= @ship.current_system.z %>)</p>
+    <% elsif @ship.destination_system %>
+      <p class="text-sky-400">In transit to <%= @ship.destination_system.name %></p>
+      <% if @ship.arrival_at %>
+        <p class="text-sm text-gray-400">ETA: <%= distance_of_time_in_words_to_now(@ship.arrival_at) %></p>
+      <% end %>
+    <% else %>
+      <p class="text-gray-400">Location unknown</p>
+    <% end %>
+  </div>
+
+  <!-- Ship Stats -->
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+    <h2 class="text-lime-400 font-bold mb-2">Ship Statistics</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div>
+        <div class="text-gray-400 text-sm">Cargo Capacity</div>
+        <div class="text-white text-lg"><%= @ship.ship_attributes["cargo_capacity"] || 0 %> tons</div>
+      </div>
+      <div>
+        <div class="text-gray-400 text-sm">Fuel</div>
+        <div class="text-white text-lg"><%= @ship.fuel.round(1) %> units</div>
+      </div>
+      <div>
+        <div class="text-gray-400 text-sm">Fuel Efficiency</div>
+        <div class="text-white text-lg"><%= @ship.fuel_efficiency %>x</div>
+      </div>
+      <div>
+        <div class="text-gray-400 text-sm">Maneuverability</div>
+        <div class="text-white text-lg"><%= @ship.maneuverability %></div>
+      </div>
+      <div>
+        <div class="text-gray-400 text-sm">Hull Points</div>
+        <div class="text-white text-lg"><%= @ship.ship_attributes["hull_points"] || 0 %></div>
+      </div>
+      <div>
+        <div class="text-gray-400 text-sm">Hardpoints</div>
+        <div class="text-white text-lg"><%= @ship.ship_attributes["hardpoints"] || 0 %></div>
+      </div>
+      <div>
+        <div class="text-gray-400 text-sm">Sensor Range</div>
+        <div class="text-white text-lg"><%= @ship.ship_attributes["sensor_range"] || 0 %></div>
+      </div>
+      <div>
+        <div class="text-gray-400 text-sm">Maintenance</div>
+        <div class="text-white text-lg"><%= @ship.ship_attributes["maintenance_rate"] || 0 %> cr/day</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Crew -->
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+    <h2 class="text-lime-400 font-bold mb-2">Crew</h2>
+    <% if @ship.crew.any? %>
+      <div class="space-y-2">
+        <% @ship.crew.each do |member| %>
+          <div class="flex justify-between items-center py-2 border-b border-blue-700 last:border-0">
+            <span class="text-white"><%= member.name %></span>
+            <span class="text-gray-400"><%= member.npc_class.humanize %></span>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-gray-400">No crew assigned.</p>
+      <p class="text-sm text-gray-500 mt-2">
+        Crew slots: <%= @ship.ship_attributes.dig("crew_slots", "min") || 1 %>-<%= @ship.ship_attributes.dig("crew_slots", "max") || 1 %>
+      </p>
+    <% end %>
+    <%= link_to "Manage Crew", "#", class: "mt-4 inline-block text-sky-400 hover:text-sky-300" %>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex gap-4 mt-6">
+    <%= link_to "Set Navigation", "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
+    <%= link_to "Manage Cargo", "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
+    <%= link_to "Assign to Route", "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
+    <%= link_to "Repair", ship_repair_path(@ship), method: :post, class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
+  </div>
+
+  <div class="mt-8 text-sm text-gray-500">
+    <p>Keyboard: n=navigation, c=cargo, s=crew, r=repair, a=assign route, Esc=back</p>
+  </div>
+</div>
