@@ -1,5 +1,6 @@
 class BuildingsController < ApplicationController
   before_action :set_active_menu
+  before_action :check_construction_completions
   before_action :set_building, only: [:show, :repair, :upgrade, :demolish]
 
   def index
@@ -133,6 +134,10 @@ class BuildingsController < ApplicationController
   end
 
   private
+
+  def check_construction_completions
+    current_user.buildings.under_construction.find_each(&:check_construction_complete!)
+  end
 
   def set_active_menu
     super(:buildings)
