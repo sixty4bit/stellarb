@@ -1,17 +1,28 @@
 ---
-title: StellArb PRD
+title: StellArb ROADMAP
 created: 2026-02-04
-tags: [stellarb, game-design, prd]
+tags: [stellarb, game-design, roadmap]
 ---
 
-# **Product Requirement Document (PRD)**
+# **StellArb ROADMAP**
 Project Name: Stellar Arbitrage (Working Title)
-Version: 0.2 (Updated)
-Date: March 6, 2026
+Version: 0.3
+Date: February 4, 2026
 
 ---
 
 > *You are traveling through space. It's like a maze of twisty passages that look all alike, but that's another game. This game has lasers.*
+
+---
+
+## **TODO: Document Consolidation**
+
+- [ ] Merge all PRD content into this ROADMAP
+- [ ] Add success criteria (testable by agents) to every section
+- [ ] Delete `docs/PRD.md` after consolidation complete
+- [ ] Update brain/projects/stellarb-prd.md to point here
+
+**Rule:** Every feature section must have success criteria that an agent can verify (commands to run, numbers to check, checklists).
 
 ---
 
@@ -505,10 +516,11 @@ Once the Beacon is built, the Server monitors the system for a 7-day probationar
 * **Gameplay Loop:** This forces players to actively explore nearby systems to find arbitrage opportunities. You cannot simply query the database for "Cheapest Iron"; you must go look for it.
 
 ## **7. User Interface (UI)**
-* Style: Text-Only / Command Line Interface (CLI).
+* Style: Text-based, CLI-inspired. **Rendered as HTML, not ASCII art.**
 * Feedback: "Just commands and information." No 3D rendering.
 * Input: Players type commands or select options (e.g., `> warp to sector 4`, `> scan local`, `> buy 500 iron`).
-* Visuals: Information is conveyed via text descriptions and data tables.
+* Visuals: Information is conveyed via text descriptions and data tables. Sparse, clean, terminal aesthetic — but proper HTML elements (divs, tables, buttons), not ASCII box-drawing characters.
+* Tech: Rails 8 + Turbo + Stimulus. Tailwind CSS. Monospace font for the terminal feel.
 
 ## **8. Technical Considerations**
 * Database: Light schema. Only stores "Deltas" and Player Asset States.
@@ -740,6 +752,35 @@ end
   2. **Recent History:** Last 5 systems visited (Auto-generated).
   3. **Local Neighbors:** Systems reachable with current fuel.
 
+### **13.4. System Entry Intentions**
+Upon entering a system, players must declare their **intention**:
+
+* **Trade Mode:** Access to markets, refineries, and docking. Peaceful interactions only.
+* **Battle Mode:** Hostile entry. The system's **defense grid** engages immediately.
+
+**Rules:**
+* **Locked While Present:** You cannot switch intentions while in the system.
+* **Leave to Switch:** Departure and re-entry required to change modes.
+* **Strategic Implication:** Raiding a system means forfeiting trade access until you leave. Defending systems invest in defense infrastructure to punish raiders.
+
+**UI Flow:**
+```
+> warp sy-rig
+Destination: Rigel Prime (sy-rig)
+Distance: 4.2 LY | ETA: 3 hours
+
+[T] Trade - Enter peacefully
+[B] Battle - Engage defenses
+
+Select intention: _
+```
+
+**Success Criteria:**
+- [ ] System entry requires intention selection (Trade/Battle)
+- [ ] Intention locked while in system (cannot switch)
+- [ ] Battle mode triggers defense grid combat
+- [ ] Test: Enter trade → try switch → rejected; leave → re-enter battle → works
+
 ## **14. Starter Quests (Onboarding)**
 New players spawn in one of the 6 Core Galaxies. Each Galaxy has a "Flavor" and a specific NPC guide who introduces mechanics via "Petty Problems."
 
@@ -943,6 +984,439 @@ PlayerName > Ships > Trading
 * **Back:** `Esc` or `q` navigates up one level.
 * **Home:** A dedicated shortcut (e.g., `H`) returns to the root menu.
 
+### **16.6. Screen Definitions**
+
+**Rendering Note:** All wireframes below use ASCII for documentation only. The actual UI is **HTML** — sparse, clean, terminal aesthetic with proper elements (divs, tables, buttons). Not ASCII box-drawing in the browser.
+
+**Tech Stack:**
+- **Framework:** Rails 8 with Turbo + Stimulus
+- **Rendering:** Server-rendered HTML, Turbo Frames for panel updates
+- **Style:** Tailwind CSS, monospace font, terminal aesthetic
+- **Layout:** Fixed left sidebar (menu), scrollable right panel (content)
+
+**Global Keyboard Shortcuts (always active):**
+| Key | Action |
+|-----|--------|
+| `j` | Move selection down |
+| `k` | Move selection up |
+| `Enter` | Select / drill into |
+| `Esc` | Go back one level |
+| `q` | Go back one level (alias) |
+| `H` | Go to Home (Inbox) |
+| `?` | Show keyboard shortcuts overlay |
+
+---
+
+#### **Screen 1: Inbox (Home Screen)**
+
+**Route:** `/inbox` (root redirects here)
+
+**Purpose:** Activity feed showing all notifications, alerts, and messages from NPCs and systems.
+
+**Data Displayed:**
+| Field | Description |
+|-------|-------------|
+| Icon | `●` unread, `○` read |
+| Title | Subject line (NPC name, ship ID, or system event) |
+| Body | 1-2 line description |
+| Timestamp | Relative time ("2 minutes ago") |
+| Tag | Optional urgency tag: `[URGENT]`, `[ACTION REQUIRED]` |
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `Enter` | Drill into message detail |
+| `r` | Toggle read/unread |
+| `e` | Delete/archive message |
+| `u` | Filter: show unread only |
+| `a` | Filter: show all |
+
+**Success Criteria:**
+- [ ] Shows all notifications in reverse chronological order
+- [ ] Unread count displayed in header
+- [ ] `r` toggles read status without page reload
+- [ ] `e` archives with undo option
+
+---
+
+#### **Screen 2: Message Detail**
+
+**Route:** `/inbox/:id`
+
+**Purpose:** Full view of a single notification with context and actions.
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `s` | Send salvage ship (if applicable) |
+| `d` | Dismiss message |
+| `v` | View related entity (ship, building, system) |
+| `Esc` | Back to Inbox |
+
+**Success Criteria:**
+- [ ] Shows full message with sender, timestamp, body
+- [ ] Context-appropriate action buttons render
+- [ ] Links to related entities work
+
+---
+
+#### **Screen 3: Chat**
+
+**Route:** `/chat`
+
+**Purpose:** Player-to-player messaging and guild chat.
+
+**Data Displayed:**
+- Channel selector (tabs or dropdown)
+- Message history (scrollable)
+- Input field at bottom
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `Tab` | Switch channels |
+| `/` | Focus input field |
+| `Enter` | Send message (when input focused) |
+| `PageUp/Down` | Scroll history |
+
+**Success Criteria:**
+- [ ] Messages appear in real-time (ActionCable)
+- [ ] Channel switching preserves scroll position
+- [ ] Input field clears after send
+
+---
+
+#### **Screen 4: Navigation**
+
+**Route:** `/navigation`
+
+**Purpose:** Map view and travel controls. Shows current location, nearby systems, and active routes.
+
+**Data Displayed:**
+| Section | Fields |
+|---------|--------|
+| Current Location | System name, coordinates, star type, hazard level, ownership |
+| Nearby Systems | Name, coordinates, fuel cost, visited status |
+| Active Routes | Route ID, stops, assigned ship, ETA, profit/hr |
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `w` | Warp to selected system |
+| `s` | Scan selected system |
+| `r` | Go to Routes screen |
+| `Enter` | Select system → System Detail |
+
+**Success Criteria:**
+- [ ] Only shows systems within current fuel range
+- [ ] Visited/unvisited status clearly marked
+- [ ] Active routes show real-time ETA
+
+---
+
+#### **Screen 5: Systems**
+
+**Route:** `/systems`
+
+**Purpose:** List of all known (visited) systems with key stats.
+
+**Data Displayed:**
+| Column | Description |
+|--------|-------------|
+| Name | System name |
+| Coords | (x, y, z) |
+| Star | Star type |
+| Hazard | 0-100 danger level |
+| Flags | [H] home, [C] controlled, [!] has alerts |
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `Enter` | View System Detail |
+| `b` | View Buildings in system |
+| `m` | View Market in system |
+| `/` | Search/filter systems |
+
+**Success Criteria:**
+- [ ] All visited systems listed
+- [ ] Sorting by any column works
+- [ ] Search filters as you type
+
+---
+
+#### **Screen 6: System Detail**
+
+**Route:** `/systems/:id`
+
+**Purpose:** Full detail view of a single system.
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `m` | View Market |
+| `b` | View Buildings |
+| `p` | View Planets (minerals/plants) |
+| `w` | Warp here |
+
+**Success Criteria:**
+- [ ] Shows all planets with mineral/plant profiles
+- [ ] Lists all player assets in system
+- [ ] Discovery date and discoverer shown
+
+---
+
+#### **Screen 7: Buildings**
+
+**Route:** `/systems/:system_id/buildings` or `/buildings` (all buildings)
+
+**Purpose:** List of player-owned buildings, optionally filtered by system.
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `Enter` | View Building Detail |
+| `s` | Manage staff |
+| `r` | Repair (if damaged) |
+| `t` | Filter by type (cycles: All → Refinery → Habitat → Extractor → ...) |
+| `y` | Filter by system (cycles through systems with buildings) |
+| `c` | Clear all filters |
+| `/` | Search by name |
+
+**Filter Behavior:**
+- Filters persist until cleared
+- URL updates to reflect filters: `/buildings?type=refinery&system=sy-vig`
+- Count updates to show filtered total: `[3 of 7]`
+
+**Success Criteria:**
+- [ ] Type and system filters work independently
+- [ ] URL reflects filter state (bookmarkable)
+- [ ] Count shows filtered vs total
+
+---
+
+#### **Screen 8: Building Detail**
+
+**Route:** `/buildings/:id`
+
+**Purpose:** Full detail view of a single building.
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `s` | Manage staff assignments |
+| `r` | Repair building |
+| `u` | Upgrade to next tier |
+| `x` | Demolish (with confirmation) |
+
+**Success Criteria:**
+- [ ] Shows production I/O with efficiency %
+- [ ] Staff slots with hire/assign actions
+- [ ] Maintenance cost and breakdown risk visible
+
+---
+
+#### **Screen 9: Ships**
+
+**Route:** `/ships`
+
+**Purpose:** List of all player-owned ships.
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `Enter` | View Ship Detail |
+| `t` | Go to Trading submenu |
+| `c` | Go to Combat submenu |
+
+**Success Criteria:**
+- [ ] Shows all ships with status indicators
+- [ ] In-transit ships show destination and ETA
+- [ ] Destroyed ships shown with salvage option
+
+---
+
+#### **Screen 10: Ship Detail**
+
+**Route:** `/ships/:id`
+
+**Purpose:** Full detail view of a single ship.
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `n` | Set navigation destination |
+| `c` | Manage cargo (load/unload) |
+| `s` | Manage crew |
+| `r` | Repair ship |
+| `a` | Assign to route |
+
+**Success Criteria:**
+- [ ] Cargo manifest with load percentages
+- [ ] Crew list with skill and wage
+- [ ] Hardpoint loadout visible
+
+---
+
+#### **Screen 11: Trading (Routes)**
+
+**Route:** `/ships/trading` or `/routes`
+
+**Purpose:** Manage automated trading routes.
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `Enter` | View Route Detail |
+| `n` | Create new route |
+| `d` | Delete route |
+
+**Success Criteria:**
+- [ ] All active routes with profit/hr
+- [ ] Route creation wizard works
+- [ ] Paused routes visually distinct
+
+---
+
+#### **Screen 12: Route Detail**
+
+**Route:** `/routes/:id`
+
+**Purpose:** View and edit a single trading route.
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `e` | Edit route stops |
+| `p` | Pause/resume route |
+| `s` | Assign different ship |
+| `d` | Delete route |
+
+**Success Criteria:**
+- [ ] Shows all stops with buy/sell orders
+- [ ] Loop count and total profit displayed
+- [ ] Edit mode allows reordering stops
+
+---
+
+#### **Screen 13: Combat**
+
+**Route:** `/ships/combat`
+
+**Purpose:** Combat-related ship management and battle logs.
+
+**Success Criteria:**
+- [ ] Lists combat-ready ships with hardpoints/marines
+- [ ] Recent engagements with outcome
+- [ ] Attack/defend actions available
+
+---
+
+#### **Screen 14: Workers**
+
+**Route:** `/workers`
+
+**Purpose:** Manage hired NPCs and browse the Recruiter for new hires.
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `Enter` | View Worker Detail |
+| `r` | Open Recruiter (hire new) |
+| `f` | Fire selected worker |
+| `a` | Assign to asset |
+
+**Success Criteria:**
+- [ ] All employed workers with assignment status
+- [ ] Unassigned workers highlighted
+- [ ] Fire confirmation prevents accidents
+
+---
+
+#### **Screen 15: Recruiter**
+
+**Route:** `/workers/recruiter`
+
+**Purpose:** Browse available NPCs for hire. Pool refreshes every 30-90 minutes.
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `Enter` | View full resume (employment history) |
+| `h` | Hire selected NPC |
+| `c` | Compare two NPCs side-by-side |
+
+**Success Criteria:**
+- [ ] Countdown timer to next pool refresh
+- [ ] Employment history summary visible
+- [ ] Hire deducts credits immediately
+
+---
+
+#### **Screen 16: Worker Detail / Resume**
+
+**Route:** `/workers/:id`
+
+**Purpose:** Full detail view of a worker including employment history (the resume).
+
+**Success Criteria:**
+- [ ] Full employment history with job outcomes
+- [ ] Quirks/traits displayed
+- [ ] Performance stats with current player
+
+---
+
+#### **Screen 17: About**
+
+**Route:** `/about`
+
+**Purpose:** Player stats, settings, and help.
+
+**Success Criteria:**
+- [ ] Player stats summary (credits, assets, playtime)
+- [ ] Settings accessible
+- [ ] Keyboard shortcuts reference
+
+---
+
+#### **Screen 18: Market**
+
+**Route:** `/systems/:system_id/market`
+
+**Purpose:** View buy/sell prices for a system's market. Only shows data for visited systems.
+
+**Keyboard:**
+| Key | Action |
+|-----|--------|
+| `b` | Buy commodity (opens quantity input) |
+| `s` | Sell commodity |
+| `c` | Compare with other known markets |
+
+**Success Criteria:**
+- [ ] Buy/sell prices with spread visible
+- [ ] Inventory levels shown
+- [ ] Trend indicators (↑↓→)
+
+---
+
+#### **Screen Success Criteria (All Screens)**
+
+**Done when:**
+- [ ] All 18 screens render without error
+- [ ] Navigation between screens works via menu clicks AND keyboard
+- [ ] Breadcrumbs update correctly and are clickable
+- [ ] `j`/`k` moves selection on every list screen
+- [ ] `Enter` drills into detail on every list screen
+- [ ] `Esc` goes back on every detail screen
+- [ ] `H` returns to Inbox from anywhere
+- [ ] `?` shows keyboard shortcut overlay
+- [ ] All screens work with Turbo Frames (no full page reloads)
+- [ ] Content panel updates in <100ms
+
+**Fails if:**
+- Any keyboard shortcut conflicts with browser defaults
+- Navigation state desyncs from URL
+- Back button doesn't work as expected
+- Screen flickers or fully reloads on navigation
 
 ## **17. Fun Calibration (Final Test Phase)**
 
