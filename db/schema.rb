@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_142933) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_05_143157) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -31,6 +31,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_142933) do
     t.index ["system_id"], name: "index_buildings_on_system_id"
     t.index ["user_id"], name: "index_buildings_on_user_id"
     t.index ["uuid"], name: "index_buildings_on_uuid", unique: true
+  end
+
+  create_table "flight_records", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.decimal "distance", precision: 10, scale: 2
+    t.string "event_type", null: false
+    t.bigint "from_system_id", null: false
+    t.datetime "occurred_at", null: false
+    t.bigint "ship_id", null: false
+    t.bigint "to_system_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["event_type"], name: "index_flight_records_on_event_type"
+    t.index ["from_system_id"], name: "index_flight_records_on_from_system_id"
+    t.index ["occurred_at"], name: "index_flight_records_on_occurred_at"
+    t.index ["ship_id", "occurred_at"], name: "index_flight_records_on_ship_id_and_occurred_at"
+    t.index ["ship_id"], name: "index_flight_records_on_ship_id"
+    t.index ["to_system_id"], name: "index_flight_records_on_to_system_id"
+    t.index ["user_id", "occurred_at"], name: "index_flight_records_on_user_id_and_occurred_at"
+    t.index ["user_id"], name: "index_flight_records_on_user_id"
   end
 
   create_table "hired_recruits", force: :cascade do |t|
@@ -198,6 +218,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_142933) do
 
   add_foreign_key "buildings", "systems"
   add_foreign_key "buildings", "users"
+  add_foreign_key "flight_records", "ships"
+  add_foreign_key "flight_records", "systems", column: "from_system_id"
+  add_foreign_key "flight_records", "systems", column: "to_system_id"
+  add_foreign_key "flight_records", "users"
   add_foreign_key "hired_recruits", "recruits", column: "original_recruit_id"
   add_foreign_key "hirings", "hired_recruits"
   add_foreign_key "hirings", "users"

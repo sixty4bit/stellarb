@@ -7,6 +7,8 @@ class System < ApplicationRecord
   has_many :ships, foreign_key: 'current_system_id'
   has_many :system_visits, dependent: :destroy
   has_many :visitors, through: :system_visits, source: :user
+  has_many :departures, -> { where(event_type: 'departure') }, class_name: 'FlightRecord', foreign_key: 'from_system_id', dependent: :destroy
+  has_many :arrivals, -> { where(event_type: 'arrival') }, class_name: 'FlightRecord', foreign_key: 'to_system_id', dependent: :destroy
 
   # Validations
   validates :x, presence: true, numericality: { in: 0..999_999 }

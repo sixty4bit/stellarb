@@ -22,6 +22,7 @@ class Ship < ApplicationRecord
   belongs_to :destination_system, class_name: 'System', optional: true
   has_many :hirings, as: :assignable, dependent: :destroy
   has_many :crew, through: :hirings, source: :hired_recruit
+  has_many :flight_records, dependent: :destroy
 
   # Constants
   RACES = %w[vex solari krog myrmidon].freeze

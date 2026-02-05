@@ -10,6 +10,7 @@ class User < ApplicationRecord
   has_many :system_visits, dependent: :destroy
   has_many :visited_systems, through: :system_visits, source: :system
   has_many :routes, dependent: :destroy
+  has_many :flight_records, dependent: :destroy
 
   # Validations
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
@@ -31,6 +32,24 @@ class User < ApplicationRecord
   def travel_log(limit: nil)
     visits = system_visits.by_last_visit
     limit ? visits.limit(limit) : visits
+  end
+
+  # ===========================================
+  # Flight Recorder (Movement History)
+  # ===========================================
+
+  # Returns user's flight history (all movements) ordered by most recent
+  # @param limit [Integer] Maximum number of entries to return (nil for all)
+  # @return [ActiveRecord::Relation<FlightRecord>]
+  def flight_history(limit: nil)
+    records = flight_records.recent_first
+    limit ? records.limit(limit) : records
+  end
+
+  # Calculate total distance traveled by this user
+  # @return [Decimal] Total distance in game units
+  def total_distance_traveled
+    flight_records.sum(:distance)
   end
 
   private
