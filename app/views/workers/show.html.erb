@@ -1,3 +1,4 @@
+<turbo-frame id="content_panel">
 <%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
 
 <% hiring = @worker.hirings.find { |h| h.user_id == current_user.id } %>
@@ -180,3 +181,4 @@
     <p>Keyboard: a to assign, f to fire, q to go back</p>
   </div>
 </div>
+</turbo-frame>
