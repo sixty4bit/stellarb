@@ -1,7 +1,7 @@
 class ShipsController < ApplicationController
   before_action :set_active_menu
   before_action :check_ship_arrivals
-  before_action :set_ship, only: [:show, :repair, :assign_crew, :set_navigation, :upgrade]
+  before_action :set_ship, only: [:show, :repair, :assign_crew, :set_navigation, :upgrade, :refuel]
 
   def index
     @ships = current_user.ships.includes(:current_system, :crew)
@@ -124,6 +124,34 @@ class ShipsController < ApplicationController
   def repair
     # TODO: Implement repair logic
     redirect_to @ship, notice: "Ship repaired!"
+  end
+
+  def refuel
+    amount = params[:amount].to_f
+
+    result = @ship.refuel!(amount, current_user)
+
+    if result.success?
+      respond_to do |format|
+        format.html { redirect_to @ship, notice: "Successfully refueled #{amount} units!" }
+        format.turbo_stream {
+          flash.now[:notice] = "Refueled #{amount} units!"
+          render turbo_stream: [
+            turbo_stream.replace("ship_fuel", partial: "ships/fuel", locals: { ship: @ship }),
+            turbo_stream.replace("user_credits", partial: "shared/credits", locals: { user: current_user.reload }),
+            turbo_stream.replace("flash", partial: "shared/flash")
+          ]
+        }
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to @ship, alert: result.error }
+        format.turbo_stream {
+          flash.now[:alert] = result.error
+          render turbo_stream: turbo_stream.replace("flash", partial: "shared/flash")
+        }
+      end
+    end
   end
 
   def upgrade
