@@ -1,4 +1,6 @@
 class Ship < ApplicationRecord
+  include TripleId
+
   # Associations
   belongs_to :user
   belongs_to :current_system, class_name: 'System', optional: true

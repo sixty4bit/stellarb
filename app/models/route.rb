@@ -1,4 +1,6 @@
 class Route < ApplicationRecord
+  include TripleId
+
   belongs_to :user
   belongs_to :ship, optional: true
 

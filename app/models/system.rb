@@ -1,4 +1,6 @@
 class System < ApplicationRecord
+  include TripleId
+
   # Associations
   belongs_to :discovered_by, class_name: 'User', optional: true
   has_many :buildings, dependent: :destroy

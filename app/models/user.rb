@@ -1,4 +1,6 @@
 class User < ApplicationRecord
+  include TripleId
+
   # Associations
   has_many :ships, dependent: :destroy
   has_many :buildings, dependent: :destroy
