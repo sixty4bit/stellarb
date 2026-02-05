@@ -511,6 +511,48 @@ class RecruitTest < ActiveSupport::TestCase
     end
   end
 
+  test "hire! removes recruit from available pool" do
+    recruit = Recruit.generate!(level_tier: 1)
+    ship = create_test_ship(@user)
+
+    # Before hiring, recruit should be available
+    assert_includes Recruit.available_for(@user), recruit
+
+    recruit.hire!(@user, ship)
+
+    # After hiring, recruit should no longer be available
+    assert_not_includes Recruit.available_for(@user), recruit
+  end
+
+  test "hire! expires recruit immediately" do
+    recruit = Recruit.generate!(level_tier: 1)
+    ship = create_test_ship(@user)
+
+    original_expires_at = recruit.expires_at
+    assert original_expires_at > Time.current
+
+    recruit.hire!(@user, ship)
+    recruit.reload
+
+    # After hiring, expires_at should be in the past
+    assert recruit.expires_at <= Time.current
+    assert_includes Recruit.expired, recruit
+  end
+
+  test "hire! prevents double-hiring same recruit" do
+    recruit = Recruit.generate!(level_tier: 1)
+    ship1 = create_test_ship(@user)
+    ship2 = create_test_ship(@other_user)
+
+    # First hire succeeds
+    recruit.hire!(@user, ship1)
+
+    # Second hire fails
+    assert_raises(Recruit::AlreadyHiredError) do
+      recruit.hire!(@other_user, ship2)
+    end
+  end
+
   private
 
   def create_test_ship(user)
