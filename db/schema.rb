@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_175840) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_05_175947) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -312,6 +312,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_175840) do
     t.datetime "last_sign_in_at"
     t.integer "level_tier", default: 1
     t.string "name"
+    t.datetime "onboarding_completed_at"
+    t.string "onboarding_step", default: "profile_setup", null: false
     t.integer "phase", default: 1, null: false
     t.datetime "profile_completed_at"
     t.string "short_id"
@@ -321,6 +323,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_175840) do
     t.string "uuid", limit: 36
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["emigrated"], name: "index_users_on_emigrated"
+    t.index ["onboarding_completed_at"], name: "index_users_on_onboarding_completed_at", where: "(onboarding_completed_at IS NOT NULL)"
+    t.index ["onboarding_step"], name: "index_users_on_onboarding_step"
     t.index ["phase"], name: "index_users_on_phase"
     t.index ["short_id"], name: "index_users_on_short_id", unique: true
     t.index ["tutorial_phase"], name: "index_users_on_tutorial_phase"

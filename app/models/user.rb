@@ -1,5 +1,9 @@
 class User < ApplicationRecord
   include TripleId
+  include Onboardable
+
+  # Expose ONBOARDING_STEPS at the class level for external access
+  ONBOARDING_STEPS = Onboardable::ONBOARDING_STEPS
 
   # Custom Errors
   class NotReadyForEmigrationError < StandardError; end
