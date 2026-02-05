@@ -24,6 +24,8 @@ class Message < ApplicationRecord
   # Callbacks
   before_create :generate_uuid
   after_create_commit :broadcast_unread_badge
+  after_destroy_commit :broadcast_unread_badge
+  after_update_commit :broadcast_unread_badge, if: :saved_change_to_read_at?
 
   # Instance methods
 
