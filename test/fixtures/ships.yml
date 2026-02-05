@@ -67,3 +67,29 @@ warship:
     maintenance_rate: 25
     hull_points: 180
     sensor_range: 8
+
+# In-transit ship for testing navigation view
+traveling:
+  user: traveler
+  name: Star Runner
+  short_id: sh-tra
+  uuid: 01900000-0000-7000-8000-000000000004
+  race: myrmidon
+  hull_size: frigate
+  variant_idx: 1
+  fuel: 30.0
+  status: in_transit
+  current_system: cradle
+  destination_system: alpha_centauri
+  arrival_at: <%= 5.minutes.from_now.to_fs(:db) %>
+  ship_attributes:
+    cargo_capacity: 60
+    fuel_efficiency: 1.0
+    maneuverability: 60
+    hardpoints: 2
+    crew_slots:
+      min: 2
+      max: 4
+    maintenance_rate: 10
+    hull_points: 80
+    sensor_range: 12
