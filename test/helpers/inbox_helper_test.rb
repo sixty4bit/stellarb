@@ -32,6 +32,12 @@ class InboxHelperTest < ActionView::TestCase
     assert_includes badge, "unread-badge"
   end
 
+  test "unread_badge includes Stimulus controller data attributes" do
+    badge = unread_badge(@user)
+    assert_includes badge, 'data-controller="unread-counter"'
+    assert_includes badge, 'data-unread-counter-count-value="2"'
+  end
+
   test "unread_badge returns nil when count is 0" do
     @user.messages.update_all(read_at: Time.current)
     assert_nil unread_badge(@user)

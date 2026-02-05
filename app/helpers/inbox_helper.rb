@@ -11,6 +11,9 @@ module InboxHelper
 
     content_tag(:span, count, class: "unread-badge ml-2 px-2 py-0.5 text-xs bg-orange-500 text-white rounded-full",
       id: "inbox-unread-badge",
-      data: { controller: "unread-counter" })
+      data: {
+        controller: "unread-counter",
+        unread_counter_count_value: count
+      })
   end
 end
