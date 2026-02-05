@@ -230,4 +230,69 @@ class EmploymentHistoryTest < ActiveSupport::TestCase
     assert defined?(HiredRecruit::EMPLOYER_NAMES)
     assert HiredRecruit::EMPLOYER_NAMES.length >= 10
   end
+
+  test "terminating a hiring records in employment history" do
+    user = users(:one)
+    ship = ships(:hauler)
+    hired_recruit = HiredRecruit.create!(
+      race: "vex",
+      npc_class: "engineer",
+      skill: 50,
+      chaos_factor: 25,
+      stats: {},
+      employment_history: []
+    )
+    
+    hiring = Hiring.create!(
+      user: user,
+      hired_recruit: hired_recruit,
+      assignable: ship,
+      status: :active,
+      wage: 100
+    )
+    
+    # Wait at least 1 month to have measurable duration
+    travel 30.days do
+      hiring.terminate!(:fired)
+    end
+    
+    hired_recruit.reload
+    assert_equal 1, hired_recruit.employment_history.length
+    
+    record = hired_recruit.employment_history.last
+    assert_equal user.name, record["employer"]
+    assert_equal "Terminated (fired)", record["outcome"]
+    assert record["duration_months"] >= 1, "Should record duration in months"
+  end
+
+  test "terminated hiring records correct duration" do
+    user = users(:one)
+    ship = ships(:hauler)
+    hired_recruit = HiredRecruit.create!(
+      race: "vex",
+      npc_class: "engineer",
+      skill: 50,
+      chaos_factor: 25,
+      stats: {},
+      employment_history: []
+    )
+    
+    hiring = Hiring.create!(
+      user: user,
+      hired_recruit: hired_recruit,
+      assignable: ship,
+      status: :active,
+      wage: 100
+    )
+    
+    # Travel 3 months
+    travel 90.days do
+      hiring.terminate!(:retired)
+    end
+    
+    hired_recruit.reload
+    record = hired_recruit.employment_history.last
+    assert_equal 3, record["duration_months"]
+    assert_equal "Terminated (retired)", record["outcome"]
+  end
 end
