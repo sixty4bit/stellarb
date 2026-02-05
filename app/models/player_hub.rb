@@ -103,4 +103,47 @@ class PlayerHub < ApplicationRecord
   def record_immigration!
     increment!(:immigration_count)
   end
+
+  # ===========================================
+  # Emigration Selection (Class Methods)
+  # ===========================================
+
+  # Number of hub options presented during emigration
+  EMIGRATION_OPTIONS_COUNT = 5
+
+  # Minimum security rating for a hub to be offered as an emigration option
+  # Lawless zones (0-19) are not suitable for new colonists
+  EMIGRATION_MIN_SECURITY = 20
+
+  class << self
+    # Get random emigration options for Phase 3 hub selection
+    # Returns up to 5 certified hubs with security >= 20
+    #
+    # @return [ActiveRecord::Relation] Collection of PlayerHub records
+    def emigration_options
+      for_emigration
+        .order(Arel.sql("RANDOM()"))
+        .limit(EMIGRATION_OPTIONS_COUNT)
+    end
+
+    # Get dossiers for emigration options
+    # Returns formatted hub information for the selection UI
+    #
+    # @return [Array<Hash>] Array of dossier hashes with hub_id included
+    def emigration_dossiers
+      emigration_options
+        .includes(:owner, :system)
+        .map { |hub| hub.dossier.merge(hub_id: hub.id) }
+        .sort_by { |d| -d[:security_rating] }
+    end
+
+    # Find a specific hub for emigration (validates it's a valid choice)
+    # Used when player makes their selection
+    #
+    # @param hub_id [Integer] The hub ID to find
+    # @return [PlayerHub, nil] The hub if valid for emigration, nil otherwise
+    def find_emigration_hub_by_id(hub_id)
+      for_emigration.find_by(id: hub_id)
+    end
+  end
 end
