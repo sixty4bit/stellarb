@@ -28,6 +28,52 @@ class HiredRecruit < ApplicationRecord
     'myrmidon' => 0.85   # -15% (hive workers, cheaper)
   }.freeze
 
+  # Quirk system (per ROADMAP Section 5.1.5)
+  # Quirks are personality traits that affect NPC performance
+  # Higher Chaos Factor = more disruptive quirks
+  POSITIVE_QUIRKS = %w[meticulous efficient loyal frugal lucky vigilant dedicated precise resourceful calm].freeze
+  NEUTRAL_QUIRKS = %w[superstitious nocturnal chatty loner gambler eccentric perfectionist stubborn curious secretive].freeze
+  NEGATIVE_QUIRKS = %w[lazy greedy volatile reckless paranoid saboteur alcoholic forgetful clumsy dishonest].freeze
+
+  # Performance modifiers for each quirk
+  # Positive quirks improve performance, negative reduce it
+  # Values are multiplicative modifiers (1.0 = neutral)
+  QUIRK_EFFECTS = {
+    # Positive quirks (+5% to +15%)
+    'meticulous' => 1.10,
+    'efficient' => 1.15,
+    'loyal' => 1.05,
+    'frugal' => 1.05,
+    'lucky' => 1.08,
+    'vigilant' => 1.10,
+    'dedicated' => 1.12,
+    'precise' => 1.10,
+    'resourceful' => 1.08,
+    'calm' => 1.05,
+    # Neutral quirks (±5%)
+    'superstitious' => 0.98,
+    'nocturnal' => 1.0,
+    'chatty' => 0.97,
+    'loner' => 1.02,
+    'gambler' => 1.0,  # High variance handled elsewhere
+    'eccentric' => 0.98,
+    'perfectionist' => 1.03,
+    'stubborn' => 0.97,
+    'curious' => 1.02,
+    'secretive' => 1.0,
+    # Negative quirks (-5% to -20%)
+    'lazy' => 0.85,
+    'greedy' => 0.90,
+    'volatile' => 0.88,
+    'reckless' => 0.85,
+    'paranoid' => 0.92,
+    'saboteur' => 0.80,
+    'alcoholic' => 0.82,
+    'forgetful' => 0.90,
+    'clumsy' => 0.88,
+    'dishonest' => 0.85
+  }.freeze
+
   # Display name - use custom_name from hiring if set, otherwise class + race
   def name
     "#{npc_class.humanize} (#{race.humanize})"
@@ -99,5 +145,98 @@ class HiredRecruit < ApplicationRecord
       description: description
     }
     save!
+  end
+
+  # ==========================================
+  # Quirk System (Chaos Factor Effects)
+  # ==========================================
+
+  # Access quirks from stats jsonb
+  def quirks
+    stats&.dig("quirks") || []
+  end
+
+  # Generate quirks based on chaos factor
+  # Quirk count and type distribution determined by chaos level
+  def generate_quirks!
+    self.stats ||= {}
+    self.stats["quirks"] = generate_quirks_for_chaos(chaos_factor)
+    self.stats
+  end
+
+  # Calculate performance modifier from all quirks
+  # Returns a multiplicative modifier (1.0 = neutral)
+  def performance_modifier
+    return 1.0 if quirks.empty?
+
+    quirks.reduce(1.0) do |modifier, quirk|
+      effect = QUIRK_EFFECTS.fetch(quirk, 1.0)
+      modifier * effect
+    end.round(3)
+  end
+
+  private
+
+  # Generate quirks based on chaos factor using ROADMAP rules
+  def generate_quirks_for_chaos(chaos)
+    count = quirk_count_for_chaos(chaos)
+    return [] if count == 0
+
+    pool = build_weighted_quirk_pool(chaos)
+    selected = []
+
+    count.times do
+      break if pool.empty?
+      quirk = pool.sample
+      selected << quirk
+      pool.delete(quirk) # No duplicates
+    end
+
+    selected
+  end
+
+  # Determine quirk count based on chaos factor (ROADMAP Section 5.1.5)
+  def quirk_count_for_chaos(chaos)
+    case chaos
+    when 0..20   then rand(0..1)   # 0-1 quirks
+    when 21..50  then rand(1..2)   # 1-2 quirks
+    when 51..80  then rand(1..2)   # 1-2 quirks
+    when 81..100 then rand(2..3)   # 2-3 quirks
+    else 0
+    end
+  end
+
+  # Build a weighted pool of quirks based on chaos factor
+  # Low chaos = mostly positive, high chaos = mostly negative
+  def build_weighted_quirk_pool(chaos)
+    pool = []
+
+    # Weights determine how many copies of each type go in the pool
+    weights = quirk_weights_for_chaos(chaos)
+
+    weights[:positive].times { pool.concat(POSITIVE_QUIRKS) }
+    weights[:neutral].times { pool.concat(NEUTRAL_QUIRKS) }
+    weights[:negative].times { pool.concat(NEGATIVE_QUIRKS) }
+
+    pool
+  end
+
+  # Return weights for positive/neutral/negative quirks based on chaos
+  # Per ROADMAP:
+  # - Low chaos: 70% positive, 25% neutral, 5% negative
+  # - High chaos: 5% positive, 25% neutral, 70% negative
+  def quirk_weights_for_chaos(chaos)
+    case chaos
+    when 0..20
+      { positive: 14, neutral: 5, negative: 1 }  # ~70% / ~25% / ~5%
+    when 21..50
+      { positive: 8, neutral: 6, negative: 6 }   # ~40% / ~30% / ~30%
+    when 51..80
+      { positive: 2, neutral: 5, negative: 13 }  # ~10% / ~25% / ~65%
+    when 81..100
+      { positive: 1, neutral: 5, negative: 14 }  # ~5% / ~25% / ~70%
+    else
+      { positive: 1, neutral: 1, negative: 1 }
+    end
   end
 end
