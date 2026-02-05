@@ -1,0 +1,123 @@
+<%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
+
+<div class="max-w-4xl">
+  <%# Header %>
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-orange-500"><%= @recruit.display_name %></h1>
+    <div class="flex items-center gap-4 mt-2">
+      <span class="text-xs bg-<%= rarity_color(@recruit.rarity_tier) %>-800 text-white px-2 py-0.5 rounded">
+        <%= @recruit.rarity_tier.upcase %>
+      </span>
+      <span class="text-gray-400"><%= @recruit.race.humanize %></span>
+      <span class="text-gray-400">•</span>
+      <span class="text-gray-400"><%= @recruit.npc_class.humanize %></span>
+    </div>
+  </div>
+
+  <%# Stats Panel %>
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-6">
+    <h2 class="text-lg font-bold text-white mb-3">Stats</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div>
+        <span class="text-gray-400 text-sm">Skill</span>
+        <div class="text-<%= skill_color(@recruit.skill) %>-400 font-bold text-xl">
+          <%= @recruit.skill %>
+        </div>
+      </div>
+      <div>
+        <span class="text-gray-400 text-sm">Chaos Factor</span>
+        <div class="text-<%= chaos_color(@recruit.chaos_factor) %>-400 font-bold text-xl">
+          <%= @recruit.chaos_factor %>
+        </div>
+      </div>
+      <div>
+        <span class="text-gray-400 text-sm">Base Wage</span>
+        <div class="text-orange-400 font-bold text-xl">
+          <%= @recruit.base_wage %> cr
+        </div>
+      </div>
+      <div>
+        <span class="text-gray-400 text-sm">Hire cost</span>
+        <div class="text-lime-400 font-bold text-xl">
+          <%= @recruit.base_wage * 2 %> cr
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Quirks (if any) %>
+  <% quirks = @recruit.base_stats&.dig("quirks") || [] %>
+  <% if quirks.any? %>
+    <div class="bg-blue-900 border border-blue-700 p-4 mb-6">
+      <h2 class="text-lg font-bold text-white mb-3">Quirks</h2>
+      <div class="flex flex-wrap gap-2">
+        <% quirks.each do |quirk| %>
+          <span class="px-3 py-1 rounded text-sm
+            <%= quirk_badge_class(quirk) %>">
+            <%= quirk.humanize %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Employment History (The Resume) %>
+  <div class="bg-blue-900 border border-blue-700 p-4 mb-6">
+    <h2 class="text-lg font-bold text-white mb-3">Employment History</h2>
+
+    <% if @recruit.employment_history.is_a?(Array) && @recruit.employment_history.any? %>
+      <div class="space-y-3">
+        <% @recruit.employment_history.each do |entry| %>
+          <div class="border-l-2 border-blue-700 pl-4">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-white">
+                <%= entry["employer"] || entry[:employer] %>
+              </span>
+              <span class="text-gray-500 text-sm">
+                <%= entry["duration"] || entry[:duration] || "#{entry['duration_months'] || entry[:duration_months]} months" %>
+              </span>
+            </div>
+            <div class="text-sm mt-1">
+              <span class="text-<%= outcome_color(entry["outcome"] || entry[:outcome]) %>-400">
+                <%= entry["outcome"] || entry[:outcome] %>
+              </span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-gray-500">No prior employment history available.</p>
+    <% end %>
+  </div>
+
+  <%# Risk Assessment %>
+  <% if @recruit.chaos_factor >= 50 %>
+    <div class="bg-orange-900/50 border border-orange-500 p-4 mb-6">
+      <h2 class="text-lg font-bold text-orange-400 mb-2">⚠️ Risk Assessment</h2>
+      <p class="text-gray-300 text-sm">
+        This recruit has a <strong>high chaos factor (<%= @recruit.chaos_factor %>)</strong>.
+        Review their employment history carefully for red flags.
+        High-chaos recruits may cause incidents but are often available at a discount.
+      </p>
+    </div>
+  <% end %>
+
+  <%# Actions %>
+  <div class="flex items-center justify-between border-t border-blue-700 pt-6">
+    <div class="text-sm text-gray-400">
+      Available for: <%= distance_of_time_in_words_to_now(@recruit.expires_at) %>
+    </div>
+    <div class="flex gap-4">
+      <%= link_to recruiters_path, class: "px-4 py-2 bg-blue-800 text-gray-300 hover:text-white rounded", data: { turbo_frame: "content_panel" } do %>
+        ← Back to Recruiter
+      <% end %>
+      <%= button_to "Hire (#{@recruit.base_wage * 2} cr)", hire_recruiter_path(@recruit),
+          method: :post,
+          class: "px-6 py-2 bg-lime-800 text-white hover:bg-lime-700 rounded font-bold" %>
+    </div>
+  </div>
+
+  <div class="mt-8 text-sm text-gray-500">
+    <p>Keyboard: h to hire, q to go back, c to compare</p>
+  </div>
+</div>

@@ -38,4 +38,32 @@ module RecruitersHelper
       "gray"
     end
   end
+
+  # Color for chaos factor
+  def chaos_color(chaos)
+    if chaos >= 80
+      "red"
+    elsif chaos >= 50
+      "orange"
+    elsif chaos >= 20
+      "yellow"
+    else
+      "lime"
+    end
+  end
+
+  # CSS classes for quirk badges
+  POSITIVE_QUIRKS = %w[meticulous efficient loyal frugal lucky vigilant dedicated precise resourceful calm].freeze
+  NEGATIVE_QUIRKS = %w[lazy greedy volatile reckless paranoid saboteur alcoholic forgetful clumsy dishonest].freeze
+
+  def quirk_badge_class(quirk)
+    quirk_lower = quirk.to_s.downcase
+    if POSITIVE_QUIRKS.include?(quirk_lower)
+      "bg-lime-800 text-lime-200"
+    elsif NEGATIVE_QUIRKS.include?(quirk_lower)
+      "bg-red-800 text-red-200"
+    else
+      "bg-yellow-800 text-yellow-200"
+    end
+  end
 end
