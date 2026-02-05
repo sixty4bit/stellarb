@@ -66,4 +66,45 @@ class NavigationControllerTest < ActionDispatch::IntegrationTest
     # Alpha Centauri is reachable, so Travel button should appear
     assert_select "input[value='Travel →']"
   end
+
+  # In-Transit View Tests (4s1.3)
+  test "shows in-transit view when ship is traveling" do
+    sign_out
+    traveler = users(:traveler)
+    sign_in_as(traveler)
+
+    get navigation_index_path
+    assert_response :success
+
+    # Should show in-transit panel
+    assert_select "h3", text: /In Transit/
+    assert_select "strong", text: "Alpha Centauri"
+  end
+
+  test "hides reachable systems when ship is in transit" do
+    sign_out
+    traveler = users(:traveler)
+    sign_in_as(traveler)
+
+    get navigation_index_path
+    assert_response :success
+
+    # Should NOT show reachable systems section
+    assert_select "h3", text: /Reachable Systems/, count: 0
+    # Should NOT show warp gates section
+    assert_select "h3", text: /Warp Gates/, count: 0
+  end
+
+  test "shows ETA countdown when ship is in transit" do
+    sign_out
+    traveler = users(:traveler)
+    sign_in_as(traveler)
+
+    get navigation_index_path
+    assert_response :success
+
+    # Should show ETA section with countdown
+    assert_select "[data-controller='countdown']"
+    assert_match /ETA/, response.body
+  end
 end

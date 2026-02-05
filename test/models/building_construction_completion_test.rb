@@ -82,7 +82,7 @@ class BuildingConstructionCompletionTest < ActiveSupport::TestCase
   test "construction_complete scope returns buildings ready to activate" do
     @building.update!(
       status: "under_construction",
-      construction_completes_at: 1.minute.ago
+      construction_ends_at: 1.minute.ago
     )
 
     assert_includes Building.construction_complete, @building
@@ -91,7 +91,7 @@ class BuildingConstructionCompletionTest < ActiveSupport::TestCase
   test "construction_complete scope excludes buildings still building" do
     @building.update!(
       status: "under_construction",
-      construction_completes_at: 1.hour.from_now
+      construction_ends_at: 1.hour.from_now
     )
 
     refute_includes Building.construction_complete, @building

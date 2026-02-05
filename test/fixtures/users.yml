@@ -15,3 +15,12 @@ pilot:
   credits: 1000.0
   uuid: 01956e8a-3b2c-7d4e-8a1b-123456789def
   profile_completed_at: <%= 1.day.ago.to_fs(:db) %>
+
+traveler:
+  email: traveler@test.example
+  name: Traveler
+  short_id: u-tra
+  level_tier: 1
+  credits: 500.0
+  uuid: 01956e8a-3b2c-7d4e-8a1b-123456789aaa
+  profile_completed_at: <%= 1.day.ago.to_fs(:db) %>
