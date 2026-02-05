@@ -7,6 +7,24 @@ class RecruiterRefreshJob < ApplicationJob
   MIN_PER_CLASS = 10
   POOL_MULTIPLIER = 0.3
 
+  # Check if a RecruiterRefreshJob is already scheduled
+  # Works with both test adapter and solid_queue
+  def self.job_already_scheduled?
+    if Rails.env.test?
+      # Test adapter stores jobs in memory
+      ActiveJob::Base.queue_adapter.enqueued_jobs.any? do |job|
+        job["job_class"] == "RecruiterRefreshJob"
+      end
+    elsif defined?(SolidQueue)
+      # Production: check solid_queue scheduled jobs
+      SolidQueue::ScheduledExecution
+        .where(job_class: "RecruiterRefreshJob")
+        .exists?
+    else
+      false
+    end
+  end
+
   # Idempotent startup method - safe to call on every server boot
   # Checks pool health, refreshes if needed, ensures job is scheduled
   def self.ensure_pool_ready
@@ -20,8 +38,8 @@ class RecruiterRefreshJob < ApplicationJob
       end
     end
 
-    # Always schedule next run to ensure rotation continues
-    job.send(:schedule_next_run)
+    # Only schedule if not already scheduled (deduplication)
+    job.send(:schedule_next_run) unless job_already_scheduled?
   end
 
   def perform
@@ -69,6 +87,8 @@ class RecruiterRefreshJob < ApplicationJob
   end
 
   def schedule_next_run
+    return if self.class.job_already_scheduled?
+
     delay_minutes = rand(30..90)
     RecruiterRefreshJob.set(wait: delay_minutes.minutes).perform_later
   end
