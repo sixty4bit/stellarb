@@ -9,7 +9,7 @@
         data-action="mouseenter->keyboard-navigation#selectItem">
       <%= link_to inbox_index_path,
           class: "block px-3 py-2 hover:bg-blue-800 transition-colors rounded #{'bg-blue-800' if @active_menu == :inbox}",
-          data: { turbo_frame: "content_panel" } do %>
+          data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
         <span class="<%= 'text-orange-500' if @active_menu == :inbox %>">Inbox</span>
       <% end %>
     </li>
@@ -18,7 +18,7 @@
         data-action="mouseenter->keyboard-navigation#selectItem">
       <%= link_to chat_index_path,
           class: "block px-3 py-2 hover:bg-blue-800 transition-colors rounded #{'bg-blue-800' if @active_menu == :chat}",
-          data: { turbo_frame: "content_panel" } do %>
+          data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
         <span class="<%= 'text-orange-500' if @active_menu == :chat %>">Chat</span>
       <% end %>
     </li>
@@ -27,7 +27,7 @@
         data-action="mouseenter->keyboard-navigation#selectItem">
       <%= link_to navigation_index_path,
           class: "block px-3 py-2 hover:bg-blue-800 transition-colors rounded #{'bg-blue-800' if @active_menu == :navigation}",
-          data: { turbo_frame: "content_panel" } do %>
+          data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
         <span class="<%= 'text-orange-500' if @active_menu == :navigation %>">Navigation</span>
       <% end %>
     </li>
@@ -36,14 +36,14 @@
         data-action="mouseenter->keyboard-navigation#selectItem">
       <%= link_to systems_path,
           class: "block px-3 py-2 hover:bg-blue-800 transition-colors rounded #{'bg-blue-800' if @active_menu == :systems}",
-          data: { turbo_frame: "content_panel" } do %>
+          data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
         <span class="<%= 'text-orange-500' if @active_menu == :systems %>">Systems</span>
       <% end %>
       <ul class="pl-6 mt-1 space-y-1 hidden group-hover:block">
         <li data-keyboard-navigation-target="menuItem">
           <%= link_to buildings_path,
               class: "block px-3 py-1 hover:bg-blue-800 text-sm rounded",
-              data: { turbo_frame: "content_panel" } do %>
+              data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
             Buildings
           <% end %>
         </li>
@@ -54,21 +54,21 @@
         data-action="mouseenter->keyboard-navigation#selectItem">
       <%= link_to ships_path,
           class: "block px-3 py-2 hover:bg-blue-800 transition-colors rounded #{'bg-blue-800' if @active_menu == :ships}",
-          data: { turbo_frame: "content_panel" } do %>
+          data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
         <span class="<%= 'text-orange-500' if @active_menu == :ships %>">Ships</span>
       <% end %>
       <ul class="pl-6 mt-1 space-y-1 hidden group-hover:block">
         <li data-keyboard-navigation-target="menuItem">
           <%= link_to trading_ships_path,
               class: "block px-3 py-1 hover:bg-blue-800 text-sm rounded",
-              data: { turbo_frame: "content_panel" } do %>
+              data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
             Trading
           <% end %>
         </li>
         <li data-keyboard-navigation-target="menuItem">
           <%= link_to combat_ships_path,
               class: "block px-3 py-1 hover:bg-blue-800 text-sm rounded",
-              data: { turbo_frame: "content_panel" } do %>
+              data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
             Combat
           <% end %>
         </li>
@@ -79,7 +79,7 @@
         data-action="mouseenter->keyboard-navigation#selectItem">
       <%= link_to workers_path,
           class: "block px-3 py-2 hover:bg-blue-800 transition-colors rounded #{'bg-blue-800' if @active_menu == :workers}",
-          data: { turbo_frame: "content_panel" } do %>
+          data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
         <span class="<%= 'text-orange-500' if @active_menu == :workers %>">Workers</span>
       <% end %>
     </li>
@@ -88,7 +88,7 @@
         data-action="mouseenter->keyboard-navigation#selectItem">
       <%= link_to about_path,
           class: "block px-3 py-2 hover:bg-blue-800 transition-colors rounded #{'bg-blue-800' if @active_menu == :about}",
-          data: { turbo_frame: "content_panel" } do %>
+          data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
         <span class="<%= 'text-orange-500' if @active_menu == :about %>">About</span>
       <% end %>
     </li>
