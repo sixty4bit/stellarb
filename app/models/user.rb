@@ -13,6 +13,7 @@ class User < ApplicationRecord
   has_many :flight_records, dependent: :destroy
   has_many :player_quests, dependent: :destroy
   has_many :quests, through: :player_quests
+  has_many :messages, dependent: :destroy
 
   # Validations
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }

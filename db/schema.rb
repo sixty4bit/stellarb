@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_153245) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_05_160521) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -57,9 +57,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_153245) do
   end
 
   create_table "hired_recruits", force: :cascade do |t|
+    t.integer "age_days", default: 0, null: false
     t.integer "chaos_factor"
     t.datetime "created_at", null: false
     t.jsonb "employment_history", default: []
+    t.integer "lifespan_days"
     t.string "npc_class"
     t.bigint "original_recruit_id"
     t.string "race"
@@ -107,6 +109,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_153245) do
     t.index ["hired_recruit_id"], name: "index_incidents_on_hired_recruit_id"
     t.index ["is_pip_infestation"], name: "index_incidents_on_is_pip_infestation", where: "((is_pip_infestation = true) AND (resolved_at IS NULL))"
     t.index ["uuid"], name: "index_incidents_on_uuid", unique: true
+  end
+
+  create_table "messages", force: :cascade do |t|
+    t.text "body", null: false
+    t.string "category"
+    t.datetime "created_at", null: false
+    t.string "from", null: false
+    t.datetime "read_at"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "urgent", default: false, null: false
+    t.bigint "user_id", null: false
+    t.string "uuid", limit: 36
+    t.index ["user_id", "category"], name: "index_messages_on_user_id_and_category"
+    t.index ["user_id", "read_at"], name: "index_messages_on_user_id_and_read_at"
+    t.index ["user_id", "urgent"], name: "index_messages_on_user_id_and_urgent"
+    t.index ["user_id"], name: "index_messages_on_user_id"
+    t.index ["uuid"], name: "index_messages_on_uuid", unique: true
   end
 
   create_table "player_hubs", force: :cascade do |t|
@@ -317,6 +337,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_153245) do
   add_foreign_key "hirings", "hired_recruits"
   add_foreign_key "hirings", "users"
   add_foreign_key "incidents", "hired_recruits"
+  add_foreign_key "messages", "users"
   add_foreign_key "player_hubs", "systems"
   add_foreign_key "player_hubs", "users", column: "owner_id"
   add_foreign_key "price_deltas", "systems"
