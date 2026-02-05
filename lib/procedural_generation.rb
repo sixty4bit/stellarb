@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'digest'
+require_relative 'procedural_generation/seed_helpers'
+require_relative 'procedural_generation/reserved_system'
 
 module ProceduralGeneration
   STAR_TYPES = %w[
@@ -30,6 +32,11 @@ module ProceduralGeneration
     # Special case for The Cradle
     if x == 0 && y == 0 && z == 0
       return generate_cradle
+    end
+
+    # Special case for reserved Talos Arm systems
+    if ReservedSystem.reserved?(x, y, z)
+      return ReservedSystem.generate(x, y, z)
     end
 
     # Generate deterministic seed
