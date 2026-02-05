@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_145127) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_05_153245) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -259,10 +259,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_145127) do
     t.string "name"
     t.string "short_id"
     t.integer "sign_in_count", default: 0
+    t.string "tutorial_phase", default: "cradle", null: false
     t.datetime "updated_at", null: false
     t.string "uuid", limit: 36
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["short_id"], name: "index_users_on_short_id", unique: true
+    t.index ["tutorial_phase"], name: "index_users_on_tutorial_phase"
     t.index ["uuid"], name: "index_users_on_uuid", unique: true
   end
 
