@@ -165,6 +165,23 @@ class User < ApplicationRecord
   end
 
   # ===========================================
+  # Colonial Ticket (Phase 2 -> Phase 3)
+  # ===========================================
+
+  # Check if user has the Colonial Ticket (passed Proving Ground)
+  # The ticket is granted when advancing to emigration phase
+  # @return [Boolean]
+  def has_colonial_ticket?
+    emigration? || graduated?
+  end
+
+  # Check if user can emigrate (has ticket and is in emigration phase)
+  # @return [Boolean]
+  def can_emigrate?
+    emigration?
+  end
+
+  # ===========================================
   # Proving Ground (Phase 2)
   # ===========================================
 
