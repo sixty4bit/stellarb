@@ -74,9 +74,27 @@
       <% end %>
     </div>
   <% else %>
-    <div class="bg-blue-900 border border-blue-700 p-8 text-center">
-      <p class="text-gray-400">No recruits available at your level.</p>
-      <p class="text-sm text-gray-500 mt-2">Check back later when the pool refreshes.</p>
+    <%# Enhanced empty state for new players %>
+    <div class="bg-blue-900 border border-blue-700 p-8">
+      <div class="text-center mb-6">
+        <div class="text-4xl mb-3">👷</div>
+        <h2 class="text-xl font-bold text-orange-400 mb-2">No Recruits Available</h2>
+        <p class="text-gray-400">The recruit pool is currently empty at your level.</p>
+      </div>
+
+      <div class="bg-blue-950 border border-blue-800 p-4 rounded mb-4">
+        <h3 class="text-lime-400 font-bold mb-2">💡 About Workers</h3>
+        <p class="text-gray-300 text-sm">
+          Workers help your fleet operate more efficiently. Hire Navigators to plot faster routes,
+          Engineers to maintain your ships, Marines for protection, and Governors to manage stations.
+        </p>
+      </div>
+
+      <div class="text-center">
+        <p class="text-gray-400 text-sm">
+          🕐 <span class="text-lime-400">Check back soon</span> — new recruits appear regularly as the pool refreshes.
+        </p>
+      </div>
     </div>
   <% end %>
 
