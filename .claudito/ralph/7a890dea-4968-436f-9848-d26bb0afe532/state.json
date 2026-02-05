@@ -1,0 +1,16 @@
+{
+  "taskId": "7a890dea-4968-436f-9848-d26bb0afe532",
+  "projectId": "_Users_sia_clawd_stellarb",
+  "config": {
+    "taskDescription": "Your ROADMAP can be found at docs/ROADMAP.md. Before you start a session create a branch and push it to GitHub. Before you end a session commit your changes and push the branch to GitHub again. Feel free to merge successful iterations to main.",
+    "maxTurns": 5,
+    "workerModel": "claude-opus-4-20250514",
+    "reviewerModel": "claude-sonnet-4-20250514"
+  },
+  "currentIteration": 1,
+  "status": "worker_running",
+  "summaries": [],
+  "feedback": [],
+  "createdAt": "2026-02-05T10:56:30.777Z",
+  "updatedAt": "2026-02-05T10:56:30.783Z"
+}

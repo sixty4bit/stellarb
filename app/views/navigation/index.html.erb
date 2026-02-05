@@ -1,0 +1,77 @@
+<%= render 'shared/breadcrumbs' %>
+
+<div class="max-w-6xl">
+  <h2 class="text-2xl font-bold mb-4 text-orange-500">Navigation</h2>
+
+  <!-- Current Location -->
+  <div class="bg-blue-900 border border-blue-700 rounded p-4 mb-6">
+    <h3 class="text-lg font-semibold text-lime-400 mb-2">Current Location</h3>
+    <div class="grid grid-cols-2 gap-4 text-sm">
+      <div>
+        <span class="text-gray-400">System:</span>
+        <span class="text-white ml-2"><%= @current_system[:name] %></span>
+      </div>
+      <div>
+        <span class="text-gray-400">Coordinates:</span>
+        <span class="text-white ml-2">(<%= @current_system[:coordinates][:x] %>, <%= @current_system[:coordinates][:y] %>, <%= @current_system[:coordinates][:z] %>)</span>
+      </div>
+      <div>
+        <span class="text-gray-400">Star Type:</span>
+        <span class="text-white ml-2"><%= @current_system[:star_type].humanize %></span>
+      </div>
+      <div>
+        <span class="text-gray-400">Hazard Level:</span>
+        <span class="text-white ml-2"><%= @current_system[:hazard_level] %>%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nearby Systems -->
+  <div class="bg-blue-900 border border-blue-700 rounded p-4 mb-6">
+    <h3 class="text-lg font-semibold text-lime-400 mb-2">Nearby Systems</h3>
+    <% if @nearby_systems.any? %>
+      <div class="space-y-2">
+        <% @nearby_systems.each do |system| %>
+          <div class="flex items-center justify-between p-2 hover:bg-blue-800 rounded cursor-pointer">
+            <div>
+              <span class="text-white"><%= system[:name] %></span>
+              <span class="text-gray-500 text-sm ml-2">(<%= system[:distance] %> LY)</span>
+            </div>
+            <div class="text-sm">
+              <span class="text-gray-400">Fuel cost:</span>
+              <span class="text-orange-500 ml-1"><%= system[:fuel_cost] %></span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-gray-500">No systems within fuel range. Upgrade your ship or refuel to explore further.</p>
+    <% end %>
+  </div>
+
+  <!-- Active Routes -->
+  <div class="bg-blue-900 border border-blue-700 rounded p-4">
+    <h3 class="text-lg font-semibold text-lime-400 mb-2">Active Routes</h3>
+    <% if @active_routes.any? %>
+      <div class="space-y-2">
+        <% @active_routes.each do |route| %>
+          <div class="flex items-center justify-between p-2 hover:bg-blue-800 rounded">
+            <div>
+              <span class="text-white"><%= route[:name] %></span>
+              <span class="text-gray-500 text-sm ml-2">→ <%= route[:stops].join(" → ") %></span>
+            </div>
+            <div class="text-sm">
+              <span class="text-lime-400"><%= route[:profit_per_hour] %> cr/hr</span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-gray-500">No active trade routes. Create routes from the Ships → Trading menu.</p>
+    <% end %>
+  </div>
+
+  <div class="mt-6 text-sm text-gray-500">
+    <p>Press <span class="text-lime-400">w</span> to warp • <span class="text-lime-400">s</span> to scan • <span class="text-lime-400">r</span> to manage routes</p>
+  </div>
+</div>

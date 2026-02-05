@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_022059) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_05_110845) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -77,6 +77,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_022059) do
     t.index ["level_tier"], name: "index_recruits_on_level_tier"
   end
 
+  create_table "routes", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "loop_count", default: 0
+    t.string "name"
+    t.decimal "profit_per_hour", default: "0.0"
+    t.bigint "ship_id"
+    t.string "short_id", null: false
+    t.string "status", default: "active"
+    t.jsonb "stops", default: []
+    t.decimal "total_profit", default: "0.0"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["ship_id"], name: "index_routes_on_ship_id"
+    t.index ["short_id"], name: "index_routes_on_short_id", unique: true
+    t.index ["status"], name: "index_routes_on_status"
+    t.index ["user_id"], name: "index_routes_on_user_id"
+  end
+
   create_table "ships", force: :cascade do |t|
     t.jsonb "cargo", default: {}
     t.datetime "created_at", null: false
@@ -97,6 +115,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_022059) do
     t.index ["current_system_id"], name: "index_ships_on_current_system_id"
     t.index ["short_id"], name: "index_ships_on_short_id", unique: true
     t.index ["user_id"], name: "index_ships_on_user_id"
+  end
+
+  create_table "system_visits", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "first_visited_at", null: false
+    t.datetime "last_visited_at", null: false
+    t.bigint "system_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.integer "visit_count", default: 1
+    t.index ["system_id"], name: "index_system_visits_on_system_id"
+    t.index ["user_id", "system_id"], name: "index_system_visits_on_user_id_and_system_id", unique: true
+    t.index ["user_id"], name: "index_system_visits_on_user_id"
   end
 
   create_table "systems", force: :cascade do |t|
@@ -134,7 +165,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_022059) do
   add_foreign_key "hired_recruits", "recruits", column: "original_recruit_id"
   add_foreign_key "hirings", "hired_recruits"
   add_foreign_key "hirings", "users"
+  add_foreign_key "routes", "ships"
+  add_foreign_key "routes", "users"
   add_foreign_key "ships", "systems", column: "current_system_id"
   add_foreign_key "ships", "users"
+  add_foreign_key "system_visits", "systems"
+  add_foreign_key "system_visits", "users"
   add_foreign_key "systems", "users", column: "discovered_by_id"
 end

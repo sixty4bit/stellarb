@@ -1,0 +1,22 @@
+{
+  "id": "_Users_sia_clawd_stellarb",
+  "name": "StellArb",
+  "path": "/Users/sia/clawd/stellarb",
+  "status": "running",
+  "currentConversationId": "dc319cc1-ad63-4436-a3b3-789d4e3e2704",
+  "nextItem": null,
+  "currentItem": null,
+  "lastContextUsage": {
+    "inputTokens": 49,
+    "outputTokens": 1095,
+    "totalTokens": 1144,
+    "cacheCreationInputTokens": 8932,
+    "cacheReadInputTokens": 199312,
+    "maxContextTokens": 200000,
+    "percentUsed": 0.6
+  },
+  "permissionOverrides": null,
+  "modelOverride": null,
+  "createdAt": "2026-02-04T21:04:13.782Z",
+  "updatedAt": "2026-02-05T10:56:30.780Z"
+}

@@ -5,6 +5,9 @@ class User < ApplicationRecord
   has_many :discovered_systems, class_name: 'System', foreign_key: 'discovered_by_id'
   has_many :hirings, dependent: :destroy
   has_many :hired_recruits, through: :hirings
+  has_many :system_visits, dependent: :destroy
+  has_many :visited_systems, through: :system_visits, source: :system
+  has_many :routes, dependent: :destroy
 
   # Validations
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }

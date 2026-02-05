@@ -1,0 +1,17 @@
+<% if @breadcrumbs.present? %>
+  <nav class="breadcrumb mb-4 text-sm">
+    <% @breadcrumbs.each_with_index do |crumb, index| %>
+      <% if index > 0 %>
+        <span class="text-gray-500 mx-2">&gt;</span>
+      <% end %>
+
+      <% if crumb[:path] && index < @breadcrumbs.length - 1 %>
+        <%= link_to crumb[:name], crumb[:path],
+            class: "text-orange-500 hover:text-orange-400",
+            data: { turbo_frame: "content_panel" } %>
+      <% else %>
+        <span class="text-white"><%= crumb[:name] %></span>
+      <% end %>
+    <% end %>
+  </nav>
+<% end %>
