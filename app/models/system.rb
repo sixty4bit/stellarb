@@ -162,6 +162,53 @@ class System < ApplicationRecord
     properties&.dig("base_prices") || {}
   end
 
+  # ===========================================
+  # Mineral Distribution
+  # ===========================================
+
+  # Get the raw mineral distribution for this system
+  # @return [Hash] Planet index => {minerals: [], abundance: symbol}
+  def mineral_distribution
+    properties&.dig("mineral_distribution") || {}
+  end
+
+  # Get all unique minerals available in this system
+  # @return [Array<String>] List of mineral names
+  def available_minerals
+    mineral_distribution.values.flat_map do |planet_data|
+      planet_data["minerals"] || planet_data[:minerals] || []
+    end.uniq
+  end
+
+  # Check if a specific mineral is available in this system
+  # @param mineral [String] Mineral name to check
+  # @return [Boolean] True if available
+  def mineral_available?(mineral)
+    available_minerals.include?(mineral.to_s)
+  end
+
+  # Get minerals available on a specific planet
+  # @param planet_index [Integer] Zero-based planet index
+  # @return [Hash, nil] Planet mineral data or nil if planet doesn't exist
+  def minerals_on_planet(planet_index)
+    mineral_distribution[planet_index] ||
+      mineral_distribution[planet_index.to_s]
+  end
+
+  # Get all minerals of a specific tier in this system
+  # @param tier [Symbol] :basic, :intermediate, :advanced, or :rare
+  # @return [Array<String>] Minerals of that tier present in this system
+  def minerals_by_tier(tier)
+    tier_minerals = MineralDistribution.minerals_for_tier(tier)
+    available_minerals & tier_minerals
+  end
+
+  # Check if this system is in the starter zone (near The Cradle)
+  # @return [Boolean] True if in starter zone
+  def starter_zone?
+    MineralDistribution.starter_zone?(x, y, z)
+  end
+
   private
 
   def generate_short_id

@@ -30,6 +30,11 @@ class HiredRecruit < ApplicationRecord
   # Delegate some methods to maintain consistency
   delegate :rarity_tier, to: :original_recruit, allow_nil: true
 
+  # Generate a display name (NPCs don't have stored names - derived from class and id)
+  def name
+    "#{npc_class.humanize} ##{id}"
+  end
+
   # Calculate wage with modifiers
   def calculate_wage(modifier = 1.0)
     base = skill * 10

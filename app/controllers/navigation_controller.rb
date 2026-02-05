@@ -3,7 +3,8 @@ class NavigationController < ApplicationController
 
   def index
     # Get the user's current location
-    @current_system = current_user.ships.first&.current_system || generate_cradle_system
+    system = current_user.ships.first&.current_system
+    @current_system = system ? system_to_hash(system) : generate_cradle_system
 
     # Get nearby systems within fuel range
     @nearby_systems = [] # TODO: Calculate based on ship fuel range
@@ -27,5 +28,16 @@ class NavigationController < ApplicationController
   def generate_cradle_system
     # Generate The Cradle system for new players
     ProceduralGeneration.generate_system(0, 0, 0)
+  end
+
+  # Convert a System model to hash format for the view
+  def system_to_hash(system)
+    {
+      name: system.name,
+      coordinates: { x: system.x, y: system.y, z: system.z },
+      star_type: system.properties&.dig("star_type") || "unknown",
+      planet_count: system.properties&.dig("planet_count") || 0,
+      hazard_level: system.properties&.dig("hazard_level") || 0
+    }
   end
 end
