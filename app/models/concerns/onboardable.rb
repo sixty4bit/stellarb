@@ -65,7 +65,8 @@ module Onboardable
   def advance_onboarding_step!
     return if onboarding_complete?
 
-    current_index = ONBOARDING_STEPS.index(onboarding_step)
+    current_step = onboarding_step
+    current_index = ONBOARDING_STEPS.index(current_step)
     return if current_index.nil?
 
     next_index = current_index + 1
@@ -76,6 +77,9 @@ module Onboardable
     else
       update!(onboarding_step: ONBOARDING_STEPS[next_index])
     end
+
+    # Trigger step-specific actions after advancement
+    on_navigation_tutorial_complete! if current_step == "navigation_tutorial"
   end
 
   # Skip onboarding entirely
@@ -90,6 +94,32 @@ module Onboardable
     update!(
       onboarding_step: ONBOARDING_STEPS.first,
       onboarding_completed_at: nil
+    )
+  end
+
+  private
+
+  # Called when user completes navigation tutorial
+  # Creates an inbox message celebrating their progress
+  def on_navigation_tutorial_complete!
+    messages.create!(
+      title: "Navigation Training Complete!",
+      from: "Navigation Academy",
+      category: "achievement",
+      body: <<~BODY.strip
+        Congratulations, pilot!
+
+        You've mastered the basics of stellar navigation. The galaxy is now truly open to you.
+
+        Your navigation skills allow you to:
+        • Plot courses between star systems
+        • Discover new locations and trade routes
+        • Find the most profitable paths for your cargo
+
+        Keep exploring - there's always more to discover among the stars!
+
+        — The Navigation Academy
+      BODY
     )
   end
 end

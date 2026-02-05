@@ -141,4 +141,33 @@ class OnboardingStateTest < ActiveSupport::TestCase
     assert_equal "profile_setup", @user.onboarding_step
     assert_nil @user.onboarding_completed_at
   end
+
+  # ===========================================
+  # Navigation Tutorial Completion Message
+  # ===========================================
+
+  test "completing navigation tutorial creates inbox message" do
+    @user.update!(onboarding_step: "navigation_tutorial")
+    initial_message_count = @user.messages.count
+
+    @user.advance_onboarding_step!
+
+    assert_equal initial_message_count + 1, @user.messages.count
+    message = @user.messages.last
+    assert_equal "Navigation Training Complete!", message.title
+    assert_equal "Navigation Academy", message.from
+    assert_equal "achievement", message.category
+    assert_match /navigation/i, message.body
+  end
+
+  test "navigation completion message is not created for other step advances" do
+    @user.update!(onboarding_step: "ships_tour")
+    initial_message_count = @user.messages.count
+
+    @user.advance_onboarding_step!
+
+    # No new navigation message should be created
+    new_messages = @user.messages.where(title: "Navigation Training Complete!")
+    assert_equal 0, new_messages.count
+  end
 end
