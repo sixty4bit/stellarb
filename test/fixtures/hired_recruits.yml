@@ -1,0 +1,28 @@
+# Test hired recruit fixtures
+hired_engineer:
+  original_recruit: engineer_bob
+  race: vex
+  npc_class: engineer
+  skill: 65
+  chaos_factor: 15
+  stats:
+    efficiency: 0.8
+    reliability: 0.9
+  employment_history:
+    - employer: Stellar Mining Corp
+      duration_months: 14
+      outcome: Contract completed
+
+hired_navigator:
+  original_recruit: navigator_zara
+  race: solari
+  npc_class: navigator
+  skill: 82
+  chaos_factor: 45
+  stats:
+    efficiency: 0.9
+    reliability: 0.6
+  employment_history:
+    - employer: Deep Space Freight
+      duration_months: 3
+      outcome: Creative differences

@@ -1,0 +1,51 @@
+# Test recruit fixtures (shared pool)
+engineer_bob:
+  level_tier: 1
+  race: vex
+  npc_class: engineer
+  skill: 65
+  chaos_factor: 15
+  available_at: <%= 1.hour.ago %>
+  expires_at: <%= 2.hours.from_now %>
+  base_stats:
+    efficiency: 0.8
+    reliability: 0.9
+  employment_history:
+    - employer: Stellar Mining Corp
+      duration_months: 14
+      outcome: Contract completed
+
+navigator_zara:
+  level_tier: 1
+  race: solari
+  npc_class: navigator
+  skill: 82
+  chaos_factor: 45
+  available_at: <%= 1.hour.ago %>
+  expires_at: <%= 2.hours.from_now %>
+  base_stats:
+    efficiency: 0.9
+    reliability: 0.6
+  employment_history:
+    - employer: Deep Space Freight
+      duration_months: 3
+      outcome: Creative differences
+    - employer: Void Runners
+      duration_months: 8
+      outcome: Company dissolved
+
+marine_grunt:
+  level_tier: 1
+  race: krog
+  npc_class: marine
+  skill: 55
+  chaos_factor: 60
+  available_at: <%= 1.hour.ago %>
+  expires_at: <%= 2.hours.from_now %>
+  base_stats:
+    combat: 0.85
+    discipline: 0.5
+  employment_history:
+    - employer: Private Security
+      duration_months: 2
+      outcome: Cargo incident (T2)

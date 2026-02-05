@@ -1,0 +1,14 @@
+# Test hiring fixtures
+pilot_engineer:
+  user: pilot
+  hired_recruit: hired_engineer
+  hired_at: <%= 1.week.ago %>
+  wage: 650
+  status: active
+
+pilot_navigator:
+  user: pilot
+  hired_recruit: hired_navigator
+  hired_at: <%= 3.days.ago %>
+  wage: 1230
+  status: active
