@@ -64,46 +64,43 @@ export default class extends Controller {
     // Find the menu item to highlight
     const menuItem = document.querySelector(this.highlightValue)
     if (menuItem) {
-      // Add highlight classes
+      // Add highlight classes - uses CSS animation defined in application.css
       menuItem.classList.add(
         "ring-2",
         "ring-orange-500",
         "ring-offset-2",
         "ring-offset-blue-950",
-        "bg-blue-800",
+        "bg-orange-500/20",
+        "rounded",
         "onboarding-highlight"
       )
 
       // Store reference for cleanup
       this.highlightedElement = menuItem
 
-      // Scroll into view if needed
-      menuItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      // Scroll into view if needed, with offset for sidebar
+      menuItem.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }
 
   removeHighlight() {
+    const highlightClasses = [
+      "ring-2",
+      "ring-orange-500",
+      "ring-offset-2",
+      "ring-offset-blue-950",
+      "bg-orange-500/20",
+      "rounded",
+      "onboarding-highlight"
+    ]
+
     if (this.highlightedElement) {
-      this.highlightedElement.classList.remove(
-        "ring-2",
-        "ring-orange-500",
-        "ring-offset-2",
-        "ring-offset-blue-950",
-        "bg-blue-800",
-        "onboarding-highlight"
-      )
+      this.highlightedElement.classList.remove(...highlightClasses)
     }
 
     // Also remove any leftover highlights
     document.querySelectorAll('.onboarding-highlight').forEach(el => {
-      el.classList.remove(
-        "ring-2",
-        "ring-orange-500",
-        "ring-offset-2",
-        "ring-offset-blue-950",
-        "bg-blue-800",
-        "onboarding-highlight"
-      )
+      el.classList.remove(...highlightClasses)
     })
   }
 
