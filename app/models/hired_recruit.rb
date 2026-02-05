@@ -8,6 +8,26 @@ class HiredRecruit < ApplicationRecord
   RACES = Recruit::RACES
   NPC_CLASSES = Recruit::NPC_CLASSES
 
+  # Wage calculation constants
+  # Based on ROADMAP Section 4.4.3: "The Wage Spiral"
+  # Higher skill NPCs demand exponentially higher wages
+  # Target: skill_90_wage > skill_80_wage * 1.5
+  # Target: skill_95_wage > skill_75_wage * 3 (legendary premium)
+  BASE_WAGE = 50                # Base wage for skill 1
+  GROWTH_FACTOR = 1.06          # Exponential growth factor per skill point
+                                # 1.06^10 = 1.79x (passes skill 80->90 test)
+                                # 1.06^20 = 3.21x (passes skill 75->95 test)
+  CHAOS_DISCOUNT_FACTOR = 0.003 # Max 30% discount at chaos 100
+
+  # Racial wage modifiers (per ROADMAP Section 10.3)
+  # Vex: Trait "Greedy" (Higher Salary)
+  RACIAL_WAGE_MODIFIERS = {
+    'vex' => 1.15,       # +15% wages (Greedy trait)
+    'solari' => 1.0,     # Neutral
+    'krog' => 0.95,      # -5% (less negotiation savvy)
+    'myrmidon' => 0.85   # -15% (hive workers, cheaper)
+  }.freeze
+
   # Display name - use custom_name from hiring if set, otherwise class + race
   def name
     "#{npc_class.humanize} (#{race.humanize})"
@@ -32,6 +52,25 @@ class HiredRecruit < ApplicationRecord
     )
   end
 
+  # Class method for exponential wage calculation
+  # Can be used without an instance for projections/calculations
+  def self.exponential_wage(skill:, chaos_factor: 0, race: nil, modifier: 1.0)
+    # Exponential formula: base * growth_factor^skill
+    # This ensures skill 90 wage > skill 80 wage * 1.5 (ROADMAP requirement)
+    base = BASE_WAGE * (GROWTH_FACTOR ** skill)
+
+    # Apply chaos discount (risky hires are cheaper)
+    # chaos_factor 0 = no discount, 100 = max ~30% discount
+    chaos_discount = 1.0 - (chaos_factor * CHAOS_DISCOUNT_FACTOR)
+
+    # Apply racial modifier
+    racial_modifier = race ? RACIAL_WAGE_MODIFIERS.fetch(race, 1.0) : 1.0
+
+    # Calculate final wage
+    wage = base * chaos_discount * racial_modifier * modifier
+    wage.round
+  end
+
   # Delegate some methods to maintain consistency
   delegate :rarity_tier, to: :original_recruit, allow_nil: true
 
@@ -40,13 +79,15 @@ class HiredRecruit < ApplicationRecord
     "#{npc_class.humanize} ##{id}"
   end
 
-  # Calculate wage with modifiers
+  # Calculate wage using exponential formula
+  # This method uses instance attributes and delegates to the class method
   def calculate_wage(modifier = 1.0)
-    base = skill * 10
-    base *= 1.5 if skill > 80
-    base *= 2.0 if skill > 90
-    base *= modifier
-    base.round
+    self.class.exponential_wage(
+      skill: skill,
+      chaos_factor: chaos_factor,
+      race: race,
+      modifier: modifier
+    )
   end
 
   # Add incident to employment history
