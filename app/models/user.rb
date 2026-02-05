@@ -242,8 +242,34 @@ class User < ApplicationRecord
   end
 
   # ===========================================
-  # Emigration (Phase 3: The Drop)
+  # Building Purchase
   # ===========================================
+
+  # Check if user can afford a building
+  # @param function [String] Building function
+  # @param tier [Integer] Building tier (1-5)
+  # @param race [String] Building race
+  # @return [Boolean]
+  def can_afford_building?(function:, tier:, race:)
+    cost = Building.cost_for(function: function, tier: tier, race: race)
+    credits >= cost
+  end
+
+  # Deduct building cost from user credits
+  # @param function [String] Building function
+  # @param tier [Integer] Building tier (1-5)
+  # @param race [String] Building race
+  # @raise [InsufficientCreditsError] If user doesn't have enough credits
+  def deduct_building_cost!(function:, tier:, race:)
+    cost = Building.cost_for(function: function, tier: tier, race: race)
+    raise InsufficientCreditsError, "Insufficient credits (need #{cost}, have #{credits.to_i})" if credits < cost
+
+    update!(credits: credits - cost)
+  end
+
+  # ===========================================
+  # Emigration (Phase 3: The Drop)
+  # =========================================== 
 
   # Complete emigration by teleporting to a player hub
   # This is a one-way trip - instant transport to the frontier
