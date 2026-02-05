@@ -10,5 +10,82 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
-  # root "posts#index"
+  root "inbox#index"
+
+  # Main game screens
+  resources :inbox, only: [:index, :show] do
+    member do
+      post :mark_read
+      delete :archive
+    end
+  end
+
+  resources :chat, only: [:index, :create]
+
+  resources :navigation, only: [:index] do
+    collection do
+      post :warp
+    end
+  end
+
+  resources :systems, only: [:index, :show] do
+    resources :buildings, only: [:index]
+    resources :market, only: [:index] do
+      collection do
+        post :buy
+        post :sell
+      end
+    end
+  end
+
+  resources :buildings, only: [:index, :show, :new, :create] do
+    member do
+      post :repair
+      post :upgrade
+      delete :demolish
+    end
+  end
+
+  resources :ships, only: [:index, :show, :new, :create] do
+    member do
+      post :repair
+      patch :assign_crew
+      patch :set_navigation
+    end
+
+    collection do
+      get :trading
+      get :combat
+    end
+  end
+
+  resources :routes, only: [:index, :show, :new, :create, :destroy] do
+    member do
+      post :pause
+      post :resume
+      patch :edit_stops
+    end
+  end
+
+  resources :workers, only: [:index, :show] do
+    collection do
+      get :recruiter
+      post :hire
+    end
+
+    member do
+      post :fire
+      patch :assign
+    end
+  end
+
+  get :about, to: 'about#index'
+
+  # Authentication (passwordless)
+  resources :sessions, only: [:new, :create] do
+    collection do
+      get :check_email
+      delete :destroy
+    end
+  end
 end
