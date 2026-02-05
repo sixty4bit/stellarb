@@ -131,16 +131,29 @@
         🔧 Repair
       <% end %>
       
-      <% if @building.tier < 5 %>
+      <% if @building.upgradeable? %>
+        <% upgrade_cost = @building.upgrade_cost %>
+        <% can_afford = current_user.credits >= upgrade_cost %>
         <%= button_to upgrade_building_path(@building),
             method: :post,
-            class: "px-4 py-2 bg-orange-800 hover:bg-orange-700 border border-orange-600 transition-colors",
-            data: { turbo_frame: "content_panel" } do %>
-          ⬆ Upgrade to T<%= @building.tier + 1 %>
+            class: "px-4 py-2 #{can_afford ? 'bg-orange-800 hover:bg-orange-700 border-orange-600' : 'bg-gray-700 border-gray-600 opacity-75'} border transition-colors",
+            disabled: !can_afford,
+            data: { 
+              turbo_frame: "content_panel",
+              confirm: "Upgrade #{@building.name} to Tier #{@building.tier + 1} for #{number_with_delimiter(upgrade_cost)} credits?"
+            } do %>
+          ⬆ Upgrade to T<%= @building.tier + 1 %> 
+          <span class="text-xs <%= can_afford ? 'text-orange-300' : 'text-red-400' %>">
+            (<%= number_with_delimiter(upgrade_cost) %> cr)
+          </span>
         <% end %>
-      <% else %>
+      <% elsif @building.tier >= 5 %>
         <span class="px-4 py-2 bg-gray-800 border border-gray-700 text-gray-500 cursor-not-allowed">
           Max Tier
+        </span>
+      <% else %>
+        <span class="px-4 py-2 bg-gray-800 border border-gray-700 text-gray-500 cursor-not-allowed">
+          Cannot Upgrade
         </span>
       <% end %>
     <% end %>

@@ -112,8 +112,19 @@ class BuildingsController < ApplicationController
   end
 
   def upgrade
-    # TODO: Implement upgrade logic
-    redirect_to @building, notice: "Building upgrade started!"
+    unless @building.upgradeable?
+      redirect_to @building, alert: "Building cannot be upgraded (max tier or not operational)."
+      return
+    end
+
+    begin
+      @building.upgrade!(user: current_user)
+      redirect_to @building, notice: "Building upgraded to Tier #{@building.tier}!"
+    rescue User::InsufficientCreditsError => e
+      redirect_to @building, alert: "Upgrade failed: #{e.message}"
+    rescue Building::UpgradeError => e
+      redirect_to @building, alert: "Upgrade failed: #{e.message}"
+    end
   end
 
   def demolish

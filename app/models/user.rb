@@ -267,6 +267,15 @@ class User < ApplicationRecord
     update!(credits: credits - cost)
   end
 
+  # Deduct a specific amount of credits
+  # @param amount [Integer] Amount to deduct
+  # @raise [InsufficientCreditsError] If user doesn't have enough credits
+  def deduct_credits!(amount)
+    raise InsufficientCreditsError, "Insufficient credits (need #{amount}, have #{credits.to_i})" if credits < amount
+
+    update!(credits: credits - amount)
+  end
+
   # ===========================================
   # Emigration (Phase 3: The Drop)
   # =========================================== 

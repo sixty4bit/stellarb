@@ -1,6 +1,9 @@
 class Building < ApplicationRecord
   include TripleId
 
+  # Custom Errors
+  class UpgradeError < StandardError; end
+
   # Associations
   belongs_to :user
   belongs_to :system
@@ -12,6 +15,7 @@ class Building < ApplicationRecord
   RACES = %w[vex solari krog myrmidon].freeze
   FUNCTIONS = %w[extraction refining logistics civic defense].freeze
   STATUSES = %w[active inactive destroyed under_construction].freeze
+  MAX_TIER = 5
 
   # ===========================================
   # Building Costs Configuration
@@ -117,6 +121,83 @@ class Building < ApplicationRecord
 
   def operational?
     !disabled? && status != 'destroyed'
+  end
+
+  # ===========================================
+  # Building Upgrades
+  # ===========================================
+
+  # Check if building can be upgraded
+  # @return [Boolean]
+  def upgradeable?
+    tier < MAX_TIER && !disabled? && status == 'active'
+  end
+
+  # Calculate the cost to upgrade to next tier
+  # @return [Integer, nil] Upgrade cost, or nil if at max tier
+  def upgrade_cost
+    return nil if tier >= MAX_TIER
+
+    current_cost = Building.cost_for(function: function, tier: tier, race: race)
+    next_cost = Building.cost_for(function: function, tier: tier + 1, race: race)
+    next_cost - current_cost
+  end
+
+  # Upgrade building to next tier
+  # @param user [User] The user paying for the upgrade
+  # @raise [UpgradeError] If building cannot be upgraded
+  # @raise [User::InsufficientCreditsError] If user cannot afford upgrade
+  def upgrade!(user:)
+    raise UpgradeError, "Building is at max tier" if tier >= MAX_TIER
+    raise UpgradeError, "Cannot upgrade: building is not operational" unless upgradeable?
+
+    cost = upgrade_cost
+
+    ActiveRecord::Base.transaction do
+      user.deduct_credits!(cost)
+      self.tier += 1
+      regenerate_building_attributes!
+      save!
+    end
+  end
+
+  # Recalculate building attributes based on current tier
+  # Used after upgrades to update stats
+  def regenerate_building_attributes!
+    base_stats = {
+      "staff_slots" => { "min" => 2, "max" => 5 },
+      "maintenance_rate" => 20 * tier,
+      "hardpoints" => tier,
+      "storage_capacity" => 1000 * tier,
+      "output_rate" => (10 * (tier ** 1.5)).to_i,
+      "power_consumption" => 5 * tier,
+      "durability" => 500 * tier
+    }
+
+    # Apply function-specific modifications
+    case function
+    when 'extraction'
+      base_stats["output_rate"] = (base_stats["output_rate"] * 2).to_i
+    when 'defense'
+      base_stats["hardpoints"] = (base_stats["hardpoints"] * 2).to_i
+      base_stats["durability"] = (base_stats["durability"] * 1.5).to_i
+    when 'logistics'
+      base_stats["storage_capacity"] = (base_stats["storage_capacity"] * 3).to_i
+    end
+
+    # Apply racial bonuses
+    case race
+    when 'vex'
+      base_stats["output_rate"] = (base_stats["output_rate"] * 1.1).to_i if function == 'civic'
+    when 'solari'
+      base_stats["power_consumption"] = (base_stats["power_consumption"] * 1.2).to_i
+    when 'krog'
+      base_stats["durability"] = (base_stats["durability"] * 1.2).to_i
+    when 'myrmidon'
+      base_stats["maintenance_rate"] = (base_stats["maintenance_rate"] * 0.8).to_i
+    end
+
+    self.building_attributes = base_stats
   end
 
   private
