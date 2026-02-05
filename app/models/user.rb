@@ -152,6 +152,19 @@ class User < ApplicationRecord
     cradle? && cradle_complete?
   end
 
+  # ===========================================
+  # Proving Ground (Phase 2)
+  # ===========================================
+
+  # Get available reserved systems for Phase 2 exploration
+  # Only accessible to users in proving_ground phase
+  # @return [Array<Hash>] List of reserved system data (empty if not in phase 2)
+  def available_proving_ground_systems
+    return [] unless proving_ground?
+
+    ProceduralGeneration::ReservedSystem.all_reserved_systems
+  end
+
   private
 
   def generate_short_id
