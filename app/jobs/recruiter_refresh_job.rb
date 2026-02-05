@@ -15,7 +15,7 @@ class RecruiterRefreshJob < ApplicationJob
       ActiveJob::Base.queue_adapter.enqueued_jobs.any? do |job|
         job["job_class"] == "RecruiterRefreshJob"
       end
-    elsif defined?(SolidQueue)
+    elsif defined?(SolidQueue) && SolidQueue::ScheduledExecution.table_exists?
       # Production: check solid_queue scheduled jobs
       SolidQueue::ScheduledExecution
         .where(job_class: "RecruiterRefreshJob")

@@ -6,7 +6,13 @@
 
   <% if @ship.nil? %>
     <div class="bg-red-900 border border-red-700 rounded p-4 mb-6">
-      <p class="text-red-300">⚠ No operational ship available. Acquire or repair a ship to navigate.</p>
+      <p class="text-red-300">
+        ⚠ No operational ship available.
+        <%= link_to "Acquire", new_ship_path, class: "text-orange-400 hover:text-orange-300 underline", data: { turbo_frame: "content_panel" } %>
+        or
+        <%= link_to "repair", ships_path, class: "text-orange-400 hover:text-orange-300 underline", data: { turbo_frame: "content_panel" } %>
+        a ship to navigate.
+      </p>
     </div>
   <% end %>
 
