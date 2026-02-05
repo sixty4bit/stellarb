@@ -21,21 +21,14 @@ class EmigrationController < ApplicationController
       return
     end
 
-    # Complete the emigration
-    ActiveRecord::Base.transaction do
-      # Update user status
-      current_user.update!(
-        tutorial_phase: :graduated,
-        emigrated: true,
-        emigrated_at: Time.current,
-        emigration_hub_id: hub.id
-      )
-
-      # Track immigration at the hub
-      hub.record_immigration!
-    end
+    # Complete the emigration (teleports ships, records visit, updates user)
+    current_user.emigrate_to!(hub)
 
     redirect_to root_path, notice: "Welcome to #{hub.system.name}! Your journey as a colonist begins now."
+  rescue User::InvalidHubError
+    flash.now[:alert] = "Invalid hub selection. The hub is no longer certified."
+    @dossiers = PlayerHub.emigration_dossiers
+    render :show, status: :unprocessable_entity
   end
 
   private
