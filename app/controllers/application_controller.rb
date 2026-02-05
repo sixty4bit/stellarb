@@ -6,11 +6,22 @@ class ApplicationController < ActionController::Base
   stale_when_importmap_changes
 
   before_action :authenticate_user!
+  before_action :require_profile_setup
 
   private
 
   def authenticate_user!
     redirect_to new_session_path unless current_user
+  end
+
+  def require_profile_setup
+    return unless current_user
+    return if current_user.profile_completed?
+    return if controller_name == 'profile'  # Allow profile pages
+    return if controller_name == 'sessions' # Allow logout
+
+    redirect_to edit_profile_path,
+      notice: 'Welcome! Please set up your profile to continue.'
   end
 
   def current_user
