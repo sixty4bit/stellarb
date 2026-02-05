@@ -170,4 +170,35 @@ class OnboardingStateTest < ActiveSupport::TestCase
     new_messages = @user.messages.where(title: "Navigation Training Complete!")
     assert_equal 0, new_messages.count
   end
+
+  # ===========================================
+  # Navigation Tutorial Credit Reward
+  # ===========================================
+
+  test "completing navigation tutorial awards 500 credits" do
+    @user.update!(onboarding_step: "navigation_tutorial", credits: 1000)
+
+    @user.advance_onboarding_step!
+
+    @user.reload
+    assert_equal 1500, @user.credits
+  end
+
+  test "navigation credit reward is not given for other step advances" do
+    @user.update!(onboarding_step: "ships_tour", credits: 1000)
+
+    @user.advance_onboarding_step!
+
+    @user.reload
+    assert_equal 1000, @user.credits
+  end
+
+  test "navigation completion message mentions the credit reward" do
+    @user.update!(onboarding_step: "navigation_tutorial")
+
+    @user.advance_onboarding_step!
+
+    message = @user.messages.find_by(title: "Navigation Training Complete!")
+    assert_match /500 credits/i, message.body
+  end
 end
