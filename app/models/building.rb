@@ -114,6 +114,7 @@ class Building < ApplicationRecord
   scope :disabled, -> { where.not(disabled_at: nil) }
   scope :operational, -> { where(disabled_at: nil).where.not(status: 'destroyed') }
   scope :under_construction, -> { where(status: 'under_construction') }
+  scope :construction_complete, -> { under_construction.where("construction_ends_at <= ?", Time.current) }
 
   # Disabled state (pip infestation)
   def disabled?
