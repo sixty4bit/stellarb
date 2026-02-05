@@ -60,11 +60,13 @@
             </div>
             <div class="flex gap-2">
               <%= link_to recruiter_path(recruit), class: "px-3 py-1 bg-blue-800 text-gray-300 hover:text-white rounded text-sm", data: { turbo_frame: "content_panel" } do %>
-                View Resume
+                <span class="text-lime-400">v</span> View Resume
               <% end %>
-              <%= button_to "Hire", hire_recruiter_path(recruit),
+              <%= button_to hire_recruiter_path(recruit),
                   method: :post,
-                  class: "px-4 py-1 bg-lime-800 text-white hover:bg-lime-700 rounded text-sm font-bold" %>
+                  class: "px-4 py-1 bg-lime-800 text-white hover:bg-lime-700 rounded text-sm font-bold" do %>
+                <span class="text-white/70">h</span> Hire
+              <% end %>
             </div>
           </div>
         </div>
