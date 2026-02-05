@@ -2,14 +2,38 @@
 
 <div class="max-w-6xl">
   <div class="mb-6">
-    <h1 class="text-2xl font-bold text-orange-500 mb-2"><%= @building.name %></h1>
-    <div class="text-sm text-gray-400">
-      <%= @building.function.humanize %> • Tier <%= @building.tier %> • <%= @building.race.humanize %>
-      <span class="text-xs text-<%= @building.status == 'active' ? 'lime' : 'orange' %>-400 ml-2">
-        [<%= @building.status.upcase %>]
-      </span>
+    <div class="flex items-center gap-3 mb-2">
+      <span class="text-xs font-mono text-gray-500"><%= @building.short_id %></span>
+      <h1 class="text-2xl font-bold text-orange-500"><%= @building.name %></h1>
+    </div>
+    <div class="text-sm text-gray-400 flex flex-wrap items-center gap-2">
+      <span><%= @building.function.humanize %></span>
+      <span class="text-gray-600">•</span>
+      <span>Tier <%= @building.tier %></span>
+      <span class="text-gray-600">•</span>
+      <span><%= @building.race.humanize %></span>
+      <% if @building.disabled? %>
+        <span class="text-xs bg-red-900 text-red-400 px-2 py-0.5 rounded ml-2">
+          DISABLED
+        </span>
+      <% elsif @building.status != 'active' %>
+        <span class="text-xs text-orange-400 ml-2">
+          [<%= @building.status.upcase.tr('_', ' ') %>]
+        </span>
+      <% else %>
+        <span class="text-xs text-lime-400 ml-2">
+          [OPERATIONAL]
+        </span>
+      <% end %>
     </div>
   </div>
+
+  <% if @building.disabled? %>
+    <div class="bg-red-900/30 border border-red-800 p-4 mb-6 text-red-400">
+      <strong>⚠ Building Disabled</strong>
+      <p class="text-sm mt-1">This building is currently offline and not producing output. Check for incidents or infestations.</p>
+    </div>
+  <% end %>
 
   <!-- Building Stats -->
   <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
@@ -17,7 +41,9 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
       <div>
         <span class="text-gray-400 block">Output Rate</span>
-        <span class="text-white"><%= @building.building_attributes&.dig('output_rate') || '-' %>/hr</span>
+        <span class="text-white <%= @building.disabled? ? 'line-through text-gray-500' : '' %>">
+          <%= @building.building_attributes&.dig('output_rate')&.to_i || '-' %>/hr
+        </span>
       </div>
       <div>
         <span class="text-gray-400 block">Storage</span>
@@ -25,11 +51,11 @@
       </div>
       <div>
         <span class="text-gray-400 block">Durability</span>
-        <span class="text-white"><%= @building.building_attributes&.dig('durability') || '-' %></span>
+        <span class="text-white"><%= @building.building_attributes&.dig('durability')&.to_i || '-' %></span>
       </div>
       <div>
         <span class="text-gray-400 block">Maintenance</span>
-        <span class="text-orange-400"><%= @building.building_attributes&.dig('maintenance_rate') || '-' %> cr/day</span>
+        <span class="text-orange-400"><%= @building.building_attributes&.dig('maintenance_rate')&.to_i || '-' %> cr/day</span>
       </div>
       <div>
         <span class="text-gray-400 block">Staff Slots</span>
@@ -43,7 +69,7 @@
       </div>
       <div>
         <span class="text-gray-400 block">Power</span>
-        <span class="text-yellow-400"><%= @building.building_attributes&.dig('power_consumption') || '-' %> MW</span>
+        <span class="text-yellow-400"><%= @building.building_attributes&.dig('power_consumption')&.to_i || '-' %> MW</span>
       </div>
       <div>
         <span class="text-gray-400 block">Location</span>
@@ -54,20 +80,37 @@
     </div>
   </div>
 
-  <!-- Staff -->
+  <!-- Staff Roster -->
   <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
-    <h2 class="text-lg font-semibold text-lime-400 mb-4">Assigned Staff</h2>
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold text-lime-400">Staff Roster</h2>
+      <% max_staff = @building.building_attributes&.dig('staff_slots', 'max') || 0 %>
+      <span class="text-sm text-gray-400">
+        <%= @building.staff.count %>/<%= max_staff %> slots filled
+      </span>
+    </div>
     <% if @building.staff.any? %>
       <div class="space-y-2">
         <% @building.staff.each do |worker| %>
-          <div class="flex items-center justify-between p-2 hover:bg-blue-800 rounded">
-            <span class="text-white"><%= worker.race.humanize %> <%= worker.npc_class.humanize %></span>
-            <span class="text-sm text-gray-400">Skill: <%= worker.skill %></span>
-          </div>
+          <%= link_to worker_path(worker),
+              class: "flex items-center justify-between p-3 bg-blue-800/50 hover:bg-blue-800 rounded transition-colors",
+              data: { turbo_frame: "content_panel" } do %>
+            <div>
+              <span class="text-white font-medium"><%= worker.race.humanize %> <%= worker.npc_class.humanize %></span>
+              <span class="text-xs text-gray-500 ml-2"><%= worker.short_id %></span>
+            </div>
+            <div class="flex items-center gap-4 text-sm">
+              <span class="text-gray-400">
+                Skill: <span class="text-lime-400"><%= worker.skill %></span>
+              </span>
+              <span class="text-gray-600">→</span>
+            </div>
+          <% end %>
         <% end %>
       </div>
     <% else %>
-      <p class="text-gray-500">No staff assigned. Visit Workers to hire and assign crew.</p>
+      <p class="text-gray-500 text-center py-4">No staff assigned to this building.</p>
+      <p class="text-sm text-gray-600 text-center">Visit Workers to hire and assign crew.</p>
     <% end %>
   </div>
 
@@ -79,27 +122,33 @@
       ← Back to Buildings
     <% end %>
     
-    <% if @building.status == 'active' %>
+    <% if @building.operational? %>
       <%= button_to repair_building_path(@building),
           method: :post,
           class: "px-4 py-2 bg-green-800 hover:bg-green-700 border border-green-600 transition-colors",
           data: { turbo_frame: "content_panel" } do %>
-        Repair
+        🔧 Repair
       <% end %>
       
-      <%= button_to upgrade_building_path(@building),
-          method: :post,
-          class: "px-4 py-2 bg-orange-800 hover:bg-orange-700 border border-orange-600 transition-colors",
-          data: { turbo_frame: "content_panel" } do %>
-        Upgrade
+      <% if @building.tier < 5 %>
+        <%= button_to upgrade_building_path(@building),
+            method: :post,
+            class: "px-4 py-2 bg-orange-800 hover:bg-orange-700 border border-orange-600 transition-colors",
+            data: { turbo_frame: "content_panel" } do %>
+          ⬆ Upgrade to T<%= @building.tier + 1 %>
+        <% end %>
+      <% else %>
+        <span class="px-4 py-2 bg-gray-800 border border-gray-700 text-gray-500 cursor-not-allowed">
+          Max Tier
+        </span>
       <% end %>
     <% end %>
     
     <%= button_to demolish_building_path(@building),
         method: :delete,
-        class: "px-4 py-2 bg-red-800 hover:bg-red-700 border border-red-600 transition-colors",
-        data: { confirm: "Are you sure you want to demolish #{@building.name}?", turbo_frame: "content_panel" } do %>
-      Demolish
+        class: "px-4 py-2 bg-red-900 hover:bg-red-800 border border-red-700 transition-colors",
+        data: { confirm: "Are you sure you want to demolish #{@building.name}? This cannot be undone.", turbo_frame: "content_panel" } do %>
+      🗑 Demolish
     <% end %>
   </div>
 
