@@ -63,6 +63,27 @@ class Recruit < ApplicationRecord
 
   scope :expired, -> { where("expires_at <= ?", Time.current) }
 
+  # Default threshold for considering pool stale (10 minutes before expiration)
+  REFRESH_THRESHOLD = 10.minutes
+
+  # Check if the recruit pool needs refreshing
+  # Returns true if:
+  # - No active recruits exist
+  # - The oldest active recruit expires within the threshold
+  def self.pool_needs_refresh?(threshold: REFRESH_THRESHOLD)
+    oldest = oldest_expiring_recruit
+    return true if oldest.nil?
+
+    oldest.expires_at <= Time.current + threshold
+  end
+
+  # Find the recruit that will expire soonest (among active recruits)
+  def self.oldest_expiring_recruit
+    where("expires_at > ?", Time.current)
+      .order(:expires_at)
+      .first
+  end
+
   # Display name for UI
   def display_name
     name.presence || "#{npc_class.humanize} (#{race.humanize})"
