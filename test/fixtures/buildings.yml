@@ -3,6 +3,7 @@ mining_facility:
   system: cradle
   name: Alpha Mine
   short_id: bl-ext1
+  uuid: 01900000-0000-7000-8000-000000000001
   race: vex
   function: extraction
   tier: 1
@@ -13,12 +14,17 @@ mining_facility:
       max: 5
     output_rate: 20
     storage_capacity: 1000
+    durability: 500
+    maintenance_rate: 20
+    hardpoints: 1
+    power_consumption: 5
 
 defense_platform:
   user: pilot
   system: cradle
   name: Sentinel Tower
   short_id: bl-def1
+  uuid: 01900000-0000-7000-8000-000000000002
   race: krog
   function: defense
   tier: 2
