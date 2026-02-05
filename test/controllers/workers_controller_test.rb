@@ -97,7 +97,7 @@ class WorkersControllerTest < ActionDispatch::IntegrationTest
   test "show displays traits/quirks" do
     get worker_path(@hired_recruit)
     assert_response :success
-    assert_select "*", text: /Traits/i
+    assert_select "*", text: /Quirks/i
   end
 
   test "show has back to workers link" do

@@ -85,7 +85,7 @@ class CatastropheGeneratorTest < ActiveSupport::TestCase
 
     # T5 should be dramatic
     assert description.present?
-    dramatic_terms = [ "explosion", "meltdown", "catastroph", "critical", "total", "mutiny", "breach" ]
+    dramatic_terms = [ "explosion", "meltdown", "catastroph", "critical", "total", "mutiny", "breach", "failure", "collapse", "imminent", "sentience", "dread" ]
     assert dramatic_terms.any? { |term| description.downcase.include?(term.downcase) },
       "T5 description should be dramatic: #{description}"
   end

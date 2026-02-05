@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_160521) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_05_171845) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -145,6 +145,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_160521) do
     t.index ["certified"], name: "index_player_hubs_on_certified"
     t.index ["owner_id"], name: "index_player_hubs_on_owner_id"
     t.index ["system_id"], name: "index_player_hubs_on_system_id", unique: true
+  end
+
+  create_table "player_quests", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.bigint "quest_id", null: false
+    t.datetime "started_at"
+    t.string "status"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["quest_id"], name: "index_player_quests_on_quest_id"
+    t.index ["user_id"], name: "index_player_quests_on_user_id"
   end
 
   create_table "price_deltas", force: :cascade do |t|
@@ -340,6 +352,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_160521) do
   add_foreign_key "messages", "users"
   add_foreign_key "player_hubs", "systems"
   add_foreign_key "player_hubs", "users", column: "owner_id"
+  add_foreign_key "player_quests", "quests"
+  add_foreign_key "player_quests", "users"
   add_foreign_key "price_deltas", "systems"
   add_foreign_key "quest_progresses", "quests"
   add_foreign_key "quest_progresses", "users"
