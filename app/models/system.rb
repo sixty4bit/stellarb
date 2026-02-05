@@ -9,6 +9,7 @@ class System < ApplicationRecord
   has_many :visitors, through: :system_visits, source: :user
   has_many :departures, -> { where(event_type: 'departure') }, class_name: 'FlightRecord', foreign_key: 'from_system_id', dependent: :destroy
   has_many :arrivals, -> { where(event_type: 'arrival') }, class_name: 'FlightRecord', foreign_key: 'to_system_id', dependent: :destroy
+  has_many :price_deltas, dependent: :destroy
 
   # Validations
   validates :x, presence: true, numericality: { in: 0..999_999 }
@@ -134,6 +135,31 @@ class System < ApplicationRecord
 
   def trading_ships
     ships.trading
+  end
+
+  # ===========================================
+  # Pricing (Static + Dynamic Model)
+  # ===========================================
+
+  # Get the current price for a commodity
+  # Base price (from seed) + delta (from DB)
+  #
+  # @param commodity [String] The commodity name
+  # @return [Integer, nil] Current price in cents, or nil if unknown commodity
+  def current_price(commodity)
+    PriceDelta.current_price_for(self, commodity)
+  end
+
+  # Get all current prices (base + deltas merged)
+  # @return [Hash] Commodity => current price
+  def current_prices
+    PriceDelta.all_current_prices(self)
+  end
+
+  # Get base prices (no deltas applied)
+  # @return [Hash] Commodity => base price
+  def base_prices
+    properties&.dig("base_prices") || {}
   end
 
   private

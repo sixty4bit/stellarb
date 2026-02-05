@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_143157) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_05_145030) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -85,6 +85,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_143157) do
     t.index ["hired_recruit_id"], name: "index_hirings_on_hired_recruit_id"
     t.index ["user_id"], name: "index_hirings_on_user_id"
     t.index ["uuid"], name: "index_hirings_on_uuid", unique: true
+  end
+
+  create_table "price_deltas", force: :cascade do |t|
+    t.string "commodity", null: false
+    t.datetime "created_at", null: false
+    t.integer "delta_cents", default: 0, null: false
+    t.bigint "system_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["system_id", "commodity"], name: "index_price_deltas_on_system_id_and_commodity", unique: true
+    t.index ["system_id"], name: "index_price_deltas_on_system_id"
   end
 
   create_table "recruits", force: :cascade do |t|
@@ -191,15 +201,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_143157) do
     t.datetime "created_at", null: false
     t.decimal "credits", default: "500.0"
     t.string "email"
+    t.datetime "grant_received_at"
     t.datetime "last_sign_in_at"
     t.integer "level_tier", default: 1
     t.string "name"
     t.string "short_id"
     t.integer "sign_in_count", default: 0
+    t.bigint "spawn_system_id"
+    t.integer "tutorial_phase", default: 1
     t.datetime "updated_at", null: false
     t.string "uuid", limit: 36
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["short_id"], name: "index_users_on_short_id", unique: true
+    t.index ["spawn_system_id"], name: "index_users_on_spawn_system_id"
     t.index ["uuid"], name: "index_users_on_uuid", unique: true
   end
 
@@ -225,6 +239,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_143157) do
   add_foreign_key "hired_recruits", "recruits", column: "original_recruit_id"
   add_foreign_key "hirings", "hired_recruits"
   add_foreign_key "hirings", "users"
+  add_foreign_key "price_deltas", "systems"
   add_foreign_key "routes", "ships"
   add_foreign_key "routes", "users"
   add_foreign_key "ships", "systems", column: "current_system_id"
@@ -234,6 +249,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_143157) do
   add_foreign_key "system_visits", "users"
   add_foreign_key "systems", "users", column: "discovered_by_id"
   add_foreign_key "systems", "users", column: "owner_id"
+  add_foreign_key "users", "systems", column: "spawn_system_id"
   add_foreign_key "warp_gates", "systems", column: "system_a_id"
   add_foreign_key "warp_gates", "systems", column: "system_b_id"
 end
