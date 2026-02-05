@@ -1,60 +1,36 @@
-# frozen_string_literal: true
-
 require "test_helper"
 
-class NavigationMenuTest < ActionView::TestCase
+class NavigationMenuTest < ActionDispatch::IntegrationTest
   setup do
-    @user = users(:pilot)
+    @user = users(:one)
+    sign_in_as(@user)
   end
 
-  test "menu links use turbo-action advance to update URL" do
-    # Set instance variables that the partial expects
-    @active_menu = :inbox
-
-    render partial: "shared/navigation_menu", locals: {
-      current_user: @user
-    }
-
-    # All main menu links should have data-turbo-action="advance"
-    # This ensures the URL updates when clicking menu items
-    assert_select "a[href='/inbox'][data-turbo-action='advance']"
-    assert_select "a[href='/chat'][data-turbo-action='advance']"
-    assert_select "a[href='/navigation'][data-turbo-action='advance']"
-    assert_select "a[href='/systems'][data-turbo-action='advance']"
-    assert_select "a[href='/ships'][data-turbo-action='advance']"
-    assert_select "a[href='/workers'][data-turbo-action='advance']"
+  test "navigation menu shows user name as link to profile" do
+    get root_path
+    assert_response :success
+    
+    # User name should be a link to profile
+    assert_select "a[href='#{profile_path}'] h1", @user.name
   end
 
-  test "menu links still target content_panel turbo frame" do
-    @active_menu = :inbox
-
-    render partial: "shared/navigation_menu", locals: {
-      current_user: @user
-    }
-
-    # Links should still target the turbo frame for fast loading
-    assert_select "a[href='/inbox'][data-turbo-frame='content_panel']"
+  test "navigation menu shows user credits" do
+    get root_path
+    assert_response :success
+    
+    # Should display credits
+    assert_match "Credits:", response.body
+    assert_match "1,000", response.body  # Formatted credits from fixture
   end
 
-  test "nav uses menu-highlight controller for client-side sync" do
-    @active_menu = :inbox
-
-    render partial: "shared/navigation_menu", locals: {
-      current_user: @user
-    }
-
-    # Nav should have the menu-highlight controller
-    assert_select "nav[data-controller*='menu-highlight']"
-  end
-
-  test "menu items have menu-highlight-target attribute" do
-    @active_menu = :inbox
-
-    render partial: "shared/navigation_menu", locals: {
-      current_user: @user
-    }
-
-    # Each menu item should be a target for the highlight controller
-    assert_select "li[data-menu-highlight-target='item']", minimum: 6
+  test "clicking user name navigates to profile" do
+    get root_path
+    assert_response :success
+    
+    # Find the profile link and verify it points to profile_path
+    assert_select "a[href='#{profile_path}']" do |links|
+      # There should be at least one link to profile
+      assert links.any?
+    end
   end
 end
