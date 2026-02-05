@@ -3,6 +3,7 @@ hauler:
   user: pilot
   name: Stellar Hauler
   short_id: sh-hau
+  uuid: 01900000-0000-7000-8000-000000000001
   race: vex
   hull_size: transport
   variant_idx: 1
@@ -25,6 +26,7 @@ scout:
   user: pilot
   name: Recon Scout
   short_id: sh-sco
+  uuid: 01900000-0000-7000-8000-000000000002
   race: solari
   hull_size: scout
   variant_idx: 1
@@ -47,6 +49,7 @@ warship:
   user: pilot
   name: Iron Fist
   short_id: sh-war
+  uuid: 01900000-0000-7000-8000-000000000003
   race: krog
   hull_size: cruiser
   variant_idx: 1

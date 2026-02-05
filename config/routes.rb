@@ -51,6 +51,7 @@ Rails.application.routes.draw do
       post :repair
       patch :assign_crew
       patch :set_navigation
+      post :upgrade
     end
 
     collection do
