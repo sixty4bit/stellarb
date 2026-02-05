@@ -13,10 +13,10 @@ Rails.application.routes.draw do
   root "inbox#index"
 
   # Main game screens
-  resources :inbox, only: [:index, :show] do
+  resources :inbox, only: [:index, :show, :destroy] do
     member do
       post :mark_read
-      delete :archive
+      post :mark_unread
     end
   end
 

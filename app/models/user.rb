@@ -48,6 +48,7 @@ class User < ApplicationRecord
 
   # Callbacks
   before_validation :generate_short_id, on: :create
+  after_create :create_welcome_messages
 
   # ===========================================
   # Profile Completion
@@ -385,5 +386,46 @@ class User < ApplicationRecord
     end
 
     self.short_id = candidate
+  end
+
+  # Create welcome messages for new users
+  # Called after user creation to populate their inbox
+  def create_welcome_messages
+    messages.create!(
+      title: "Welcome to StellArb!",
+      from: "Colonial Authority",
+      category: "system",
+      body: <<~BODY.strip
+        Greetings, pilot.
+
+        You've been selected for the Colonial Expansion Program. As a new arrival to the frontier, you have been granted a starter vessel and a small credit line to begin your journey.
+
+        Your first task: Visit the Navigation panel to plot a course to the nearest trade hub. There you can purchase supplies and accept your first contracts.
+
+        May the stars guide your path.
+
+        — Colonial Authority Registration Division
+      BODY
+    )
+
+    messages.create!(
+      title: "Tutorial Quest Available",
+      from: "System Guide",
+      category: "quest",
+      urgent: true,
+      body: <<~BODY.strip
+        PRIORITY NOTIFICATION
+
+        A tutorial quest has been unlocked for your account. Completing this quest will grant you:
+
+        • 500 Credits
+        • Basic Scanner Module
+        • Navigation Chart: Local Sector
+
+        To begin, access the Navigation panel from the main menu.
+
+        This quest will expire in 72 hours.
+      BODY
+    )
   end
 end
