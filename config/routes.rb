@@ -91,6 +91,13 @@ Rails.application.routes.draw do
   # User Profile
   resource :profile, only: [:show, :edit, :update], controller: 'profile'
 
+  # Onboarding tutorial
+  scope :onboarding, controller: 'onboarding' do
+    post :advance, as: :advance_onboarding
+    post :skip, as: :skip_onboarding
+    post :reset, as: :reset_onboarding
+  end
+
   get :about, to: 'about#index'
 
   # Authentication (passwordless)
