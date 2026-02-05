@@ -521,6 +521,12 @@ Once the Beacon is built, the Server monitors the system for a 7-day probationar
 * Input: Players type commands or select options (e.g., `> warp to sector 4`, `> scan local`, `> buy 500 iron`).
 * Visuals: Information is conveyed via text descriptions and data tables. Sparse, clean, terminal aesthetic — but proper HTML elements (divs, tables, buttons), not ASCII box-drawing characters.
 * Tech: Rails 8 + Turbo + Stimulus. Tailwind CSS. Monospace font for the terminal feel.
+* **Color Palette:**
+  * Background: Dark blue
+  * Primary accent: Orange
+  * Secondary: Lime green
+  * Tertiary: `#79bffd` (light blue)
+  * Text: White
 
 ## **8. Technical Considerations**
 * Database: Light schema. Only stores "Deltas" and Player Asset States.

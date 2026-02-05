@@ -667,6 +667,29 @@ Players have a permanent log of their journey ("The Breadcrumb Trail").
   2. **Recent History:** Last 5 systems visited (Auto-generated).
   3. **Local Neighbors:** Systems reachable with current fuel.
 
+### **13.4. System Entry Intentions**
+Upon entering a system, players must declare their **intention**:
+
+* **Trade Mode:** Access to markets, refineries, and docking. Peaceful interactions only.
+* **Battle Mode:** Hostile entry. The system's **defense grid** engages immediately.
+
+**Rules:**
+* **Locked While Present:** You cannot switch intentions while in the system.
+* **Leave to Switch:** Departure and re-entry required to change modes.
+* **Strategic Implication:** Raiding a system means forfeiting trade access until you leave. Defending systems invest in defense infrastructure to punish raiders.
+
+**UI Flow:**
+```
+> warp sy-rig
+Destination: Rigel Prime (sy-rig)
+Distance: 4.2 LY | ETA: 3 hours
+
+[T] Trade - Enter peacefully
+[B] Battle - Engage defenses
+
+Select intention: _
+```
+
 ## **14. Starter Quests (Onboarding)**
 New players spawn in one of the 6 Core Galaxies. Each Galaxy has a "Flavor" and a specific NPC guide who introduces mechanics via "Petty Problems."
 
