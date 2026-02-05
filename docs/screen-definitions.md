@@ -81,14 +81,14 @@ PlayerName
 **Keyboard:**
 | Key | Action |
 |-----|--------|
-| `Enter` | Open message detail |
-| `r` | Mark as read |
-| `d` | Delete/archive message |
+| `Enter` | Drill into message detail |
+| `r` | Toggle read/unread |
+| `e` | Delete/archive message |
 | `u` | Filter: show unread only |
 | `a` | Filter: show all |
 
 **Actions:**
-- Selecting a message opens **Message Detail** (modal or drill-down)
+- Selecting a message drills into **Message Detail** (no modals)
 - Messages link to relevant entity (ship, building, system)
 
 ---
