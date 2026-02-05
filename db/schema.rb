@@ -108,6 +108,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_145127) do
     t.index ["uuid"], name: "index_incidents_on_uuid", unique: true
   end
 
+  create_table "price_deltas", force: :cascade do |t|
+    t.string "commodity", null: false
+    t.datetime "created_at", null: false
+    t.integer "delta_cents", default: 0, null: false
+    t.bigint "system_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["system_id", "commodity"], name: "index_price_deltas_on_system_id_and_commodity", unique: true
+    t.index ["system_id"], name: "index_price_deltas_on_system_id"
+  end
+
   create_table "quest_progresses", force: :cascade do |t|
     t.datetime "completed_at"
     t.datetime "created_at", null: false
@@ -279,6 +289,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_145127) do
   add_foreign_key "hirings", "hired_recruits"
   add_foreign_key "hirings", "users"
   add_foreign_key "incidents", "hired_recruits"
+  add_foreign_key "price_deltas", "systems"
   add_foreign_key "quest_progresses", "quests"
   add_foreign_key "quest_progresses", "users"
   add_foreign_key "routes", "ships"
