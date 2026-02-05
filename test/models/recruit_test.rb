@@ -452,6 +452,80 @@ class RecruitTest < ActiveSupport::TestCase
     assert recruit.expires_at >= now + 29.minutes, "Expected expires_at to be at least 29 minutes away, got #{recruit.expires_at - now} seconds"
   end
 
+  # =====================
+  # Hire! Method
+  # =====================
+
+  test "hire! creates HiredRecruit from recruit" do
+    recruit = Recruit.generate!(level_tier: 1)
+    ship = create_test_ship(@user)
+
+    hiring = recruit.hire!(@user, ship)
+
+    assert_kind_of Hiring, hiring
+    assert hiring.persisted?
+    assert_equal recruit.race, hiring.hired_recruit.race
+    assert_equal recruit.npc_class, hiring.hired_recruit.npc_class
+    assert_equal recruit.skill, hiring.hired_recruit.skill
+  end
+
+  test "hire! creates Hiring join record" do
+    recruit = Recruit.generate!(level_tier: 1)
+    ship = create_test_ship(@user)
+
+    hiring = recruit.hire!(@user, ship)
+
+    assert_equal @user, hiring.user
+    assert_equal ship, hiring.assignable
+    assert_equal "active", hiring.status
+    assert hiring.wage > 0
+    assert_not_nil hiring.hired_at
+  end
+
+  test "hire! links HiredRecruit to original recruit" do
+    recruit = Recruit.generate!(level_tier: 1)
+    ship = create_test_ship(@user)
+
+    hiring = recruit.hire!(@user, ship)
+
+    assert_equal recruit, hiring.hired_recruit.original_recruit
+  end
+
+  test "hire! raises error if recruit already expired" do
+    recruit = build_recruit(expires_at: 1.hour.ago)
+    recruit.save!
+    ship = create_test_ship(@user)
+
+    assert_raises(Recruit::AlreadyHiredError) do
+      recruit.hire!(@user, ship)
+    end
+  end
+
+  test "hire! raises error if recruit not yet available" do
+    recruit = build_recruit(available_at: 1.hour.from_now, expires_at: 2.hours.from_now)
+    recruit.save!
+    ship = create_test_ship(@user)
+
+    assert_raises(Recruit::NotAvailableError) do
+      recruit.hire!(@user, ship)
+    end
+  end
+
+  private
+
+  def create_test_ship(user)
+    Ship.create!(
+      user: user,
+      name: "Test Ship #{SecureRandom.hex(3)}",
+      race: "vex",
+      hull_size: "scout",
+      variant_idx: 0,
+      location_x: 0,
+      location_y: 0,
+      location_z: 0
+    )
+  end
+
   private
 
   def build_recruit(overrides = {})

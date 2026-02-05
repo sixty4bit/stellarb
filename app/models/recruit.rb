@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class Recruit < ApplicationRecord
+  # Custom errors for hire! method
+  class AlreadyHiredError < StandardError; end
+  class NotAvailableError < StandardError; end
   # Constants
   RACES = %w[vex solari krog myrmidon].freeze
   NPC_CLASSES = %w[governor navigator engineer marine].freeze
@@ -90,6 +93,31 @@ class Recruit < ApplicationRecord
       "uncommon"
     else
       "common"
+    end
+  end
+
+  # Hire this recruit for a user, assigning to an asset
+  # Returns the Hiring record
+  def hire!(user, assignable)
+    # Validate availability
+    raise NotAvailableError, "Recruit is not yet available" if available_at > Time.current
+    raise AlreadyHiredError, "Recruit is no longer available" if expires_at <= Time.current
+
+    transaction do
+      # Create immutable copy
+      hired_recruit = HiredRecruit.create_from_recruit!(self, user)
+
+      # Create hiring join record
+      hiring = Hiring.create!(
+        user: user,
+        hired_recruit: hired_recruit,
+        assignable: assignable,
+        status: "active",
+        hired_at: Time.current,
+        wage: hired_recruit.calculate_wage
+      )
+
+      hiring
     end
   end
 
