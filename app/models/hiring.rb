@@ -34,12 +34,24 @@ class Hiring < ApplicationRecord
   scope :terminated, -> { where.not(status: 'active') }
   scope :unassigned, -> { where(assignable: nil) }
 
-  # Terminate employment
+  # Terminate employment and record in employment history
   def terminate!(reason = 'fired')
+    termination_time = Time.current
+    
+    # Calculate employment duration in months
+    duration_months = ((termination_time - hired_at) / 1.month).round
+    duration_months = 1 if duration_months < 1 # Minimum 1 month
+    
+    # Record in employment history
+    hired_recruit.add_employment_record(
+      employer: user.name,
+      duration_months: duration_months,
+      outcome: "Terminated (#{reason})"
+    )
+    
     update!(
       status: reason,
-      terminated_at: Time.current,
-      assignable: nil
+      terminated_at: termination_time
     )
   end
 
