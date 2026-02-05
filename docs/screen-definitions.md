@@ -552,15 +552,15 @@ PlayerName
 │ │ STOPS:                                                        │
 │ │ ─────────────────────────────────────────────────────────────│
 │ │ 1. Vigby                                                      │
-│ │    BUY:  Iron (200t @ $10)                                   │
-│ │    SELL: Gold (50t @ $150)                                   │
+│ │    BUY:  Iron (200t < $10)                                   │
+│ │    SELL: Gold (50t > $150)                                   │
 │ │                                                               │
 │ │ 2. Chug                                                       │
-│ │    BUY:  Gold (50t @ $120)                                   │
-│ │    SELL: Iron (200t @ $15)                                   │
+│ │    BUY:  Gold (50t < $120)                                   │
+│ │    SELL: Iron (200t > $15)                                   │
 │ │                                                               │
 │ │ 3. Szaps                                                      │
-│ │    BUY:  Titanium (100t @ $25)                               │
+│ │    BUY:  Titanium (100t < $25)                               │
 │ │    SELL: -                                                    │
 │ │                                                               │
 │ │ [E] Edit Stops   [P] Pause   [S] Change Ship   [D] Delete    │
