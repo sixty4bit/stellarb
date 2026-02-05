@@ -85,6 +85,9 @@ Rails.application.routes.draw do
     end
   end
 
+  # Emigration (Phase 3: Hub Selection)
+  resource :emigration, only: [:show, :create], controller: 'emigration'
+
   get :about, to: 'about#index'
 
   # Authentication (passwordless)

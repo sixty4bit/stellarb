@@ -1,0 +1,140 @@
+<div class="max-w-6xl mx-auto">
+  <%# Title Banner %>
+  <div class="text-center mb-8">
+    <h2 class="text-3xl font-bold text-orange-500">The Emigration</h2>
+    <p class="text-lime-400 mt-2">Phase 3: Choose Your New Home</p>
+  </div>
+
+  <%# Introduction Text %>
+  <div class="bg-blue-900 border-2 border-orange-500 p-6 mb-8">
+    <h3 class="text-xl font-bold mb-3 text-white">Colonial Ticket Activated</h3>
+    <p class="text-gray-300 mb-3">
+      Congratulations, Colonist. You have proven yourself worthy of leaving the Cradle.
+      The Colonial Authority has prepared <%= @dossiers.count %> Immigration Options for your consideration.
+    </p>
+    <p class="text-gray-400 text-sm">
+      <span class="text-orange-400">⚠ Warning:</span>
+      This is a <span class="text-orange-400 font-bold">one-way trip</span>.
+      Once you select a hub, you will be instantly transported thousands of light-years from the Cradle.
+      There is no return.
+    </p>
+  </div>
+
+  <%# Hub Dossiers %>
+  <% if @dossiers.any? %>
+    <div class="space-y-4">
+      <% @dossiers.each_with_index do |dossier, index| %>
+        <div class="hub-dossier bg-blue-900 border border-blue-700 p-5 hover:border-orange-500 transition-colors">
+          <%# Header Row %>
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <span class="text-xs text-gray-500">OPTION <%= index + 1 %></span>
+              <h4 class="system-name text-xl font-bold text-white"><%= dossier[:system_name] %></h4>
+            </div>
+            <div class="text-right">
+              <span class="security-level inline-block px-3 py-1 rounded text-sm font-bold
+                <%= security_level_class(dossier[:security_level]) %>">
+                <%= dossier[:security_level] %>
+              </span>
+            </div>
+          </div>
+
+          <%# Owner Info %>
+          <div class="mb-4 pb-4 border-b border-blue-700">
+            <span class="text-gray-500">Operated by:</span>
+            <span class="owner-name text-white ml-2"><%= dossier[:owner_name] %></span>
+            <span class="text-gray-500 ml-4">Colonists:</span>
+            <span class="text-lime-400 ml-1"><%= dossier[:immigration_count] %></span>
+          </div>
+
+          <%# Stats Grid %>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <%# Security Rating %>
+            <div>
+              <span class="text-gray-500 text-xs block">Security</span>
+              <span class="security-rating text-lg font-bold <%= security_rating_color(dossier[:security_rating]) %>">
+                <%= dossier[:security_rating] %>%
+              </span>
+            </div>
+
+            <%# Tax Rate %>
+            <div>
+              <span class="text-gray-500 text-xs block">Tax Rate</span>
+              <span class="tax-rate text-lg font-bold text-orange-400">
+                <%= dossier[:tax_rate] %>%
+              </span>
+            </div>
+
+            <%# Economic Liquidity %>
+            <div>
+              <span class="text-gray-500 text-xs block">Market Liquidity</span>
+              <span class="text-lg font-bold text-white">
+                <%= number_with_delimiter(dossier[:economic_liquidity]) %> cr
+              </span>
+            </div>
+
+            <%# Distance %>
+            <div>
+              <span class="text-gray-500 text-xs block">Distance from Cradle</span>
+              <span class="text-lg font-bold text-sky-400">
+                <%= number_with_delimiter(dossier[:distance_from_cradle].round) %> LY
+              </span>
+            </div>
+          </div>
+
+          <%# Resource Prices %>
+          <% if dossier[:resource_prices].present? %>
+            <div class="mb-4">
+              <span class="text-gray-500 text-xs block mb-2">Market Prices</span>
+              <div class="flex flex-wrap gap-3">
+                <% dossier[:resource_prices].each do |commodity, price| %>
+                  <span class="text-sm">
+                    <span class="text-gray-400"><%= commodity.humanize %>:</span>
+                    <span class="text-lime-400"><%= price %> cr</span>
+                  </span>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <%# Active Orders %>
+          <div class="mb-4 text-sm">
+            <span class="text-gray-500">Active buy orders:</span>
+            <span class="text-lime-400 ml-1"><%= dossier[:active_buy_orders] %></span>
+            <span class="text-gray-500 ml-2">(employment opportunities)</span>
+          </div>
+
+          <%# Selection Button %>
+          <div class="mt-4 pt-4 border-t border-blue-700">
+            <%= form_with url: emigration_path, method: :post, local: true do |f| %>
+              <%= hidden_field_tag :hub_id, dossier[:hub_id] %>
+              <%= f.submit "Select #{dossier[:system_name]}",
+                  class: "w-full bg-orange-500 text-blue-950 font-bold py-3 px-4 rounded hover:bg-orange-400 transition-colors cursor-pointer",
+                  data: { confirm: "Are you sure? This is a one-way trip to #{dossier[:system_name]}. There is no return to the Cradle." } %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <%# No Hubs Available %>
+    <div class="bg-blue-900 border border-blue-700 p-8 text-center">
+      <p class="text-orange-400 text-xl mb-3">⚠ No Hubs Available</p>
+      <p class="text-gray-400">
+        The Colonial Authority has no certified hubs to offer at this time.
+        Please check back later or contact support.
+      </p>
+    </div>
+  <% end %>
+
+  <%# Footer Note %>
+  <div class="mt-8 text-center text-sm text-gray-500">
+    <p>Your Colonial Ticket is valid indefinitely. Take your time to review each option.</p>
+    <p class="mt-2">Coordinates shown are relative to The Cradle (0,0,0).</p>
+  </div>
+
+  <%# Keyboard Shortcuts %>
+  <div class="mt-6 text-sm text-gray-500 text-center">
+    <p>Keyboard: 1-5 to select hub, j/k to navigate options</p>
+  </div>
+</div>
