@@ -45,6 +45,24 @@ class User < ApplicationRecord
   before_validation :generate_short_id, on: :create
 
   # ===========================================
+  # Profile Completion
+  # ===========================================
+
+  # Check if the user has completed their profile setup
+  # @return [Boolean]
+  def profile_completed?
+    profile_completed_at.present?
+  end
+
+  # Mark the user's profile as complete
+  # Only sets the timestamp if not already completed
+  def complete_profile!
+    return if profile_completed?
+
+    update!(profile_completed_at: Time.current)
+  end
+
+  # ===========================================
   # Travel Log (Visitor History)
   # ===========================================
 
