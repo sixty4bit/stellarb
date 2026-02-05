@@ -31,12 +31,12 @@ class OnboardingStateTest < ActiveSupport::TestCase
   # Step Progression
   # ===========================================
 
-  test "ONBOARDING_STEPS constant defines correct order" do
-    expected = %w[profile_setup ships_tour navigation_tutorial trade_routes workers_overview]
+  test "ONBOARDING_STEPS constant defines correct order ending at inbox" do
+    expected = %w[profile_setup ships_tour navigation_tutorial trade_routes workers_overview inbox_introduction]
     assert_equal expected, User::ONBOARDING_STEPS
   end
 
-  test "advance_onboarding_step! moves to next step" do
+  test "advance_onboarding_step! moves to next step through all steps ending at inbox" do
     assert_equal "profile_setup", @user.onboarding_step
 
     @user.advance_onboarding_step!
@@ -50,6 +50,17 @@ class OnboardingStateTest < ActiveSupport::TestCase
 
     @user.advance_onboarding_step!
     assert_equal "workers_overview", @user.onboarding_step
+
+    @user.advance_onboarding_step!
+    assert_equal "inbox_introduction", @user.onboarding_step
+  end
+
+  test "inbox_introduction is the final step before completion" do
+    @user.update!(onboarding_step: "inbox_introduction")
+    assert_not @user.onboarding_complete?
+
+    @user.advance_onboarding_step!
+    assert @user.onboarding_complete?
   end
 
   test "advance_onboarding_step! completes onboarding on final step" do

@@ -9,9 +9,9 @@ module Onboardable
     profile_setup
     ships_tour
     navigation_tutorial
-    first_trade_run
     trade_routes
     workers_overview
+    inbox_introduction
   ].freeze
 
   included do
@@ -20,9 +20,9 @@ module Onboardable
       profile_setup: "profile_setup",
       ships_tour: "ships_tour",
       navigation_tutorial: "navigation_tutorial",
-      first_trade_run: "first_trade_run",
       trade_routes: "trade_routes",
-      workers_overview: "workers_overview"
+      workers_overview: "workers_overview",
+      inbox_introduction: "inbox_introduction"
     }, default: :profile_setup
 
     # Scope for users still in onboarding

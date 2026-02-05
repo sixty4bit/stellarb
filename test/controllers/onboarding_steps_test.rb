@@ -7,7 +7,8 @@ class OnboardingStepsTest < ActionDispatch::IntegrationTest
     @system = System.create!(x: 0, y: 0, z: 0, name: "Test System")
     @user = User.create!(
       email: "steps@test.com",
-      name: "StepsUser"
+      name: "StepsUser",
+      profile_completed_at: Time.current
     )
     sign_in_as(@user)
   end
@@ -22,7 +23,7 @@ class OnboardingStepsTest < ActionDispatch::IntegrationTest
     get ships_path
 
     assert_response :success
-    assert_select "#onboarding-overlay"
+    assert_select "#onboarding-sidebar"
     assert_select "[data-onboarding-step-value='ships_tour']"
   end
 
@@ -56,7 +57,7 @@ class OnboardingStepsTest < ActionDispatch::IntegrationTest
     get navigation_index_path
 
     assert_response :success
-    assert_select "#onboarding-overlay"
+    assert_select "#onboarding-sidebar"
     assert_select "[data-onboarding-step-value='navigation_tutorial']"
   end
 
@@ -80,7 +81,7 @@ class OnboardingStepsTest < ActionDispatch::IntegrationTest
     get routes_path
 
     assert_response :success
-    assert_select "#onboarding-overlay"
+    assert_select "#onboarding-sidebar"
     assert_select "[data-onboarding-step-value='trade_routes']"
   end
 
@@ -104,7 +105,7 @@ class OnboardingStepsTest < ActionDispatch::IntegrationTest
   end
 
   # ===========================================
-  # Workers Overview Step (Step 5 - Final)
+  # Workers Overview Step (Step 5)
   # ===========================================
 
   test "workers_overview step shows overlay on workers page" do
@@ -113,12 +114,36 @@ class OnboardingStepsTest < ActionDispatch::IntegrationTest
     get workers_path
 
     assert_response :success
-    assert_select "#onboarding-overlay"
+    assert_select "#onboarding-sidebar"
     assert_select "[data-onboarding-step-value='workers_overview']"
   end
 
-  test "advancing from workers_overview completes onboarding" do
+  test "advancing from workers_overview goes to inbox_introduction" do
     @user.update!(onboarding_step: "workers_overview")
+
+    post advance_onboarding_path
+
+    @user.reload
+    assert_equal "inbox_introduction", @user.onboarding_step
+    assert_redirected_to inbox_index_path
+  end
+
+  # ===========================================
+  # Inbox Introduction Step (Step 6 - Final)
+  # ===========================================
+
+  test "inbox_introduction step shows overlay on inbox page" do
+    @user.update!(onboarding_step: "inbox_introduction")
+
+    get inbox_index_path
+
+    assert_response :success
+    assert_select "#onboarding-sidebar"
+    assert_select "[data-onboarding-step-value='inbox_introduction']"
+  end
+
+  test "advancing from inbox_introduction completes onboarding" do
+    @user.update!(onboarding_step: "inbox_introduction")
 
     post advance_onboarding_path
 
@@ -133,7 +158,7 @@ class OnboardingStepsTest < ActionDispatch::IntegrationTest
     get ships_path
 
     assert_response :success
-    assert_select "#onboarding-overlay", count: 0
+    assert_select "#onboarding-sidebar", count: 0
   end
 
   # ===========================================
@@ -146,7 +171,8 @@ class OnboardingStepsTest < ActionDispatch::IntegrationTest
       "ships_tour" => "Your Fleet Awaits",
       "navigation_tutorial" => "Charting the Stars",
       "trade_routes" => "Trade Routes",
-      "workers_overview" => "Your Crew"
+      "workers_overview" => "Your Crew",
+      "inbox_introduction" => "Your Command Center"
     }
 
     step_titles.each do |step, expected_title|
