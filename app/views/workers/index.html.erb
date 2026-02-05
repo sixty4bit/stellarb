@@ -1,0 +1,71 @@
+<%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
+
+<div class="max-w-6xl">
+  <h1 class="text-2xl font-bold mb-1 text-orange-500">Workers</h1>
+  <div class="text-sm text-gray-400 mb-6">Your employed NPCs</div>
+
+  <!-- Quick Actions -->
+  <div class="mb-6">
+    <%= link_to recruiter_workers_path,
+        class: "px-4 py-2 bg-orange-800 text-white hover:bg-orange-700 rounded transition-colors",
+        data: { turbo_frame: "content_panel" } do %>
+      <span class="text-lime-400">r</span> Open Recruiter
+    <% end %>
+  </div>
+
+  <% if @workers.any? %>
+    <!-- Unassigned Workers Warning -->
+    <% if @unassigned_workers&.any? %>
+      <div class="bg-orange-900 border border-orange-600 p-4 mb-6">
+        <p class="text-orange-300">
+          <span class="font-bold"><%= @unassigned_workers.count %> unassigned worker(s)</span>
+          — Assign them to ships or buildings to put them to work!
+        </p>
+      </div>
+    <% end %>
+
+    <div class="space-y-2">
+      <% @workers.each do |worker| %>
+        <% hiring = worker.hirings.find { |h| h.user_id == current_user.id } %>
+        <% assigned = hiring&.assignable.present? %>
+        <%= link_to worker_path(worker),
+            class: "block bg-blue-900 border border-blue-700 p-4 hover:border-orange-500 transition-colors",
+            data: { turbo_frame: "content_panel" } do %>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="font-bold text-white"><%= worker.npc_class.humanize %></span>
+              <span class="text-xs bg-<%= worker.rarity_tier == 'legendary' ? 'yellow' : worker.rarity_tier == 'rare' ? 'purple' : worker.rarity_tier == 'uncommon' ? 'blue' : 'gray' %>-800 text-white px-2 py-0.5 ml-2 rounded">
+                <%= worker.rarity_tier&.upcase || 'COMMON' %>
+              </span>
+              <% if !assigned %>
+                <span class="text-xs text-orange-400 ml-2">[UNASSIGNED]</span>
+              <% else %>
+                <span class="text-xs text-lime-400 ml-2">[ACTIVE]</span>
+              <% end %>
+            </div>
+            <div class="text-sm">
+              <span class="text-gray-400">Skill: </span>
+              <span class="text-white"><%= worker.skill %></span>
+            </div>
+          </div>
+          <div class="text-sm text-gray-400 mt-2">
+            <span>Race: <%= worker.race.humanize %></span>
+            <span class="ml-4">Wage: <%= hiring&.wage || worker.calculate_wage %> cr/day</span>
+            <% if assigned %>
+              <span class="ml-4 text-lime-400">Assigned to: <%= hiring.assignable.name rescue 'Unknown' %></span>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="bg-blue-900 border border-blue-700 p-8 text-center">
+      <p class="text-gray-400">No workers employed.</p>
+      <p class="text-sm text-gray-500 mt-2">Visit the Recruiter to hire NPCs for your ships and buildings.</p>
+    </div>
+  <% end %>
+
+  <div class="mt-8 text-sm text-gray-500">
+    <p>Keyboard: j/k to navigate, Enter to view details, r for recruiter, f to fire, a to assign</p>
+  </div>
+</div>
