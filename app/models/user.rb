@@ -21,6 +21,20 @@ class User < ApplicationRecord
   validates :level_tier, presence: true, numericality: { greater_than_or_equal_to: 1 }
   validates :credits, presence: true, numericality: { greater_than_or_equal_to: 0 }
 
+  # Tutorial Phase Enum
+  # Phase 1: cradle - Learn basics at (0,0,0)
+  # Phase 2: proving_ground - Exploration in Talos Arm
+  # Phase 3: emigration - The Drop to open galaxy
+  # graduated - Full game access
+  enum :tutorial_phase, {
+    cradle: "cradle",
+    proving_ground: "proving_ground",
+    emigration: "emigration",
+    graduated: "graduated"
+  }, default: :cradle
+
+  TUTORIAL_PHASES = %w[cradle proving_ground emigration graduated].freeze
+
   # Callbacks
   before_validation :generate_short_id, on: :create
 
@@ -96,6 +110,46 @@ class User < ApplicationRecord
   def completed_galaxy?(galaxy)
     galaxy_quests = Quest.for_galaxy(galaxy)
     galaxy_quests.all? { |q| player_quests.finished.exists?(quest: q) }
+  end
+
+  # ===========================================
+  # Tutorial Phase System
+  # ===========================================
+
+  # Advance to the next tutorial phase
+  # Does nothing if already graduated
+  def advance_tutorial_phase!
+    current_index = TUTORIAL_PHASES.index(tutorial_phase)
+    return if current_index.nil? || current_index >= TUTORIAL_PHASES.length - 1
+
+    next_phase = TUTORIAL_PHASES[current_index + 1]
+    update!(tutorial_phase: next_phase)
+  end
+
+  # Check if user is still in tutorial
+  # @return [Boolean]
+  def in_tutorial?
+    !graduated?
+  end
+
+  # Check if user can graduate from tutorial
+  # @return [Boolean] true only when in emigration phase
+  def can_graduate?
+    emigration?
+  end
+
+  # Check if user has completed the Cradle phase requirements
+  # Requires: at least one profitable automated route
+  # @return [Boolean]
+  def cradle_complete?
+    routes.where(status: "active").where("total_profit > 0").exists?
+  end
+
+  # Check if user can leave the Cradle
+  # Must be in cradle phase and have completed objectives
+  # @return [Boolean]
+  def can_leave_cradle?
+    cradle? && cradle_complete?
   end
 
   private

@@ -10,12 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_153040) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_05_153245) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "buildings", force: :cascade do |t|
     t.jsonb "building_attributes", default: {}
+    t.datetime "construction_ends_at"
     t.datetime "created_at", null: false
     t.datetime "disabled_at"
     t.string "function"
@@ -282,12 +283,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_153040) do
     t.integer "phase", default: 1, null: false
     t.string "short_id"
     t.integer "sign_in_count", default: 0
+    t.string "tutorial_phase", default: "cradle", null: false
     t.datetime "updated_at", null: false
     t.string "uuid", limit: 36
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["emigrated"], name: "index_users_on_emigrated"
     t.index ["phase"], name: "index_users_on_phase"
     t.index ["short_id"], name: "index_users_on_short_id", unique: true
+    t.index ["tutorial_phase"], name: "index_users_on_tutorial_phase"
     t.index ["uuid"], name: "index_users_on_uuid", unique: true
   end
 
