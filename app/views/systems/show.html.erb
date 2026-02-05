@@ -86,18 +86,36 @@
     <% end %>
   </div>
 
+  <!-- Available Minerals -->
+  <% if @system.available_minerals.any? %>
+  <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-lime-400 mb-4">Mineral Resources</h2>
+    <div class="flex flex-wrap gap-2">
+      <% @system.available_minerals.each do |mineral| %>
+        <span class="px-3 py-1 bg-blue-800 text-white text-sm rounded"><%= mineral.humanize %></span>
+      <% end %>
+    </div>
+  </div>
+  <% end %>
+
   <!-- Actions -->
-  <div class="flex gap-4">
+  <div class="flex flex-wrap gap-4">
     <%= link_to systems_path,
         class: "px-4 py-2 bg-blue-800 hover:bg-blue-700 border border-blue-600 transition-colors",
         data: { turbo_frame: "content_panel" } do %>
       ← Back to Systems
     <% end %>
     
+    <%= link_to system_market_index_path(@system),
+        class: "px-4 py-2 bg-lime-800 hover:bg-lime-700 border border-lime-600 transition-colors",
+        data: { turbo_frame: "content_panel" } do %>
+      <span class="text-orange-300">m</span> View Market
+    <% end %>
+    
     <%= link_to navigation_index_path,
         class: "px-4 py-2 bg-orange-800 hover:bg-orange-700 border border-orange-600 transition-colors",
         data: { turbo_frame: "content_panel" } do %>
-      Navigate Here
+      <span class="text-lime-300">n</span> Navigate Here
     <% end %>
   </div>
 
