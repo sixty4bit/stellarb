@@ -3,6 +3,7 @@
 class RecruitersController < ApplicationController
   before_action :set_active_menu
   before_action :set_recruit, only: [:show, :hire]
+  before_action :ensure_recruit_available, only: [:show]
 
   # Task stellarb-b2a: List available recruits
   def index
@@ -66,6 +67,14 @@ class RecruitersController < ApplicationController
 
   def set_recruit
     @recruit = Recruit.find(params[:id])
+  end
+
+  def ensure_recruit_available
+    if @recruit.expires_at <= Time.current
+      redirect_to recruiters_path, alert: "This recruit is no longer available."
+    elsif @recruit.available_at > Time.current
+      redirect_to recruiters_path, alert: "This recruit is not yet available."
+    end
   end
 
   # Find the assignable (Ship or Building) if specified in params

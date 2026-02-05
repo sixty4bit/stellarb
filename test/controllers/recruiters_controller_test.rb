@@ -199,6 +199,22 @@ class RecruitersControllerTest < ActionDispatch::IntegrationTest
     assert_select "*", text: /Cargo incident/i
   end
 
+  test "show redirects to index when recruit is expired" do
+    @recruit.update!(expires_at: 1.hour.ago)
+
+    get recruiter_path(@recruit)
+    assert_redirected_to recruiters_path
+    assert_match /no longer available/i, flash[:alert]
+  end
+
+  test "show redirects to index when recruit is not available yet" do
+    @recruit.update!(available_at: 1.hour.from_now)
+
+    get recruiter_path(@recruit)
+    assert_redirected_to recruiters_path
+    assert_match /not yet available/i, flash[:alert]
+  end
+
   # ================================================
   # Task stellarb-r9a: RecruitersController#hire
   # ================================================
