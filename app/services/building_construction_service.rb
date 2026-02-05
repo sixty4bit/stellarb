@@ -4,13 +4,15 @@
 # Players learn to construct their first asset (Mineral Extractor) in the Proving Ground
 class BuildingConstructionService
   # Result struct for construction operations
-  ConstructionResult = Struct.new(:success?, :error, :building, :tutorial_milestone?, :tutorial_milestone, keyword_init: true) do
-    def self.success(building:, tutorial_milestone: nil)
+  ConstructionResult = Struct.new(:success?, :error, :building, :tutorial_milestone?, :tutorial_milestone, :colonial_ticket_unlocked?, :ticket, keyword_init: true) do
+    def self.success(building:, tutorial_milestone: nil, ticket: nil)
       new(
         success?: true,
         building: building,
         tutorial_milestone?: tutorial_milestone.present?,
-        tutorial_milestone: tutorial_milestone
+        tutorial_milestone: tutorial_milestone,
+        colonial_ticket_unlocked?: ticket.present?,
+        ticket: ticket
       )
     end
 
@@ -143,8 +145,9 @@ class BuildingConstructionService
       building = create_building!
 
       tutorial_milestone = check_tutorial_milestone
+      ticket = check_colonial_ticket_unlock
 
-      ConstructionResult.success(building: building, tutorial_milestone: tutorial_milestone)
+      ConstructionResult.success(building: building, tutorial_milestone: tutorial_milestone, ticket: ticket)
     end
   rescue ActiveRecord::RecordInvalid => e
     ConstructionResult.failure("Failed to create building: #{e.message}")
@@ -234,5 +237,14 @@ class BuildingConstructionService
     else
       nil
     end
+  end
+
+  # Check if building construction completes Proving Ground requirements
+  # and automatically unlock Colonial Ticket if so
+  def check_colonial_ticket_unlock
+    return nil unless @user.proving_ground?
+
+    result = ColonialTicketService.check_and_unlock_if_ready(user: @user)
+    result.ticket if result.success?
   end
 end
