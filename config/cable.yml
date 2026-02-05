@@ -1,13 +1,12 @@
 development:
-  adapter: async
+  adapter: solid_cable
+  silence_polling: true
+  polling_interval: 0.1.seconds
 
 test:
   adapter: test
 
 production:
-  adapter: async
-  # TODO: Switch to solid_cable when gem is added
-  # adapter: solid_cable
-  # connects_to:
-  #   database:
-  #     writing: cable
+  adapter: solid_cable
+  silence_polling: true
+  polling_interval: 1.second
