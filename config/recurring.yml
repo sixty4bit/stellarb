@@ -1,15 +1,64 @@
-# examples:
-#   periodic_cleanup:
-#     class: CleanSoftDeletedRecordsJob
-#     queue: background
-#     args: [ 1000, { batch_size: 500 } ]
-#     schedule: every hour
-#   periodic_cleanup_with_command:
-#     command: "SoftDeletedRecord.due.delete_all"
-#     priority: 2
-#     schedule: at 5am every day
+# Solid Queue Recurring Tasks
+#
+# Schedule format:
+#   schedule: every [N] [unit]
+#   schedule: every [N] [unit] at [time]
+#   schedule: at [time] every day
+#
+# Examples:
+#   schedule: every 1 minute
+#   schedule: every hour at minute 15
+#   schedule: at 5am every day
+
+# ============================================
+# Shared job definitions (used by all envs)
+# ============================================
+shared: &shared
+  # Ship Arrivals - check every minute for ships that have reached destination
+  ship_arrivals:
+    class: ShipArrivalJob
+    queue: default
+    schedule: every 1 minute
+
+  # NPC Age Progression - daily increment of NPC ages
+  # Run at 4:00 AM to process overnight
+  npc_age_progression:
+    class: NpcAgeProgressionJob
+    queue: default
+    schedule: at 4am every day
+
+  # NPC Aging (Retirement/Death) - check for end-of-life events
+  # Run 5 minutes after age progression to process newly aged NPCs
+  npc_aging:
+    class: NpcAgingJob
+    queue: default
+    schedule: at 4:05am every day
+
+  # Pip Escalation - daily spread of pip infestations
+  # Run at 3:00 AM during low activity
+  pip_escalation:
+    class: PipEscalationJob
+    queue: default
+    schedule: at 3am every day
+
+  # Recruiter Refresh - ensure recruit pool is populated
+  # This job self-schedules (30-90 min intervals), but we add
+  # an hourly fallback in case self-scheduling breaks
+  recruiter_refresh:
+    class: RecruiterRefreshJob
+    queue: default
+    schedule: every hour at minute 30
+
+# ============================================
+# Environment-specific configuration
+# ============================================
+
+development:
+  <<: *shared
 
 production:
+  <<: *shared
+  # Clear finished jobs from Solid Queue
   clear_solid_queue_finished_jobs:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12
