@@ -285,6 +285,85 @@ class Ship < ApplicationRecord
     refuel!(amount, user)
   end
 
+  # ===========================================
+  # Cargo System
+  # ===========================================
+  
+  # Get the cargo capacity from ship attributes
+  # @return [Integer] Maximum cargo capacity in units
+  def cargo_capacity
+    ship_attributes["cargo_capacity"]&.to_i || 100
+  end
+
+  # Calculate total weight of all cargo
+  # @return [Integer] Total cargo weight in units
+  def total_cargo_weight
+    (cargo || {}).values.sum(&:to_i)
+  end
+
+  # Calculate available cargo space
+  # @return [Integer] Available space in units
+  def available_cargo_space
+    cargo_capacity - total_cargo_weight
+  end
+
+  # Get quantity of a specific commodity in cargo
+  # @param commodity [String] Commodity name
+  # @return [Integer] Quantity in cargo (0 if not present)
+  def cargo_quantity_for(commodity)
+    (cargo || {})[commodity].to_i
+  end
+
+  # Add cargo to the ship
+  # @param commodity [String] Commodity to add
+  # @param quantity [Integer] Amount to add
+  # @return [TravelResult] Success/failure result
+  def add_cargo!(commodity, quantity)
+    quantity = quantity.to_i
+    
+    # Check capacity
+    if total_cargo_weight + quantity > cargo_capacity
+      return TravelResult.failure("Cannot exceed cargo capacity (#{available_cargo_space} available)")
+    end
+
+    self.cargo ||= {}
+    self.cargo[commodity] = cargo_quantity_for(commodity) + quantity
+    save!
+
+    TravelResult.success
+  end
+
+  # Remove cargo from the ship
+  # @param commodity [String] Commodity to remove
+  # @param quantity [Integer] Amount to remove
+  # @return [TravelResult] Success/failure result
+  def remove_cargo!(commodity, quantity)
+    quantity = quantity.to_i
+    current_qty = cargo_quantity_for(commodity)
+    
+    # Check if we have this commodity
+    if current_qty == 0
+      return TravelResult.failure("You don't have any #{commodity} in cargo")
+    end
+
+    # Check if we have enough
+    if current_qty < quantity
+      return TravelResult.failure("Insufficient #{commodity} in cargo (have #{current_qty}, need #{quantity})")
+    end
+
+    self.cargo ||= {}
+    new_qty = current_qty - quantity
+    
+    if new_qty <= 0
+      self.cargo.delete(commodity)
+    else
+      self.cargo[commodity] = new_qty
+    end
+    
+    save!
+    TravelResult.success
+  end
+
   # Associations
   belongs_to :user
   belongs_to :current_system, class_name: 'System', optional: true
