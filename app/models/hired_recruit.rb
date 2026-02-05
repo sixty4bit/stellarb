@@ -451,4 +451,27 @@ class HiredRecruit < ApplicationRecord
       { clean: 10, incident: 5, catastrophe: 1 }
     end
   end
+
+  # ==========================================
+  # Lifespan Generation
+  # ==========================================
+
+  # Generate lifespan based on skill level
+  # Higher skill = longer lifespan (they're more valuable)
+  # Formula: base + (skill * bonus) + random variance
+  def generate_lifespan
+    return if lifespan_days.present?
+
+    # Base lifespan with skill bonus
+    # Skill 1: ~30-50 days, Skill 100: ~110-130 days
+    skill_bonus = (skill || 50) * SKILL_LIFESPAN_BONUS
+    base = BASE_LIFESPAN_MIN + skill_bonus
+
+    # Add some random variance (±20%)
+    variance = base * 0.2
+    actual = base + rand(-variance..variance)
+
+    # Clamp to valid range
+    self.lifespan_days = actual.round.clamp(BASE_LIFESPAN_MIN, 180)
+  end
 end
