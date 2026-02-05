@@ -6,6 +6,7 @@ pilot_engineer:
   hired_at: <%= 1.week.ago %>
   wage: 650
   status: active
+  assignable: hauler (Ship)
 
 pilot_navigator:
   user: pilot
@@ -14,3 +15,4 @@ pilot_navigator:
   hired_at: <%= 3.days.ago %>
   wage: 1230
   status: active
+  assignable: scout (Ship)
