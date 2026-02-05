@@ -1,0 +1,6 @@
+pilot_visits_cradle:
+  user: pilot
+  system: cradle
+  first_visited_at: <%= 1.day.ago %>
+  last_visited_at: <%= 1.hour.ago %>
+  visit_count: 5
