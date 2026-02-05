@@ -60,6 +60,7 @@ class ProfileControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update marks profile as completed if not already" do
+    @user.update!(profile_completed_at: nil)
     assert_nil @user.profile_completed_at
     patch profile_path, params: { user: { name: "New Name" } }
     @user.reload

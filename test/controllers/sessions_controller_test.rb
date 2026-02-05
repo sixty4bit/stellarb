@@ -34,7 +34,10 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
       post sessions_path, params: { user: { email: email } }
     end
 
+    # New users are redirected to root, then to profile setup
     assert_redirected_to root_path
+    follow_redirect!
+    assert_redirected_to edit_profile_path  # Profile setup required for new users
     follow_redirect!
     assert_response :success
 

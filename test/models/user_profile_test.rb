@@ -21,6 +21,7 @@ class UserProfileTest < ActiveSupport::TestCase
   end
 
   test "complete_profile! sets profile_completed_at" do
+    @user.update!(profile_completed_at: nil)
     assert_nil @user.profile_completed_at
     @user.complete_profile!
     assert_not_nil @user.profile_completed_at

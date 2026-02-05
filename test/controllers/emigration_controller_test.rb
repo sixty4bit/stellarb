@@ -13,7 +13,8 @@ class EmigrationControllerTest < ActionDispatch::IntegrationTest
       short_id: "u-emi-#{@suffix}",
       level_tier: 1,
       credits: 10_000,
-      tutorial_phase: :emigration  # Phase 3 - ready to emigrate
+      tutorial_phase: :emigration,  # Phase 3 - ready to emigrate
+      profile_completed_at: 1.day.ago
     )
 
     # Create hub owners
@@ -22,7 +23,8 @@ class EmigrationControllerTest < ActionDispatch::IntegrationTest
         name: "Hub Owner #{i}",
         email: "hubowner#{i}-#{@suffix}@test.example",
         short_id: "u-hub#{i}-#{@suffix}",
-        credits: 100_000
+        credits: 100_000,
+        profile_completed_at: 1.day.ago
       )
     end
 
@@ -207,7 +209,8 @@ class EmigrationControllerTest < ActionDispatch::IntegrationTest
     uncertified_owner = User.create!(
       name: "Uncertified Owner",
       email: "uncert-#{@suffix}@test.example",
-      short_id: "u-unc-#{@suffix}"
+      short_id: "u-unc-#{@suffix}",
+      profile_completed_at: 1.day.ago
     )
     uncertified_hub = PlayerHub.create!(
       owner: uncertified_owner,
