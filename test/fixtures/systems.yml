@@ -1,0 +1,21 @@
+cradle:
+  name: The Cradle
+  short_id: sy-cra
+  x: 900
+  y: 900
+  z: 900
+  properties:
+    star_type: yellow_dwarf
+    planet_count: 5
+    hazard_level: 0
+
+alpha_centauri:
+  name: Alpha Centauri
+  short_id: sy-alp
+  x: 903
+  y: 900
+  z: 900
+  properties:
+    star_type: red_dwarf
+    planet_count: 3
+    hazard_level: 15

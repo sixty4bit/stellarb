@@ -1,0 +1,107 @@
+<%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
+
+<div class="max-w-6xl">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-orange-500 mb-2"><%= @system.name %></h1>
+    <div class="text-sm text-gray-400">
+      Coordinates: (<%= @system.x %>, <%= @system.y %>, <%= @system.z %>)
+      <% if @system.is_cradle? %>
+        <span class="text-xs bg-lime-800 text-lime-200 px-2 py-0.5 ml-2 rounded">[STARTING SYSTEM]</span>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- System Properties -->
+  <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-lime-400 mb-4">System Properties</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+      <div>
+        <span class="text-gray-400 block">Star Type</span>
+        <span class="text-white"><%= @system.properties&.dig('star_type')&.humanize || 'Unknown' %></span>
+      </div>
+      <div>
+        <span class="text-gray-400 block">Planets</span>
+        <span class="text-white"><%= @system.properties&.dig('planet_count') || '?' %></span>
+      </div>
+      <div>
+        <span class="text-gray-400 block">Hazard Level</span>
+        <span class="text-<%= (@system.properties&.dig('hazard_level') || 0) > 50 ? 'red' : 'lime' %>-400">
+          <%= @system.properties&.dig('hazard_level') || 0 %>%
+        </span>
+      </div>
+      <div>
+        <span class="text-gray-400 block">Discovery</span>
+        <span class="text-white">
+          <% if @system.discovered_by %>
+            <%= @system.discovered_by.name %>
+          <% else %>
+            Unknown
+          <% end %>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ships in System -->
+  <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-lime-400 mb-4">Your Ships Here</h2>
+    <% if @ships_in_system.any? %>
+      <div class="space-y-2">
+        <% @ships_in_system.each do |ship| %>
+          <%= link_to ship_path(ship),
+              class: "block p-3 hover:bg-blue-800 rounded transition-colors",
+              data: { turbo_frame: "content_panel" } do %>
+            <span class="text-white"><%= ship.name %></span>
+            <span class="text-gray-500 text-sm ml-2"><%= ship.hull_size&.humanize %></span>
+            <span class="text-xs text-<%= ship.status == 'docked' ? 'lime' : 'orange' %>-400 ml-2">
+              [<%= ship.status&.upcase %>]
+            </span>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-gray-500">No ships in this system.</p>
+    <% end %>
+  </div>
+
+  <!-- Buildings in System -->
+  <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-lime-400 mb-4">Your Buildings Here</h2>
+    <% if @buildings_in_system.any? %>
+      <div class="space-y-2">
+        <% @buildings_in_system.each do |building| %>
+          <%= link_to building_path(building),
+              class: "block p-3 hover:bg-blue-800 rounded transition-colors",
+              data: { turbo_frame: "content_panel" } do %>
+            <span class="text-white"><%= building.name %></span>
+            <span class="text-gray-500 text-sm ml-2"><%= building.function&.humanize %></span>
+            <span class="text-xs text-<%= building.status == 'active' ? 'lime' : 'orange' %>-400 ml-2">
+              [<%= building.status&.upcase %>]
+            </span>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-gray-500">No buildings in this system.</p>
+    <% end %>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex gap-4">
+    <%= link_to systems_path,
+        class: "px-4 py-2 bg-blue-800 hover:bg-blue-700 border border-blue-600 transition-colors",
+        data: { turbo_frame: "content_panel" } do %>
+      ← Back to Systems
+    <% end %>
+    
+    <%= link_to navigation_index_path,
+        class: "px-4 py-2 bg-orange-800 hover:bg-orange-700 border border-orange-600 transition-colors",
+        data: { turbo_frame: "content_panel" } do %>
+      Navigate Here
+    <% end %>
+  </div>
+
+  <div class="mt-8 text-sm text-gray-500">
+    <p>Keyboard: Esc to go back, n to navigate</p>
+  </div>
+</div>
