@@ -82,6 +82,24 @@ class Route < ApplicationRecord
     status == "active" && profitable? && has_stops?
   end
 
+  # Check if route meets supply chain tutorial criteria
+  # Same as qualifies_for_tutorial? but semantically distinct
+  # @return [Boolean]
+  def meets_supply_chain_tutorial?
+    qualifies_for_tutorial?
+  end
+
+  # Check if route involves a specific commodity in any stop
+  # @param commodity [String] the commodity name to check
+  # @return [Boolean]
+  def involves_commodity?(commodity)
+    return false unless has_stops?
+
+    stops.any? do |stop|
+      (stop["commodity"] || stop[:commodity]).to_s.downcase == commodity.to_s.downcase
+    end
+  end
+
   private
 
   # Callback: Check if this route's creation/update completes the tutorial
