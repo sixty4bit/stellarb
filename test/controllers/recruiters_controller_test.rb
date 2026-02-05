@@ -115,4 +115,87 @@ class RecruitersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "a[href='#{root_path}']"
   end
+
+  # ================================================
+  # Task stellarb-04o: RecruitersController#show
+  # ================================================
+
+  test "show renders recruit detail page" do
+    get recruiter_path(@recruit)
+    assert_response :success
+    assert_select "h1", text: /Engineer/i
+  end
+
+  test "show displays recruit skill" do
+    get recruiter_path(@recruit)
+    assert_response :success
+    assert_select "*", text: /Skill/i
+    assert_select "*", text: /65/
+  end
+
+  test "show displays recruit race" do
+    get recruiter_path(@recruit)
+    assert_response :success
+    assert_select "*", text: /Vex/i
+  end
+
+  test "show displays rarity tier" do
+    get recruiter_path(@recruit)
+    assert_response :success
+    assert_select "*", text: /uncommon/i
+  end
+
+  test "show displays full employment history" do
+    get recruiter_path(@recruit)
+    assert_response :success
+    # From fixture: employer "Stellar Mining Corp", duration "14", outcome "Contract completed"
+    assert_select "*", text: /Stellar Mining Corp/i
+    assert_select "*", text: /Contract completed/i
+  end
+
+  test "show displays hire cost" do
+    get recruiter_path(@recruit)
+    assert_response :success
+    assert_select "*", text: /Hire cost/i
+    assert_select "*", text: /cr/i
+  end
+
+  test "show has hire button" do
+    get recruiter_path(@recruit)
+    assert_response :success
+    assert_select "form[action*='hire']"
+  end
+
+  test "show has back to recruiter link" do
+    get recruiter_path(@recruit)
+    assert_response :success
+    assert_select "a[href='#{recruiters_path}']"
+  end
+
+  test "show has breadcrumb navigation" do
+    get recruiter_path(@recruit)
+    assert_response :success
+    assert_select "a[href='#{root_path}']"
+    assert_select "a[href='#{recruiters_path}']"
+  end
+
+  test "show displays quirks if present" do
+    # Navigator fixture has stats with quirks or we need to add
+    navigator = recruits(:navigator_zara)
+    navigator.update!(base_stats: { "quirks" => ["meticulous", "efficient"] })
+
+    get recruiter_path(navigator)
+    assert_response :success
+    assert_select "*", text: /meticulous/i
+  end
+
+  test "show displays chaos warning for high chaos recruits" do
+    marine = recruits(:marine_grunt)
+    # Marine has chaos_factor 60 - should show warning
+
+    get recruiter_path(marine)
+    assert_response :success
+    # High chaos should have some visual indicator
+    assert_select "*", text: /Cargo incident/i
+  end
 end
