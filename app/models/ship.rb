@@ -482,6 +482,10 @@ class Ship < ApplicationRecord
     # Store destination name before clearing
     arrived_at_system = destination_system
 
+    # Record system visit and check if it's a first visit
+    visit = SystemVisit.record_visit(user, arrived_at_system)
+    is_first_visit = visit.visit_count == 1
+
     # Arrive at destination
     self.current_system = arrived_at_system
     self.location_x = arrived_at_system.x
@@ -497,6 +501,9 @@ class Ship < ApplicationRecord
 
     # Send arrival notification to inbox
     send_arrival_notification(arrived_at_system)
+
+    # Send discovery notification for first visits
+    send_discovery_notification(arrived_at_system) if is_first_visit
   end
 
   def send_arrival_notification(system)
@@ -506,6 +513,23 @@ class Ship < ApplicationRecord
       body: "Your ship #{name} has arrived at #{system.name}.",
       from: "Navigation System",
       category: "travel"
+    )
+  end
+
+  def send_discovery_notification(system)
+    star_type = system.properties&.dig("star_type")&.humanize || "unknown type"
+    hazard = system.properties&.dig("hazard_level") || 0
+
+    Message.create!(
+      user: user,
+      title: "🌟 New System Discovered: #{system.name}",
+      body: "Congratulations, explorer! You are the first to visit #{system.name}.\n\n" \
+            "Star Type: #{star_type}\n" \
+            "Hazard Level: #{hazard}%\n" \
+            "Coordinates: (#{system.x}, #{system.y}, #{system.z})\n\n" \
+            "This discovery has been recorded in your flight log.",
+      from: "Exploration Bureau",
+      category: "discovery"
     )
   end
 

@@ -28,6 +28,11 @@ module SignInHelper
     post sessions_path, params: { user: { email: user.email } }
     follow_redirect!
   end
+
+  def sign_out
+    delete sessions_path
+    follow_redirect! if response.redirect?
+  end
 end
 
 class ActionDispatch::IntegrationTest
