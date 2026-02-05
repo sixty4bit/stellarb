@@ -328,6 +328,8 @@ PlayerName
 │                                                                 │
 │ ┤ BUILDINGS                                    [7 total]        │
 │ │ ─────────────────────────────────────────────────────────────│
+│ │ Filter: [All Types ▼]  [All Systems ▼]           [Clear]     │
+│ │ ─────────────────────────────────────────────────────────────│
 │ │ NAME           SYSTEM    TYPE        STATUS      OUTPUT      │
 │ │ ─────────────────────────────────────────────────────────────│
 │ │ Refinery-7     Vigby     Refinery    ● Online    340t/day    │
@@ -350,6 +352,15 @@ PlayerName
 | `Enter` | View Building Detail |
 | `s` | Manage staff |
 | `r` | Repair (if damaged) |
+| `t` | Filter by type (cycles: All → Refinery → Habitat → Extractor → ...) |
+| `y` | Filter by system (cycles through systems with buildings) |
+| `c` | Clear all filters |
+| `/` | Search by name |
+
+**Filter Behavior:**
+- Filters persist until cleared
+- URL updates to reflect filters: `/buildings?type=refinery&system=sy-vig`
+- Count updates to show filtered total: `[3 of 7]`
 
 ---
 
