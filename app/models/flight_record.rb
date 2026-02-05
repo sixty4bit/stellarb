@@ -6,7 +6,7 @@ class FlightRecord < ApplicationRecord
   belongs_to :to_system, class_name: 'System'
 
   # Constants
-  EVENT_TYPES = %w[departure arrival].freeze
+  EVENT_TYPES = %w[departure arrival emigration_teleport].freeze
 
   # Validations
   validates :event_type, presence: true, inclusion: { in: EVENT_TYPES }
@@ -16,6 +16,7 @@ class FlightRecord < ApplicationRecord
   # Scopes
   scope :departures, -> { where(event_type: 'departure') }
   scope :arrivals, -> { where(event_type: 'arrival') }
+  scope :emigration_teleports, -> { where(event_type: 'emigration_teleport') }
   scope :recent_first, -> { order(occurred_at: :desc) }
 
   # ===========================================

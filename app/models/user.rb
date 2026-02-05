@@ -1,6 +1,11 @@
 class User < ApplicationRecord
   include TripleId
 
+  # Custom Errors for Emigration
+  class NotReadyForEmigrationError < StandardError; end
+  class AlreadyEmigratedError < StandardError; end
+  class InvalidHubError < StandardError; end
+
   # Associations
   has_many :ships, dependent: :destroy
   has_many :buildings, dependent: :destroy
@@ -172,7 +177,100 @@ class User < ApplicationRecord
     ProceduralGeneration::ReservedSystem.all_reserved_systems
   end
 
+  # ===========================================
+  # Emigration (Phase 3: The Drop)
+  # ===========================================
+
+  # Complete emigration by teleporting to a player hub
+  # This is a one-way trip - instant transport to the frontier
+  #
+  # @param hub [PlayerHub] The certified player hub to emigrate to
+  # @raise [NotReadyForEmigrationError] If user is not in emigration phase
+  # @raise [AlreadyEmigratedError] If user has already emigrated
+  # @raise [InvalidHubError] If hub is not certified for emigration
+  def emigrate_to!(hub)
+    validate_emigration!(hub)
+
+    destination_system = hub.system
+
+    ActiveRecord::Base.transaction do
+      # Teleport all ships to destination
+      teleport_ships_to!(destination_system)
+
+      # Create system visit at destination
+      record_system_visit!(destination_system)
+
+      # Update user status
+      update!(
+        tutorial_phase: :graduated,
+        emigrated: true,
+        emigrated_at: Time.current,
+        emigration_hub_id: hub.id
+      )
+
+      # Track immigration at the hub
+      hub.record_immigration!
+    end
+  end
+
   private
+
+  # Validate that emigration can proceed
+  # @param hub [PlayerHub] The destination hub
+  # @raise [NotReadyForEmigrationError, AlreadyEmigratedError, InvalidHubError]
+  def validate_emigration!(hub)
+    raise AlreadyEmigratedError, "You have already emigrated" if emigrated?
+    raise NotReadyForEmigrationError, "You must be in emigration phase" unless emigration?
+    raise InvalidHubError, "Hub is not certified for emigration" unless hub.certified?
+  end
+
+  # Instantly teleport all user ships to destination system
+  # No fuel cost, no travel time - this is a special one-time event
+  #
+  # @param destination [System] The system to teleport ships to
+  def teleport_ships_to!(destination)
+    ships.each do |ship|
+      origin = ship.current_system
+
+      # Record the teleport in flight history
+      if origin && origin != destination
+        flight_records.create!(
+          ship: ship,
+          from_system: origin,
+          to_system: destination,
+          event_type: "emigration_teleport",
+          distance: origin.distance_to(destination),
+          occurred_at: Time.current
+        )
+      end
+
+      # Move ship to destination
+      ship.update!(
+        current_system: destination,
+        destination_system: nil,
+        arrival_at: nil,
+        status: "docked"
+      )
+    end
+  end
+
+  # Record a system visit at the destination
+  # @param system [System] The system to record visit for
+  def record_system_visit!(system)
+    visit = system_visits.find_or_initialize_by(system: system)
+    now = Time.current
+
+    if visit.new_record?
+      visit.first_visited_at = now
+      visit.last_visited_at = now
+      visit.visit_count = 1
+    else
+      visit.last_visited_at = now
+      visit.visit_count += 1
+    end
+
+    visit.save!
+  end
 
   def generate_short_id
     return if short_id.present?
