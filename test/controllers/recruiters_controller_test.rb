@@ -198,4 +198,94 @@ class RecruitersControllerTest < ActionDispatch::IntegrationTest
     # High chaos should have some visual indicator
     assert_select "*", text: /Cargo incident/i
   end
+
+  # ================================================
+  # Task stellarb-r9a: RecruitersController#hire
+  # ================================================
+
+  test "hire creates HiredRecruit and Hiring records" do
+    ship = ships(:hauler)
+    # Ensure user has enough credits
+    @user.update!(credits: 5000)
+
+    assert_difference -> { HiredRecruit.count } => 1, -> { Hiring.count } => 1 do
+      post hire_recruiter_path(@recruit), params: { assignable_type: "Ship", assignable_id: ship.id }
+    end
+  end
+
+  test "hire redirects to worker show page on success" do
+    ship = ships(:hauler)
+    @user.update!(credits: 5000)
+
+    post hire_recruiter_path(@recruit), params: { assignable_type: "Ship", assignable_id: ship.id }
+    assert_redirected_to worker_path(HiredRecruit.last)
+  end
+
+  test "hire shows success notice" do
+    ship = ships(:hauler)
+    @user.update!(credits: 5000)
+
+    post hire_recruiter_path(@recruit), params: { assignable_type: "Ship", assignable_id: ship.id }
+    assert_match /hired/i, flash[:notice]
+  end
+
+  test "hire deducts credits from user" do
+    ship = ships(:hauler)
+    @user.update!(credits: 5000)
+    initial_credits = @user.credits
+    hire_cost = @recruit.base_wage * 2
+
+    post hire_recruiter_path(@recruit), params: { assignable_type: "Ship", assignable_id: ship.id }
+
+    @user.reload
+    assert_equal initial_credits - hire_cost, @user.credits
+  end
+
+  test "hire fails when user has insufficient credits" do
+    ship = ships(:hauler)
+    @user.update!(credits: 0)
+
+    assert_no_difference -> { HiredRecruit.count } do
+      post hire_recruiter_path(@recruit), params: { assignable_type: "Ship", assignable_id: ship.id }
+    end
+
+    assert_redirected_to recruiters_path
+    assert_match /insufficient credits/i, flash[:alert]
+  end
+
+  test "hire fails when recruit is expired" do
+    ship = ships(:hauler)
+    @user.update!(credits: 5000)
+    @recruit.update!(expires_at: 1.hour.ago)
+
+    assert_no_difference -> { HiredRecruit.count } do
+      post hire_recruiter_path(@recruit), params: { assignable_type: "Ship", assignable_id: ship.id }
+    end
+
+    assert_redirected_to recruiters_path
+    assert_match /no longer available/i, flash[:alert]
+  end
+
+  test "hire removes recruit from pool" do
+    ship = ships(:hauler)
+    @user.update!(credits: 5000)
+
+    post hire_recruiter_path(@recruit), params: { assignable_type: "Ship", assignable_id: ship.id }
+
+    @recruit.reload
+    assert @recruit.expires_at <= Time.current, "Recruit should be expired after hiring"
+  end
+
+  # Note: DB schema requires assignable_id to be non-null
+  # Unassigned hires would require a migration to allow null
+  test "hire without assignable redirects with error" do
+    @user.update!(credits: 5000)
+
+    assert_no_difference -> { HiredRecruit.count } do
+      post hire_recruiter_path(@recruit)
+    end
+
+    assert_redirected_to recruiters_path
+    assert_match /must be assigned/i, flash[:alert]
+  end
 end
