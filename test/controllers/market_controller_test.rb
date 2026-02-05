@@ -56,13 +56,13 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
   test "index has buy action" do
     get system_market_index_path(@system)
     assert_response :success
-    assert_select "a, button", text: /Buy/i
+    assert_select "input[type=submit][value=Buy]"
   end
 
   test "index has sell action" do
     get system_market_index_path(@system)
     assert_response :success
-    assert_select "a, button", text: /Sell/i
+    assert_select "input[type=submit][value=Sell]"
   end
 
   test "index has back to system link" do

@@ -30,7 +30,7 @@ class InboxControllerTest < ActionDispatch::IntegrationTest
   test "show renders message detail view" do
     get inbox_path(id: 1)
     assert_response :success
-    assert_select "h1", text: /Welcome/i
+    assert_select "h2", text: /Welcome/i
   end
 
   test "show displays message body and sender" do
