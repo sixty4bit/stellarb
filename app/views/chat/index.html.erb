@@ -1,0 +1,57 @@
+<div data-controller="chat">
+  <%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
+
+  <h1 class="text-2xl font-bold text-orange-500 mb-1">Chat</h1>
+  <div class="text-sm text-gray-400 mb-6">Player Communication</div>
+
+  <!-- Channel Tabs -->
+  <div class="flex border-b border-blue-700 mb-4">
+    <% @channels.each do |channel| %>
+      <%= link_to chat_index_path(channel: channel),
+          class: "px-4 py-2 -mb-px transition-colors #{@current_channel == channel ? 'border-b-2 border-orange-500 text-orange-500' : 'text-gray-400 hover:text-white'}",
+          data: { turbo_frame: "content_panel" } do %>
+        <%= channel %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <!-- Messages Area -->
+  <div class="bg-blue-900 border border-blue-700 h-96 overflow-y-auto p-4 mb-4"
+       data-chat-target="messages">
+    <% if @messages.empty? %>
+      <div class="text-gray-500 text-center py-8">
+        <p>No messages in <%= @current_channel %> channel</p>
+        <p class="text-sm mt-2">Be the first to say something!</p>
+      </div>
+    <% else %>
+      <% @messages.each do |message| %>
+        <div class="mb-3">
+          <span class="text-lime-400"><%= message[:author] %>:</span>
+          <span><%= message[:body] %></span>
+          <span class="text-xs text-gray-500 ml-2"><%= time_ago_in_words(message[:timestamp]) %></span>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <!-- Message Input -->
+  <%= form_with url: chat_index_path, method: :post, local: false,
+      class: "flex gap-2",
+      data: { action: "turbo:submit-end->chat#clearInput" } do |f| %>
+    <%= hidden_field_tag :channel, @current_channel %>
+    <input type="text"
+           name="message"
+           placeholder="Type your message..."
+           class="flex-1 bg-blue-950 border border-blue-700 px-4 py-2 focus:border-orange-500 focus:outline-none"
+           data-chat-target="input"
+           autocomplete="off">
+    <button type="submit"
+            class="px-6 py-2 bg-orange-800 hover:bg-orange-700 border border-orange-600 transition-colors">
+      Send
+    </button>
+  <% end %>
+
+  <div class="mt-6 text-sm text-gray-500">
+    <p>Keyboard: Enter to send, Tab to switch channels</p>
+  </div>
+</div>

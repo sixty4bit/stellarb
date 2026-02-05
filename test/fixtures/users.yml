@@ -1,0 +1,6 @@
+pilot:
+  email: pilot@test.example
+  name: Test Pilot
+  short_id: u-tes
+  level_tier: 1
+  credits: 1000.0
