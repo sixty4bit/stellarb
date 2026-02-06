@@ -428,6 +428,17 @@ class Ship < ApplicationRecord
     ship_attributes["maneuverability"] || MANEUVERABILITY_BASELINE
   end
 
+  def hull_points
+    ship_attributes["hull_points"] || 100
+  end
+
+  def max_hull_points
+    base = 100
+    base = (base * 1.2).round if race == "krog"
+    upgrades = ship_attributes.dig("upgrades", "hull_points") || 0
+    base + (upgrades * UPGRADE_AMOUNTS["hull_points"])
+  end
+
   def fuel_required_for(destination)
     return 0 if destination == current_system
     distance = System.distance_between(current_system, destination)
