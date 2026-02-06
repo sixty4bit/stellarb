@@ -47,10 +47,11 @@
         <!-- Add Intent Form -->
         <%= form_with url: route_stop_intents_path(route, index), 
             class: "flex gap-2 items-center mt-2",
-            data: { turbo_frame: "_top" } do |f| %>
+            data: { controller: "intent-form", turbo_frame: "_top" } do |f| %>
           <%= f.select :type, [["Buy", "buy"], ["Sell", "sell"], ["Load", "load"], ["Unload", "unload"]],
               { prompt: "Type..." },
-              class: "bg-blue-800 border border-blue-600 text-white p-1 text-sm rounded" %>
+              class: "bg-blue-800 border border-blue-600 text-white p-1 text-sm rounded",
+              data: { intent_form_target: "type", action: "change->intent-form#typeChanged" } %>
           <%= f.text_field :commodity, 
               placeholder: "Commodity",
               class: "bg-blue-800 border border-blue-600 text-white p-1 w-24 text-sm rounded" %>
@@ -59,10 +60,12 @@
               class: "bg-blue-800 border border-blue-600 text-white p-1 w-16 text-sm rounded" %>
           <%= f.number_field :max_price, 
               placeholder: "Max price",
-              class: "bg-blue-800 border border-blue-600 text-white p-1 w-20 text-sm rounded" %>
+              class: "bg-blue-800 border border-blue-600 text-white p-1 w-20 text-sm rounded",
+              data: { intent_form_target: "maxPrice" } %>
           <%= f.number_field :min_price, 
               placeholder: "Min price",
-              class: "bg-blue-800 border border-blue-600 text-white p-1 w-20 text-sm rounded" %>
+              class: "bg-blue-800 border border-blue-600 text-white p-1 w-20 text-sm rounded",
+              data: { intent_form_target: "minPrice" } %>
           <%= f.submit "+", class: "px-2 py-1 bg-lime-800 text-white hover:bg-lime-700 rounded cursor-pointer text-sm" %>
         <% end %>
       </div>
