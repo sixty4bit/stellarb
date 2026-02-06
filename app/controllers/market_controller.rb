@@ -213,7 +213,7 @@ class MarketController < ApplicationController
     )
     
     # Filter to only available minerals and include tier/category
-    available_minerals.map do |mineral|
+    market_items = available_minerals.map do |mineral|
       commodity = mineral[:name]
       
       # Get full price breakdown for this commodity
@@ -244,8 +244,106 @@ class MarketController < ApplicationController
         trend: calculate_trend(commodity),
         tier: mineral[:tier],
         category: mineral[:category],
+        commodity_type: :mineral,
         breakdown: breakdown
       }
+    end
+    
+    # Add components from operational factories in this system
+    market_items + generate_component_market_data
+  end
+  
+  # Generate market data for components produced by factories in this system
+  # Components only appear when a matching factory exists
+  def generate_component_market_data
+    operational_factories = @system.buildings
+      .where(function: "refining")
+      .select(&:operational?)
+    
+    return [] if operational_factories.empty?
+    
+    operational_factories.flat_map do |factory|
+      specialization = factory.specialization
+      next [] unless specialization
+      
+      # Get components produced by this factory specialization
+      component_names = FactorySpecializations.produces(specialization)
+      
+      component_names.map do |component_name|
+        component = Components.find(component_name)
+        next unless component
+        
+        base_price = Components.base_price(component_name)
+        
+        # Apply factory output price modifier (decreases price based on tier)
+        price_modifier = factory.output_price_modifier_for(component_name)
+        final_price = (base_price * price_modifier).round
+        
+        # Ensure/create inventory for this component with tier-based stock
+        ensure_component_inventory(component_name, factory.tier)
+        
+        {
+          commodity: component_name,
+          buy_price: calculate_buy_price(final_price),
+          sell_price: calculate_sell_price(final_price),
+          inventory: calculate_inventory(component_name),
+          trend: calculate_trend(component_name),
+          tier: nil, # Components don't have mineral tiers
+          category: component[:category],
+          commodity_type: :component,
+          breakdown: {
+            base_price: base_price,
+            abundance_modifier: 1.0,
+            after_abundance: base_price,
+            building_effects: [{
+              building_name: factory.name,
+              modifier: price_modifier,
+              price_after: final_price
+            }],
+            delta: 0,
+            final_price: final_price
+          }
+        }
+      end.compact
+    end
+  end
+  
+  # Ensure market inventory exists for a component, with tier-based stock levels
+  # Higher factory tier = more stock. Updates existing inventory if tier increased.
+  def ensure_component_inventory(component_name, factory_tier)
+    # Base stock scales with factory tier
+    # T1: 20, T2: 50, T3: 100, T4: 200, T5: 400
+    base_stock = case factory_tier
+    when 1 then 20
+    when 2 then 50
+    when 3 then 100
+    when 4 then 200
+    when 5 then 400
+    else 20
+    end
+    
+    max_stock = base_stock * 2
+    restock = [factory_tier * 2, 10].max
+    
+    existing = MarketInventory.find_by(system: @system, commodity: component_name)
+    
+    if existing
+      # Update if factory tier has increased (higher max = higher tier)
+      if max_stock > existing.max_quantity
+        existing.update!(
+          quantity: [existing.quantity, base_stock].max,
+          max_quantity: max_stock,
+          restock_rate: restock
+        )
+      end
+    else
+      MarketInventory.create!(
+        system: @system,
+        commodity: component_name,
+        quantity: base_stock,
+        max_quantity: max_stock,
+        restock_rate: restock
+      )
     end
   end
   
