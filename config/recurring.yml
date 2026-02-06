@@ -49,6 +49,13 @@ shared: &shared
     queue: default
     schedule: every hour at minute 30
 
+  # Market Restock - replenish market inventory
+  # Run hourly to restore stock based on restock_rate
+  market_restock:
+    class: MarketRestockJob
+    queue: default
+    schedule: every hour at minute 0
+
 # ============================================
 # Environment-specific configuration
 # ============================================

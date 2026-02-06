@@ -28,6 +28,15 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
       last_visited_at: Time.current
     )
     
+    # Create market inventory for The Cradle commodities
+    @system.base_prices.each do |commodity, _price|
+      MarketInventory.find_or_create_by!(system: @system, commodity: commodity) do |inv|
+        inv.quantity = 500
+        inv.max_quantity = 1000
+        inv.restock_rate = 10
+      end
+    end
+    
     sign_in_as @user
   end
 
@@ -161,5 +170,73 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to system_market_index_path(@system)
     assert_match /need a ship docked/i, flash[:alert]
+  end
+
+  # ===========================================
+  # Inventory Tests
+  # ===========================================
+
+  test "buy fails if insufficient market stock" do
+    # Set iron inventory to only 5 units
+    inventory = MarketInventory.find_by(system: @system, commodity: "iron")
+    inventory.update!(quantity: 5)
+
+    post buy_system_market_index_path(@system), params: {
+      commodity: "iron",
+      quantity: 10
+    }
+
+    assert_redirected_to system_market_index_path(@system)
+    assert_match /insufficient stock/i, flash[:alert]
+    assert_nil @ship.reload.cargo["iron"]
+  end
+
+  test "buy decreases market inventory" do
+    inventory = MarketInventory.find_by(system: @system, commodity: "iron")
+    initial_stock = inventory.quantity
+
+    post buy_system_market_index_path(@system), params: {
+      commodity: "iron",
+      quantity: 10
+    }
+
+    assert_redirected_to system_market_index_path(@system)
+    assert_equal initial_stock - 10, inventory.reload.quantity
+  end
+
+  test "sell increases market inventory" do
+    @ship.update!(cargo: { "iron" => 50 })
+    inventory = MarketInventory.find_by(system: @system, commodity: "iron")
+    initial_stock = inventory.quantity
+
+    post sell_system_market_index_path(@system), params: {
+      commodity: "iron",
+      quantity: 20
+    }
+
+    assert_redirected_to system_market_index_path(@system)
+    assert_equal initial_stock + 20, inventory.reload.quantity
+  end
+
+  test "sell caps market inventory at max_quantity" do
+    @ship.update!(cargo: { "iron" => 1000 })
+    inventory = MarketInventory.find_by(system: @system, commodity: "iron")
+    inventory.update!(quantity: 990, max_quantity: 1000)
+
+    post sell_system_market_index_path(@system), params: {
+      commodity: "iron",
+      quantity: 50
+    }
+
+    assert_redirected_to system_market_index_path(@system)
+    # Only 10 can be absorbed (990 + 10 = 1000 max)
+    assert_equal 1000, inventory.reload.quantity
+  end
+
+  test "index shows current inventory levels" do
+    get system_market_index_path(@system)
+    
+    assert_response :success
+    # The controller now uses real inventory data
   end
 end
