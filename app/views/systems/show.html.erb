@@ -113,7 +113,7 @@
       <span class="text-orange-300">m</span> View Market
     <% end %>
     
-    <%= link_to navigation_index_path,
+    <%= link_to navigation_index_path(destination_id: @system.id),
         class: "px-4 py-2 bg-orange-800 hover:bg-orange-700 border border-orange-600 transition-colors",
         data: { turbo_frame: "content_panel" } do %>
       <span class="text-lime-300">n</span> Navigate Here

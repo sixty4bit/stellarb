@@ -63,6 +63,53 @@
     <!-- In Transit View -->
     <%= render 'navigation/in_transit', ship: @ship %>
   <% else %>
+    <% if @requested_destination && @requested_destination != @current_system %>
+      <!-- Requested Destination -->
+      <div class="bg-orange-900 border-2 border-orange-500 rounded p-4 mb-6">
+        <h3 class="text-lg font-semibold text-orange-400 mb-2">📍 Navigate to <%= @requested_destination.name %></h3>
+        <% warp_dest = @warp_destinations.find { |d| d[:system].id == @requested_destination.id } %>
+        <% nearby_dest = @nearby_systems.find { |d| d[:system].id == @requested_destination.id } %>
+        <% if warp_dest %>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-purple-400">⚡ Warp gate available</span>
+              <span class="text-gray-400 text-sm ml-2">(<%= warp_dest[:distance] %> LY, <%= warp_dest[:fuel_cost] %> fuel)</span>
+            </div>
+            <% if warp_dest[:can_reach] %>
+              <%= form_with url: warp_navigation_index_path, method: :post, class: "inline" do |f| %>
+                <%= f.hidden_field :destination_id, value: @requested_destination.id %>
+                <%= f.hidden_field :intent, value: "trade" %>
+                <%= f.submit "Warp Now →", class: "px-4 py-2 bg-purple-700 hover:bg-purple-600 text-white rounded cursor-pointer" %>
+              <% end %>
+            <% else %>
+              <span class="px-4 py-2 bg-gray-700 text-gray-500 rounded">Insufficient Fuel</span>
+            <% end %>
+          </div>
+        <% elsif nearby_dest %>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-orange-400">🚀 Conventional travel</span>
+              <span class="text-gray-400 text-sm ml-2">(<%= nearby_dest[:distance] %> LY, <%= nearby_dest[:fuel_cost] %> fuel, <%= nearby_dest[:travel_time] %>)</span>
+            </div>
+            <% if nearby_dest[:can_reach] %>
+              <%= form_with url: warp_navigation_index_path, method: :post, class: "inline" do |f| %>
+                <%= f.hidden_field :destination_id, value: @requested_destination.id %>
+                <%= f.hidden_field :intent, value: "trade" %>
+                <%= f.submit "Travel Now →", class: "px-4 py-2 bg-orange-700 hover:bg-orange-600 text-white rounded cursor-pointer" %>
+              <% end %>
+            <% else %>
+              <span class="px-4 py-2 bg-gray-700 text-gray-500 rounded">Out of Range</span>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-gray-400">This system is not currently reachable from your location.</p>
+        <% end %>
+      </div>
+    <% elsif @requested_destination && @requested_destination == @current_system %>
+      <div class="bg-lime-900 border border-lime-600 rounded p-4 mb-6">
+        <p class="text-lime-400">✓ You are already at <%= @current_system.name %></p>
+      </div>
+    <% end %>
     <!-- Warp Gates (Instant Travel) -->
     <% if @warp_destinations.any? %>
       <div class="bg-blue-900 border border-purple-600 rounded p-4 mb-6">
