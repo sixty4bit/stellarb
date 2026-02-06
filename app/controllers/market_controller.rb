@@ -78,6 +78,9 @@ class MarketController < ApplicationController
       current_user.update!(credits: current_user.credits - total_cost)
       ship.add_cargo!(commodity, quantity)
       inventory.decrease_stock!(quantity)
+      
+      # Simulate market demand - buying drives prices up
+      PriceDelta.simulate_buy(@system, commodity, quantity)
     end
 
     redirect_to system_market_index_path(@system), notice: "Purchased #{quantity} #{commodity} for #{total_cost} credits"
@@ -124,6 +127,9 @@ class MarketController < ApplicationController
       # Increase market inventory (capped at max)
       inventory = MarketInventory.for_system_commodity(@system, commodity)
       inventory&.increase_stock!(quantity)
+      
+      # Simulate market supply - selling drives prices down
+      PriceDelta.simulate_sell(@system, commodity, quantity)
     end
 
     redirect_to system_market_index_path(@system), notice: "Sold #{quantity} #{commodity} for #{total_income} credits"
@@ -189,15 +195,9 @@ class MarketController < ApplicationController
     inventory&.quantity || 0
   end
   
-  # Trend is based on recent price deltas (placeholder for now)
+  # Trend is based on price delta magnitude
+  # Requires significant movement (±10 cents) to show a trend
   def calculate_trend(commodity)
-    delta = PriceDelta.find_by(system: @system, commodity: commodity.to_s)
-    return :stable unless delta
-    
-    case delta.delta_cents
-    when 1.. then :up
-    when ..-1 then :down
-    else :stable
-    end
+    PriceDelta.trend_for(@system, commodity)
   end
 end

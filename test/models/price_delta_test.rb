@@ -171,4 +171,80 @@ class PriceDeltaTest < ActiveSupport::TestCase
     # At least some prices should differ
     assert_not_equal price1, price2
   end
+
+  # ==========================================
+  # Trend Calculation
+  # ==========================================
+
+  test "trend_for returns :up when delta > 10" do
+    PriceDelta.create!(system: @system, commodity: "iron", delta_cents: 15)
+    assert_equal :up, PriceDelta.trend_for(@system, "iron")
+  end
+
+  test "trend_for returns :down when delta < -10" do
+    PriceDelta.create!(system: @system, commodity: "iron", delta_cents: -15)
+    assert_equal :down, PriceDelta.trend_for(@system, "iron")
+  end
+
+  test "trend_for returns :stable when delta is small positive" do
+    PriceDelta.create!(system: @system, commodity: "iron", delta_cents: 5)
+    assert_equal :stable, PriceDelta.trend_for(@system, "iron")
+  end
+
+  test "trend_for returns :stable when delta is small negative" do
+    PriceDelta.create!(system: @system, commodity: "iron", delta_cents: -5)
+    assert_equal :stable, PriceDelta.trend_for(@system, "iron")
+  end
+
+  test "trend_for returns :stable when delta is exactly 10" do
+    PriceDelta.create!(system: @system, commodity: "iron", delta_cents: 10)
+    assert_equal :stable, PriceDelta.trend_for(@system, "iron")
+  end
+
+  test "trend_for returns :stable when delta is exactly -10" do
+    PriceDelta.create!(system: @system, commodity: "iron", delta_cents: -10)
+    assert_equal :stable, PriceDelta.trend_for(@system, "iron")
+  end
+
+  test "trend_for returns :stable when no delta exists" do
+    assert_equal :stable, PriceDelta.trend_for(@system, "iron")
+  end
+
+  # ==========================================
+  # Trade Simulation
+  # ==========================================
+
+  test "simulate_buy increases price based on quantity" do
+    PriceDelta.simulate_buy(@system, "iron", 100)
+    
+    delta = PriceDelta.find_by(system: @system, commodity: "iron")
+    assert_not_nil delta
+    assert_operator delta.delta_cents, :>, 0
+  end
+
+  test "simulate_sell decreases price based on quantity" do
+    PriceDelta.simulate_sell(@system, "iron", 100)
+    
+    delta = PriceDelta.find_by(system: @system, commodity: "iron")
+    assert_not_nil delta
+    assert_operator delta.delta_cents, :<, 0
+  end
+
+  test "simulate_buy accumulates with previous delta" do
+    PriceDelta.create!(system: @system, commodity: "iron", delta_cents: 50)
+    
+    PriceDelta.simulate_buy(@system, "iron", 100)
+    
+    delta = PriceDelta.find_by(system: @system, commodity: "iron")
+    assert_operator delta.delta_cents, :>, 50
+  end
+
+  test "simulate_sell accumulates with previous delta" do
+    PriceDelta.create!(system: @system, commodity: "iron", delta_cents: 50)
+    
+    PriceDelta.simulate_sell(@system, "iron", 100)
+    
+    delta = PriceDelta.find_by(system: @system, commodity: "iron")
+    assert_operator delta.delta_cents, :<, 50
+  end
 end

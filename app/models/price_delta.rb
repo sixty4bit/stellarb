@@ -93,6 +93,25 @@ class PriceDelta < ApplicationRecord
       result
     end
 
+    # Calculate price trend for a commodity in a system
+    # Returns :up, :down, or :stable based on delta magnitude
+    #
+    # @param system [System] The system
+    # @param commodity [String] The commodity name
+    # @return [Symbol] :up, :down, or :stable
+    def trend_for(system, commodity)
+      delta = find_by(system: system, commodity: commodity.to_s)
+      return :stable unless delta
+
+      if delta.delta_cents > 10
+        :up
+      elsif delta.delta_cents < -10
+        :down
+      else
+        :stable
+      end
+    end
+
     # Simulate a buy transaction (increases price due to demand)
     # @param system [System] The system
     # @param commodity [String] The commodity

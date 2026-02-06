@@ -239,4 +239,86 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     # The controller now uses real inventory data
   end
+
+  # ===========================================
+  # Price Dynamics Tests
+  # ===========================================
+
+  test "buy increases price via price delta" do
+    # Clear any existing delta
+    PriceDelta.where(system: @system, commodity: "iron").delete_all
+    
+    # Make a purchase
+    post buy_system_market_index_path(@system), params: {
+      commodity: "iron",
+      quantity: 50
+    }
+    
+    assert_redirected_to system_market_index_path(@system)
+    
+    # Price delta should exist and be positive
+    delta = PriceDelta.find_by(system: @system, commodity: "iron")
+    assert_not_nil delta, "PriceDelta should be created after buy"
+    assert_operator delta.delta_cents, :>, 0, "Delta should be positive after purchase"
+  end
+
+  test "sell decreases price via price delta" do
+    @ship.update!(cargo: { "iron" => 100 })
+    
+    # Clear any existing delta
+    PriceDelta.where(system: @system, commodity: "iron").delete_all
+    
+    # Make a sale
+    post sell_system_market_index_path(@system), params: {
+      commodity: "iron",
+      quantity: 50
+    }
+    
+    assert_redirected_to system_market_index_path(@system)
+    
+    # Price delta should exist and be negative
+    delta = PriceDelta.find_by(system: @system, commodity: "iron")
+    assert_not_nil delta, "PriceDelta should be created after sell"
+    assert_operator delta.delta_cents, :<, 0, "Delta should be negative after sale"
+  end
+
+  test "large purchase shows upward trend" do
+    # Clear any existing delta
+    PriceDelta.where(system: @system, commodity: "iron").delete_all
+    
+    # Create a significant positive delta (> 10 cents)
+    PriceDelta.create!(system: @system, commodity: "iron", delta_cents: 15)
+    
+    get system_market_index_path(@system)
+    
+    assert_response :success
+    assert_select "span.text-lime-400", text: "↑"
+  end
+
+  test "large sale shows downward trend" do
+    # Clear any existing delta
+    PriceDelta.where(system: @system, commodity: "iron").delete_all
+    
+    # Create a significant negative delta (< -10 cents)
+    PriceDelta.create!(system: @system, commodity: "iron", delta_cents: -15)
+    
+    get system_market_index_path(@system)
+    
+    assert_response :success
+    assert_select "span.text-red-400", text: "↓"
+  end
+
+  test "small delta shows stable trend" do
+    # Clear any existing delta
+    PriceDelta.where(system: @system, commodity: "iron").delete_all
+    
+    # Create a small delta (within ±10 cents)
+    PriceDelta.create!(system: @system, commodity: "iron", delta_cents: 5)
+    
+    get system_market_index_path(@system)
+    
+    assert_response :success
+    # Iron should show stable trend
+    assert_select "span.text-gray-400", text: "→"
+  end
 end
