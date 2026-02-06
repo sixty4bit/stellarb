@@ -38,7 +38,29 @@ module MineralAvailability
   DARKSTONE_DISTANCE = 5000
 
   class << self
-    # Get all minerals available in a system
+    # Get minerals visible to a specific player in a system
+    # Futuristic minerals are only visible if the player has discovered them.
+    # @param star_type [String] The star type of the system
+    # @param x [Integer] X coordinate
+    # @param y [Integer] Y coordinate
+    # @param z [Integer] Z coordinate
+    # @param user [User] The player viewing the minerals
+    # @return [Array<Hash>] Visible minerals for this player
+    def for_system_with_discoveries(star_type:, x:, y:, z:, user:)
+      all_minerals = for_system(star_type: star_type, x: x, y: y, z: z)
+
+      # Filter out undiscovered futuristic minerals
+      all_minerals.select do |mineral|
+        if mineral[:tier] == :futuristic
+          user.mineral_discovered?(mineral[:name])
+        else
+          true
+        end
+      end
+    end
+
+    # Get all minerals available in a system (without player discovery filtering)
+    # Used for system generation and non-player contexts.
     # @param star_type [String] The star type of the system
     # @param x [Integer] X coordinate
     # @param y [Integer] Y coordinate

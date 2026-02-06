@@ -39,7 +39,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_154514) do
 
   create_table "explored_coordinates", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.boolean "has_system", default: false
+    t.boolean "has_system", default: false, null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.integer "x", null: false
@@ -47,6 +47,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_154514) do
     t.integer "z", null: false
     t.index ["user_id", "x", "y", "z"], name: "index_explored_coordinates_on_user_id_and_x_and_y_and_z", unique: true
     t.index ["user_id"], name: "index_explored_coordinates_on_user_id"
+    t.index ["x", "y", "z"], name: "index_explored_coordinates_on_x_and_y_and_z"
   end
 
   create_table "flight_records", force: :cascade do |t|
@@ -152,6 +153,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_154514) do
     t.index ["user_id", "urgent"], name: "index_messages_on_user_id_and_urgent"
     t.index ["user_id"], name: "index_messages_on_user_id"
     t.index ["uuid"], name: "index_messages_on_uuid", unique: true
+  end
+
+  create_table "mineral_discoveries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "discovered_at", null: false
+    t.bigint "discovered_in_system_id"
+    t.string "mineral_name", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["discovered_in_system_id"], name: "index_mineral_discoveries_on_discovered_in_system_id"
+    t.index ["user_id", "mineral_name"], name: "index_mineral_discoveries_on_user_id_and_mineral_name", unique: true
+    t.index ["user_id"], name: "index_mineral_discoveries_on_user_id"
   end
 
   create_table "player_hubs", force: :cascade do |t|
@@ -561,6 +574,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_154514) do
   add_foreign_key "incidents", "hired_recruits"
   add_foreign_key "market_inventories", "systems"
   add_foreign_key "messages", "users"
+  add_foreign_key "mineral_discoveries", "systems", column: "discovered_in_system_id"
+  add_foreign_key "mineral_discoveries", "users"
   add_foreign_key "player_hubs", "systems"
   add_foreign_key "player_hubs", "users", column: "owner_id"
   add_foreign_key "player_quests", "quests"
