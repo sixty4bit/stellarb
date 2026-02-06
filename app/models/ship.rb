@@ -226,7 +226,7 @@ class Ship < ApplicationRecord
     base_price = current_system.base_prices["fuel"] || DEFAULT_FUEL_PRICE
     
     # Add any price delta from the market
-    delta = PriceDelta.find_by(system: current_system, commodity: "fuel")&.delta || 0
+    delta = PriceDelta.find_by(system: current_system, commodity: "fuel")&.delta_cents || 0
     
     (base_price + delta).to_i
   end

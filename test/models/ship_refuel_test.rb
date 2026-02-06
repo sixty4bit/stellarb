@@ -82,6 +82,20 @@ class ShipRefuelTest < ActiveSupport::TestCase
     assert price.positive?
   end
 
+  test "current_fuel_price includes price delta from market" do
+    # Create a price delta for fuel in this system
+    PriceDelta.create!(
+      system: @system,
+      commodity: "fuel",
+      delta_cents: 25
+    )
+
+    base_price = @system.base_prices["fuel"] || Ship::DEFAULT_FUEL_PRICE
+    expected_price = base_price + 25
+
+    assert_equal expected_price, @ship.current_fuel_price
+  end
+
   test "fuel_needed_to_fill returns correct amount" do
     @ship.update!(fuel: 30)
     
