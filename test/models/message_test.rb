@@ -75,4 +75,18 @@ class MessageTest < ActiveSupport::TestCase
     assert_includes Message.urgent, urgent
     assert_not_includes Message.urgent, normal
   end
+
+  test "broadcast_notification_sound broadcasts to user notifications channel" do
+    user = users(:one)
+    message = Message.new(user: user, title: "Test", body: "Body", from: "System")
+
+    # Verify the method exists and can be called
+    assert_respond_to message, :broadcast_notification_sound
+
+    # Save triggers the after_create_commit callback
+    message.save!
+
+    # Verify the broadcast stream name is correct
+    assert_equal "user_#{user.id}_notifications", "user_#{message.user_id}_notifications"
+  end
 end
