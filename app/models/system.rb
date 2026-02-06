@@ -191,6 +191,57 @@ class System < ApplicationRecord
   # Pricing (Static + Dynamic Model)
   # ===========================================
 
+  # Abundance modifiers for mineral prices
+  # High abundance = lower prices (0.8), Low abundance = higher prices (1.2)
+  ABUNDANCE_MODIFIERS = {
+    "very_high" => 0.7,
+    "high" => 0.8,
+    "medium" => 1.0,
+    "low" => 1.2,
+    "very_low" => 1.5
+  }.freeze
+
+  # Get the abundance modifier for a commodity based on mineral distribution
+  # @param commodity [String] The commodity name
+  # @return [Float] Multiplier (0.7-1.5), defaults to 1.0 if unknown
+  def abundance_modifier(commodity)
+    distribution = mineral_distribution
+    return 1.0 if distribution.blank?
+
+    # Find the planet/node that has this commodity
+    distribution.each do |_planet_idx, planet_data|
+      minerals = planet_data["minerals"] || planet_data[:minerals] || []
+      next unless minerals.include?(commodity.to_s)
+
+      abundance = (planet_data["abundance"] || planet_data[:abundance]).to_s
+      return ABUNDANCE_MODIFIERS[abundance] || 1.0
+    end
+
+    1.0  # Commodity not found in distribution
+  end
+
+  # Calculate the market price for a commodity applying all modifiers
+  # Formula: base_price × abundance_modifier × (product of all building modifiers)
+  # @param commodity [String] The commodity name
+  # @return [Integer, nil] Final price rounded to integer, or nil if commodity unknown
+  def calculate_market_price(commodity)
+    base = base_prices[commodity.to_s] || base_prices[commodity.to_sym]
+    return nil unless base
+
+    # Apply abundance modifier
+    price = base * abundance_modifier(commodity)
+
+    # Apply all operational building modifiers (product)
+    buildings.each do |building|
+      next unless building.respond_to?(:operational?) && building.operational?
+
+      modifier = building.price_modifier_for(commodity)
+      price *= modifier
+    end
+
+    price.round
+  end
+
   # Get the current price for a commodity
   # Base price (from seed) + delta (from DB)
   #
