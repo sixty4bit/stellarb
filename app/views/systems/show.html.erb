@@ -113,10 +113,16 @@
       <span class="text-orange-300">m</span> View Market
     <% end %>
     
-    <%= link_to navigation_index_path(destination_id: @system.id),
-        class: "px-4 py-2 bg-orange-800 hover:bg-orange-700 border border-orange-600 transition-colors",
-        data: { turbo_frame: "content_panel" } do %>
-      <span class="text-lime-300">n</span> Navigate Here
+    <% if current_user.ships.operational.first&.current_system == @system %>
+      <span class="px-4 py-2 bg-gray-800 border border-gray-600 text-gray-500">
+        📍 You are here
+      </span>
+    <% else %>
+      <%= link_to navigation_index_path(destination_id: @system.id),
+          class: "px-4 py-2 bg-orange-800 hover:bg-orange-700 border border-orange-600 transition-colors",
+          data: { turbo_frame: "content_panel" } do %>
+        <span class="text-lime-300">n</span> Navigate Here
+      <% end %>
     <% end %>
   </div>
 
