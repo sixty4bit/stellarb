@@ -21,9 +21,9 @@ class InboxHelperTest < ActionView::TestCase
   end
 
   test "unread_count only counts messages for specified user" do
-    # pilot user has 1 unread message, should not affect one's count
+    # pilot user has 2 unread messages, should not affect one's count
     pilot_user = users(:pilot)
-    assert_equal 1, unread_count(pilot_user)
+    assert_equal 2, unread_count(pilot_user)
   end
 
   test "unread_badge returns badge HTML when count > 0" do

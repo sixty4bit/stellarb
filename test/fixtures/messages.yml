@@ -32,3 +32,12 @@ other_user_message:
   from: "System"
   read_at: null
   created_at: <%= Time.current %>
+
+# Pilot's welcome message (used in inbox controller tests)
+pilot_welcome:
+  user: pilot
+  title: "Welcome to the Frontier"
+  body: "Your journey through the stars begins here, pilot."
+  from: "Colonial Authority"
+  read_at: null
+  created_at: <%= Time.current %>

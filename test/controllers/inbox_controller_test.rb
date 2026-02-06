@@ -5,6 +5,7 @@ require "test_helper"
 class InboxControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = users(:pilot)
+    @message = messages(:pilot_welcome)
     sign_in_as(@user)
   end
 
@@ -28,19 +29,19 @@ class InboxControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "show renders message detail view" do
-    get inbox_path(id: 1)
+    get inbox_path(@message)
     assert_response :success
     assert_select "h2", text: /Welcome/i
   end
 
   test "show displays message body and sender" do
-    get inbox_path(id: 1)
+    get inbox_path(@message)
     assert_response :success
     assert_select ".text-gray-400", text: /Colonial Authority/
   end
 
   test "show has back to inbox link" do
-    get inbox_path(id: 1)
+    get inbox_path(@message)
     assert_response :success
     assert_select "a[href='#{inbox_index_path}']"
   end
