@@ -221,6 +221,17 @@ class User < ApplicationRecord
   end
 
   # ===========================================
+  # Ship Location
+  # ===========================================
+
+  # Get the user's current ship (first docked ship, or first ship if none docked)
+  # Used to determine player's current location in the galaxy
+  # @return [Ship, nil]
+  def current_ship
+    ships.docked.first || ships.first
+  end
+
+  # ===========================================
   # Ship Purchase
   # ===========================================
 
