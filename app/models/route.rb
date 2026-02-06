@@ -197,6 +197,54 @@ class Route < ApplicationRecord
     intent
   end
 
+  # ===========================================
+  # Route Execution (vsx.28-30)
+  # ===========================================
+
+  # Check if an intent should execute given the current market price
+  # Buy/load intents execute when current_price <= max_price
+  # Sell/unload intents execute when current_price >= min_price
+  # @param intent [Hash] the intent to check
+  # @param current_price [Numeric] the current market price for the commodity
+  # @return [Boolean] true if intent should execute
+  def intent_should_execute?(intent, current_price)
+    type = intent["type"] || intent[:type]
+    max_price = intent["max_price"] || intent[:max_price]
+    min_price = intent["min_price"] || intent[:min_price]
+
+    case type
+    when "buy", "load"
+      current_price <= max_price
+    when "sell", "unload"
+      current_price >= min_price
+    else
+      true # Unknown type - allow execution
+    end
+  end
+
+  # Skip an intent due to price limit and send notification to user
+  # @param intent [Hash] the skipped intent
+  # @param current_price [Numeric] the current market price
+  # @param system [System] the system where skip occurred
+  def skip_and_notify_intent(intent, current_price, system)
+    type = intent["type"] || intent[:type]
+    commodity = intent["commodity"] || intent[:commodity]
+    quantity = intent["quantity"] || intent[:quantity]
+    limit_price = %w[buy load].include?(type) ? (intent["max_price"] || intent[:max_price]) : (intent["min_price"] || intent[:min_price])
+    limit_type = %w[buy load].include?(type) ? "max" : "min"
+
+    user.messages.create!(
+      title: "Route intent skipped: #{commodity}",
+      body: "Your trade route \"#{name}\" skipped a #{type} order for #{quantity} #{commodity} at #{system.name}.\n\n" \
+            "Current price: #{current_price} cr\n" \
+            "Your #{limit_type} price limit: #{limit_price} cr\n\n" \
+            "The route will continue with other intents.",
+      from: "Trade Automation",
+      category: "route",
+      urgent: false
+    )
+  end
+
   private
 
   # Callback: Check if this route's creation/update completes the tutorial
