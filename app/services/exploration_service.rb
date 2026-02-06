@@ -95,6 +95,18 @@ class ExplorationService
     (explored_count.to_f / total_coordinates * 100).round(2)
   end
 
+  # Get the current position from the ship
+  # @return [Hash, nil] { x:, y:, z: } or nil if no position available
+  def current_position
+    return nil unless @current_system
+
+    {
+      x: @current_system.x,
+      y: @current_system.y,
+      z: @current_system.z
+    }
+  end
+
   private
 
   # Build a set of explored coordinates for efficient lookup

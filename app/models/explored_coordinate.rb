@@ -1,12 +1,22 @@
+# Tracks coordinates that a user has explored
+# These can be at any x,y,z position - not necessarily where a system exists
 class ExploredCoordinate < ApplicationRecord
   belongs_to :user
 
+  # Validations
   validates :x, :y, :z, presence: true
-  validates :x, uniqueness: { scope: [:user_id, :y, :z] }
+  validates :x, uniqueness: { scope: [:user_id, :y, :z], message: "coordinates already explored" }
 
   # Scopes
   scope :with_systems, -> { where(has_system: true) }
   scope :empty, -> { where(has_system: false) }
+  scope :in_direction, ->(axis, positive) {
+    case axis
+    when :x then positive ? where("x > ?", 0) : where("x < ?", 0)
+    when :y then positive ? where("y > ?", 0) : where("y < ?", 0)
+    when :z then positive ? where("z > ?", 0) : where("z < ?", 0)
+    end
+  }
 
   # Check if a coordinate has been explored by a user
   # @param user [User] The user to check
