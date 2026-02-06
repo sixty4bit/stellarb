@@ -3,7 +3,26 @@
 
 <div class="max-w-6xl">
   <h1 class="text-2xl font-bold mb-1 text-orange-500">Market</h1>
-  <div class="text-sm text-gray-400 mb-6"><%= @system.name %> Trading Post</div>
+  <div class="text-sm text-gray-400 mb-2"><%= @system.name %> Trading Post</div>
+  
+  <!-- Price Staleness Indicator -->
+  <% if @price_source == :live %>
+    <div class="flex items-center gap-2 mb-6 text-sm">
+      <span class="inline-flex items-center px-2 py-1 bg-lime-900 border border-lime-700 text-lime-400 rounded">
+        <span class="w-2 h-2 bg-lime-400 rounded-full mr-2 animate-pulse"></span>
+        LIVE PRICES
+      </span>
+      <span class="text-gray-500">You have a ship docked at this station</span>
+    </div>
+  <% else %>
+    <div class="flex items-center gap-2 mb-6 text-sm">
+      <span class="inline-flex items-center px-2 py-1 bg-yellow-900 border border-yellow-700 text-yellow-400 rounded">
+        <span class="w-2 h-2 bg-yellow-400 rounded-full mr-2"></span>
+        REMEMBERED PRICES
+      </span>
+      <span class="text-gray-500">Prices as of <%= @staleness_label %></span>
+    </div>
+  <% end %>
 
   <!-- Market Stats -->
   <div class="grid grid-cols-3 gap-4 mb-6">
