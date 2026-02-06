@@ -98,21 +98,27 @@ class ExplorationService
   private
 
   # Build a set of explored coordinates for efficient lookup
+  # Combines system visits AND explicitly marked explored coordinates
   # @return [Set<Array<Integer>>]
   def explored_coordinates_set
     @explored_coordinates_set ||= begin
-      # Get all systems the user has visited
+      explored = Set.new
+
+      # Add coordinates from system visits
       visited_systems = @user.system_visits.includes(:system).map(&:system)
-
-      # Extract coordinates that fall within valid coordinate range
-      visited_systems.each_with_object(Set.new) do |system, set|
+      visited_systems.each do |system|
         coords = [system.x, system.y, system.z]
-
-        # Only track if coordinates are valid exploration targets
         if coords.all? { |c| VALID_COORDS.include?(c) }
-          set.add(coords)
+          explored.add(coords)
         end
       end
+
+      # Add coordinates from ExploredCoordinate records
+      @user.explored_coordinates.pluck(:x, :y, :z).each do |x, y, z|
+        explored.add([x, y, z])
+      end
+
+      explored
     end
   end
 
