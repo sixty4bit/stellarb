@@ -7,7 +7,11 @@
     </div>
     <%= link_to inbox_index_path,
         class: "text-sm text-gray-400 hover:text-orange-500 transition-colors",
-        data: { turbo_frame: "content_panel" } do %>
+        data: {
+          turbo_frame: "content_panel",
+          keyboard_navigation_target: "contentItem",
+          action: "mouseenter->keyboard-navigation#selectContentItem"
+        } do %>
       ← Back to Inbox
     <% end %>
   </div>
@@ -47,28 +51,40 @@
         <%= button_to mark_read_inbox_path(@message),
             method: :post,
             class: "px-4 py-2 bg-blue-800 border border-blue-600 text-sm hover:border-orange-500 transition-colors",
-            data: { turbo_frame: "content_panel" } do %>
+            data: {
+              turbo_frame: "content_panel",
+              keyboard_navigation_target: "contentItem",
+              action: "mouseenter->keyboard-navigation#selectContentItem"
+            } do %>
           📖 Mark Read
         <% end %>
       <% else %>
         <%= button_to mark_unread_inbox_path(@message),
             method: :post,
             class: "px-4 py-2 bg-blue-800 border border-blue-600 text-sm hover:border-orange-500 transition-colors",
-            data: { turbo_frame: "content_panel" } do %>
+            data: {
+              turbo_frame: "content_panel",
+              keyboard_navigation_target: "contentItem",
+              action: "mouseenter->keyboard-navigation#selectContentItem"
+            } do %>
           📩 Mark Unread
         <% end %>
       <% end %>
       <%= button_to inbox_path(@message),
           method: :delete,
           class: "px-4 py-2 bg-blue-800 border border-red-800 text-sm text-red-400 hover:border-red-500 transition-colors",
-          data: { turbo_frame: "content_panel" } do %>
+          data: {
+            turbo_frame: "content_panel",
+            keyboard_navigation_target: "contentItem",
+            action: "mouseenter->keyboard-navigation#selectContentItem"
+          } do %>
         🗑️ Delete
       <% end %>
     </div>
   </div>
 
   <div class="mt-6 text-sm text-gray-500">
-    <p>Keyboard: r to toggle read, d to delete, Backspace to return</p>
+    <p>Keyboard: Tab to focus actions, j/k to navigate, Enter to activate, q to go back</p>
   </div>
 </div>
 </turbo-frame>
