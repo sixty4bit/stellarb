@@ -26,6 +26,7 @@ class User < ApplicationRecord
   has_many :quests, through: :player_quests
   has_many :messages, dependent: :destroy
   has_many :system_auction_bids, dependent: :destroy
+  has_many :explored_coordinates, dependent: :destroy
 
   # Validations
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
