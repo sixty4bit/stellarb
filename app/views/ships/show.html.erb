@@ -4,7 +4,7 @@
 <div class="max-w-6xl">
   <div class="flex items-center justify-between mb-6">
     <div>
-      <h1 class="text-2xl font-bold text-orange-500"><%= @ship.name %></h1>
+      <h1 class="text-2xl font-bold text-orange-500"><%= @ship.name %> <span class="text-gray-500">(<%= @ship.short_id %>)</span></h1>
       <div class="text-sm text-gray-400">
         <%= @ship.race.humanize %> <%= @ship.hull_size.humanize %> · 
         <span class="text-<%= @ship.status == 'docked' ? 'lime' : @ship.status == 'in_transit' ? 'sky' : 'orange' %>-400">
