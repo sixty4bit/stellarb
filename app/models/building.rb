@@ -126,6 +126,15 @@ class Building < ApplicationRecord
     !disabled? && status != 'destroyed'
   end
 
+  # Returns the price modifier this building applies to a commodity
+  # Base implementation returns 1.0 (no effect)
+  # Subclasses/concerns can override for specific building types
+  # @param commodity [String, nil] The commodity to check
+  # @return [Float] Multiplier for commodity prices (1.0 = no effect)
+  def price_modifier_for(_commodity)
+    1.0
+  end
+
   # Check if construction is complete and transition to active
   # Called by before_action in BuildingsController
   def check_construction_complete!
