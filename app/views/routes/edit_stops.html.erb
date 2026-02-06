@@ -1,7 +1,10 @@
 <turbo-frame id="content_panel">
 <%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
 
-<div class="max-w-4xl">
+<div class="max-w-4xl" 
+     data-controller="route-stops-edit" 
+     data-route-stops-edit-route-id-value="<%= @route.id %>"
+     data-action="keydown->route-stops-edit#keydown">
   <div class="flex items-center justify-between mb-6">
     <div>
       <h1 class="text-2xl font-bold text-orange-500">Edit Stops</h1>
@@ -32,6 +35,7 @@
   <div class="mt-4 text-sm text-gray-500">
     <p>Add intents (buy/sell actions) to each stop using the forms above.</p>
     <p class="mt-1">Buy/Load intents require max_price. Sell/Unload intents require min_price.</p>
+    <p class="mt-2">Keyboard: j/k=navigate, Enter=edit, x=delete, a=add intent, Esc=clear</p>
   </div>
 </div>
 </turbo-frame>
