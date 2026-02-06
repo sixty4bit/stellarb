@@ -74,13 +74,17 @@ class Building < ApplicationRecord
   # Building Costs Configuration
   # ===========================================
   # Base credits cost for each function type by tier
-  # Costs scale with building complexity and capability
+  # Costs from source doc Section 3.3-3.6
+  # Mine (extraction): 10k-250k
+  # Warehouse (logistics): 5k-300k
+  # Marketplace (civic): 8k-300k
+  # Factory (refining): 25k-1M
   BUILDING_COSTS = {
-    "extraction" => { 1 => 1000, 2 => 3000, 3 => 8000, 4 => 20000, 5 => 50000 },
-    "refining" => { 1 => 1500, 2 => 4500, 3 => 12000, 4 => 30000, 5 => 75000 },
-    "logistics" => { 1 => 1200, 2 => 3600, 3 => 9600, 4 => 24000, 5 => 60000 },
-    "civic" => { 1 => 800, 2 => 2400, 3 => 6400, 4 => 16000, 5 => 40000 },
-    "defense" => { 1 => 2000, 2 => 6000, 3 => 16000, 4 => 40000, 5 => 100000 }
+    "extraction" => { 1 => 10_000, 2 => 25_000, 3 => 50_000, 4 => 100_000, 5 => 250_000 },
+    "refining" => { 1 => 25_000, 2 => 60_000, 3 => 150_000, 4 => 400_000, 5 => 1_000_000 },
+    "logistics" => { 1 => 5_000, 2 => 15_000, 3 => 40_000, 4 => 100_000, 5 => 300_000 },
+    "civic" => { 1 => 8_000, 2 => 20_000, 3 => 50_000, 4 => 120_000, 5 => 300_000 },
+    "defense" => { 1 => 15_000, 2 => 40_000, 3 => 100_000, 4 => 250_000, 5 => 600_000 }
   }.freeze
 
   # Racial cost modifiers (percentage adjustment)
@@ -186,6 +190,81 @@ class Building < ApplicationRecord
     types
   end
 
+  # ===========================================
+  # Tier Table Data for Display
+  # ===========================================
+
+  # Get tier table data for a specific building type
+  # @param function [String] Building function (extraction, logistics, civic, refining)
+  # @return [Hash] Table data with name, tiers array containing costs and effects
+  def self.tier_table_for(function)
+    validate_function!(function)
+
+    {
+      name: FUNCTION_NAMES[function],
+      tiers: (1..5).map { |tier| tier_data_for(function, tier) }
+    }
+  end
+
+  # Get all tier tables for all building types
+  # @return [Hash] Hash of function => tier table data
+  def self.all_tier_tables
+    %w[extraction logistics civic refining].each_with_object({}) do |function, tables|
+      tables[function] = tier_table_for(function)
+    end
+  end
+
+  # Build tier data for a specific function and tier
+  # @param function [String] Building function
+  # @param tier [Integer] Tier level 1-5
+  # @return [Hash] Tier data with cost and effects
+  def self.tier_data_for(function, tier)
+    {
+      tier: tier,
+      cost: BUILDING_COSTS[function][tier],
+      effects: effects_for(function, tier)
+    }
+  end
+
+  # Get effects hash for a specific function and tier
+  # @param function [String] Building function
+  # @param tier [Integer] Tier level 1-5
+  # @return [Hash] Effects specific to building type
+  def self.effects_for(function, tier)
+    case function
+    when "extraction"
+      {
+        supply_bonus: "+#{MINE_SUPPLY_BONUS[tier]}%",
+        price_effect: "-#{(tier * MINE_PRICE_REDUCTION_PER_TIER * 100).to_i}%"
+      }
+    when "logistics"
+      {
+        capacity_bonus: "+#{(WAREHOUSE_CAPACITY_BONUS[tier] * 100).to_i}%",
+        max_trade_size: WAREHOUSE_MAX_TRADE_SIZE[tier]
+      }
+    when "civic"
+      {
+        fee: "#{(MARKETPLACE_FEE_RATES[tier] * 100).to_i}%",
+        npc_volume: "#{MARKETPLACE_NPC_VOLUME[tier]}x"
+      }
+    when "refining"
+      input_increase = (FACTORY_INPUT_PRICE_INCREASE_BASE + ((tier - 1) * FACTORY_INPUT_PRICE_INCREASE_PER_TIER)) * 100
+      output_decrease = tier * FACTORY_OUTPUT_PRICE_DECREASE_PER_TIER * 100
+      {
+        input_demand: "+#{input_increase.to_i}%",
+        output_supply: "-#{output_decrease.to_i}%"
+      }
+    else
+      {}
+    end
+  end
+
+  private_class_method def self.validate_function!(function)
+    unless FUNCTIONS.include?(function)
+      raise ArgumentError, "Invalid function: #{function}. Must be one of: #{FUNCTIONS.join(', ')}"
+    end
+  end
+
   private_class_method def self.validate_building_params!(function:, tier:, race:)
     unless FUNCTIONS.include?(function)
       raise ArgumentError, "Invalid function: #{function}. Must be one of: #{FUNCTIONS.join(', ')}"
@@ -239,8 +318,17 @@ class Building < ApplicationRecord
   end
 
   # ===========================================
-  # Mine Price Reduction Configuration
+  # Mine Configuration (Section 3.3)
   # ===========================================
+  # Supply bonus per tier (stock increase)
+  MINE_SUPPLY_BONUS = {
+    1 => 20,   # +20%
+    2 => 40,   # +40%
+    3 => 60,   # +60%
+    4 => 100,  # +100%
+    5 => 150   # +150%
+  }.freeze
+
   # Price reduction per tier (-5% per tier)
   # T1=-5%, T2=-10%, T3=-15%, T4=-20%, T5=-25%
   MINE_PRICE_REDUCTION_PER_TIER = 0.05
