@@ -222,4 +222,174 @@ class RouteIntentsTest < ActiveSupport::TestCase
 
     assert route.within_cradle?
   end
+
+  # ===========================================
+  # Task: stellarb-vsx.17 - Price limit validations
+  # ===========================================
+
+  test "route validates buy intents require max_price" do
+    route = @user.routes.build(
+      name: "Invalid Route",
+      ship: @ship,
+      stops: [
+        {
+          "system_id" => @cradle.id,
+          "system" => @cradle.name,
+          "intents" => [
+            { "type" => "buy", "commodity" => "ore", "quantity" => 100 }  # missing max_price
+          ]
+        }
+      ]
+    )
+
+    refute route.valid?
+    assert route.errors[:stops].any? { |e| e.include?("max_price") }
+  end
+
+  test "route validates load intents require max_price" do
+    route = @user.routes.build(
+      name: "Invalid Route",
+      ship: @ship,
+      stops: [
+        {
+          "system_id" => @cradle.id,
+          "system" => @cradle.name,
+          "intents" => [
+            { "type" => "load", "commodity" => "ore", "quantity" => 100 }  # missing max_price
+          ]
+        }
+      ]
+    )
+
+    refute route.valid?
+    assert route.errors[:stops].any? { |e| e.include?("max_price") }
+  end
+
+  test "route validates sell intents require min_price" do
+    route = @user.routes.build(
+      name: "Invalid Route",
+      ship: @ship,
+      stops: [
+        {
+          "system_id" => @cradle.id,
+          "system" => @cradle.name,
+          "intents" => [
+            { "type" => "sell", "commodity" => "ore", "quantity" => 100 }  # missing min_price
+          ]
+        }
+      ]
+    )
+
+    refute route.valid?
+    assert route.errors[:stops].any? { |e| e.include?("min_price") }
+  end
+
+  test "route validates unload intents require min_price" do
+    route = @user.routes.build(
+      name: "Invalid Route",
+      ship: @ship,
+      stops: [
+        {
+          "system_id" => @cradle.id,
+          "system" => @cradle.name,
+          "intents" => [
+            { "type" => "unload", "commodity" => "ore", "quantity" => 100 }  # missing min_price
+          ]
+        }
+      ]
+    )
+
+    refute route.valid?
+    assert route.errors[:stops].any? { |e| e.include?("min_price") }
+  end
+
+  test "route is valid when buy intent has max_price" do
+    route = @user.routes.build(
+      name: "Valid Route",
+      ship: @ship,
+      stops: [
+        {
+          "system_id" => @cradle.id,
+          "system" => @cradle.name,
+          "intents" => [
+            { "type" => "buy", "commodity" => "ore", "quantity" => 100, "max_price" => 150 }
+          ]
+        }
+      ]
+    )
+
+    assert route.valid?
+  end
+
+  test "route is valid when sell intent has min_price" do
+    route = @user.routes.build(
+      name: "Valid Route",
+      ship: @ship,
+      stops: [
+        {
+          "system_id" => @cradle.id,
+          "system" => @cradle.name,
+          "intents" => [
+            { "type" => "sell", "commodity" => "ore", "quantity" => 100, "min_price" => 80 }
+          ]
+        }
+      ]
+    )
+
+    assert route.valid?
+  end
+
+  test "route validates intents require commodity" do
+    route = @user.routes.build(
+      name: "Invalid Route",
+      ship: @ship,
+      stops: [
+        {
+          "system_id" => @cradle.id,
+          "system" => @cradle.name,
+          "intents" => [
+            { "type" => "buy", "quantity" => 100, "max_price" => 150 }  # missing commodity
+          ]
+        }
+      ]
+    )
+
+    refute route.valid?
+    assert route.errors[:stops].any? { |e| e.include?("commodity") }
+  end
+
+  test "route validates intents require quantity" do
+    route = @user.routes.build(
+      name: "Invalid Route",
+      ship: @ship,
+      stops: [
+        {
+          "system_id" => @cradle.id,
+          "system" => @cradle.name,
+          "intents" => [
+            { "type" => "buy", "commodity" => "ore", "max_price" => 150 }  # missing quantity
+          ]
+        }
+      ]
+    )
+
+    refute route.valid?
+    assert route.errors[:stops].any? { |e| e.include?("quantity") }
+  end
+
+  test "route validates stops require system_id" do
+    route = @user.routes.build(
+      name: "Invalid Route",
+      ship: @ship,
+      stops: [
+        {
+          "system" => "Alpha",  # missing system_id
+          "intents" => []
+        }
+      ]
+    )
+
+    refute route.valid?
+    assert route.errors[:stops].any? { |e| e.include?("system_id") }
+  end
 end

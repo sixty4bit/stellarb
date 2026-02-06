@@ -7,6 +7,7 @@ class Route < ApplicationRecord
   validates :name, presence: true
   validates :short_id, presence: true, uniqueness: true
   validates :status, inclusion: { in: %w[active paused completed] }
+  validate :validate_stops_structure
 
   before_validation :generate_short_id, on: :create
   after_commit :check_tutorial_completion, on: [:create, :update]
@@ -216,5 +217,50 @@ class Route < ApplicationRecord
     return unless meets_supply_chain_tutorial?
 
     user.advance_tutorial_phase!
+  end
+
+  # Validate the stops JSONB structure and intent price limits
+  # buy/load intents require max_price
+  # sell/unload intents require min_price
+  def validate_stops_structure
+    return unless stops.is_a?(Array)
+
+    stops.each_with_index do |stop, stop_idx|
+      # Validate stop has system_id
+      unless stop["system_id"].present? || stop[:system_id].present?
+        errors.add(:stops, "stop #{stop_idx + 1} requires system_id")
+      end
+
+      # Validate intents if present
+      intents = stop["intents"] || stop[:intents] || []
+      intents.each_with_index do |intent, intent_idx|
+        validate_intent(intent, stop_idx, intent_idx)
+      end
+    end
+  end
+
+  # Validate a single intent's structure
+  def validate_intent(intent, stop_idx, intent_idx)
+    type = intent["type"] || intent[:type]
+    commodity = intent["commodity"] || intent[:commodity]
+    quantity = intent["quantity"] || intent[:quantity]
+    max_price = intent["max_price"] || intent[:max_price]
+    min_price = intent["min_price"] || intent[:min_price]
+
+    label = "stop #{stop_idx + 1} intent #{intent_idx + 1}"
+
+    # Required fields for all intents
+    errors.add(:stops, "#{label} requires commodity") unless commodity.present?
+    errors.add(:stops, "#{label} requires quantity") unless quantity.present?
+
+    # buy/load require max_price
+    if %w[buy load].include?(type) && !max_price.present?
+      errors.add(:stops, "#{label} (#{type}) requires max_price")
+    end
+
+    # sell/unload require min_price
+    if %w[sell unload].include?(type) && !min_price.present?
+      errors.add(:stops, "#{label} (#{type}) requires min_price")
+    end
   end
 end
