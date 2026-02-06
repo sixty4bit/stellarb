@@ -15,6 +15,7 @@ class User < ApplicationRecord
   has_many :ships, dependent: :destroy
   has_many :buildings, dependent: :destroy
   has_many :discovered_systems, class_name: 'System', foreign_key: 'discovered_by_id'
+  has_many :owned_systems, class_name: 'System', foreign_key: 'owner_id'
   has_many :hirings, dependent: :destroy
   has_many :hired_recruits, through: :hirings
   has_many :system_visits, dependent: :destroy

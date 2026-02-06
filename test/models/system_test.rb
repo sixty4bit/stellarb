@@ -104,4 +104,65 @@ class SystemTest < ActiveSupport::TestCase
 
     refute_equal hash1, hash2
   end
+
+  # ===========================================
+  # System Ownership Tests
+  # ===========================================
+
+  test "owned? returns true when owner_id is present" do
+    user = User.create!(name: "Owner", email: "owner@test.com")
+    system = System.cradle
+    system.update!(owner: user)
+
+    assert system.owned?
+  end
+
+  test "owned? returns false when owner_id is nil" do
+    system = System.cradle
+    system.update!(owner: nil)
+
+    refute system.owned?
+  end
+
+  test "owned_by? returns true for the actual owner" do
+    user = User.create!(name: "Owner", email: "owner@test.com")
+    system = System.cradle
+    system.update!(owner: user)
+
+    assert system.owned_by?(user)
+  end
+
+  test "owned_by? returns false for non-owner" do
+    owner = User.create!(name: "Owner", email: "owner@test.com")
+    other = User.create!(name: "Other", email: "other@test.com")
+    system = System.cradle
+    system.update!(owner: owner)
+
+    refute system.owned_by?(other)
+  end
+
+  test "owned_by? returns false for nil user" do
+    user = User.create!(name: "Owner", email: "owner@test.com")
+    system = System.cradle
+    system.update!(owner: user)
+
+    refute system.owned_by?(nil)
+  end
+
+  test "owned_by? returns false for unowned system" do
+    user = User.create!(name: "User", email: "user@test.com")
+    system = System.cradle
+    system.update!(owner: nil)
+
+    refute system.owned_by?(user)
+  end
+
+  test "system belongs_to owner association" do
+    user = User.create!(name: "Owner", email: "owner@test.com")
+    system = System.cradle
+    system.update!(owner: user)
+
+    assert_equal user, system.owner
+    assert_includes user.reload.owned_systems, system
+  end
 end

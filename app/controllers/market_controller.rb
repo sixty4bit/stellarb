@@ -74,16 +74,23 @@ class MarketController < ApplicationController
     end
 
     # Execute purchase
+    tax_paid = nil
     ActiveRecord::Base.transaction do
       current_user.update!(credits: current_user.credits - total_cost)
       ship.add_cargo!(commodity, quantity)
       inventory.decrease_stock!(quantity)
       
+      # Pay tax to system owner (if any, and buyer isn't owner)
+      base_price = @system.current_price(commodity)
+      tax_paid = pay_owner_tax(base_price, quantity, :buy)
+      
       # Simulate market demand - buying drives prices up
       PriceDelta.simulate_buy(@system, commodity, quantity)
     end
 
-    redirect_to system_market_index_path(@system), notice: "Purchased #{quantity} #{commodity} for #{total_cost} credits"
+    notice = "Purchased #{quantity} #{commodity} for #{total_cost} credits"
+    notice += " (#{tax_paid} cr tax to system owner)" if tax_paid
+    redirect_to system_market_index_path(@system), notice: notice
   end
 
   def sell
@@ -120,6 +127,7 @@ class MarketController < ApplicationController
     total_income = price * quantity
 
     # Execute sale
+    tax_paid = nil
     ActiveRecord::Base.transaction do
       current_user.update!(credits: current_user.credits + total_income)
       ship.remove_cargo!(commodity, quantity)
@@ -128,11 +136,17 @@ class MarketController < ApplicationController
       inventory = MarketInventory.for_system_commodity(@system, commodity)
       inventory&.increase_stock!(quantity)
       
+      # Pay tax to system owner (if any, and seller isn't owner)
+      base_price = @system.current_price(commodity)
+      tax_paid = pay_owner_tax(base_price, quantity, :sell)
+      
       # Simulate market supply - selling drives prices down
       PriceDelta.simulate_sell(@system, commodity, quantity)
     end
 
-    redirect_to system_market_index_path(@system), notice: "Sold #{quantity} #{commodity} for #{total_income} credits"
+    notice = "Sold #{quantity} #{commodity} for #{total_income} credits"
+    notice += " (#{tax_paid} cr tax to system owner)" if tax_paid
+    redirect_to system_market_index_path(@system), notice: notice
   end
 
   private
@@ -179,14 +193,39 @@ class MarketController < ApplicationController
     end
   end
   
-  # Buy price is 10% higher than base (player pays more)
+  # Buy price - owners buy at base price, others pay 10% spread
   def calculate_buy_price(base_price)
-    (base_price * 1.10).round
+    if @system.owned_by?(current_user)
+      base_price.round
+    else
+      (base_price * 1.10).round
+    end
   end
   
-  # Sell price is 10% lower than base (player receives less)
+  # Sell price - owners sell at base price, others get 10% less
   def calculate_sell_price(base_price)
-    (base_price * 0.90).round
+    if @system.owned_by?(current_user)
+      base_price.round
+    else
+      (base_price * 0.90).round
+    end
+  end
+  
+  # Calculate tax to pay to system owner (10% of the spread)
+  # Called after a trade by a non-owner
+  def pay_owner_tax(base_price, quantity, trade_type)
+    return unless @system.owned? && !@system.owned_by?(current_user)
+    
+    # Spread is 10% of base price
+    spread_per_unit = (base_price * 0.10).round
+    # Tax is 10% of the spread (1% of base price effectively)
+    tax_per_unit = (spread_per_unit * 0.10).round
+    total_tax = tax_per_unit * quantity
+    
+    return if total_tax <= 0
+    
+    @system.owner.update!(credits: @system.owner.credits + total_tax)
+    total_tax
   end
   
   # Get actual inventory from MarketInventory model

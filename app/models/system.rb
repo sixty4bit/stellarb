@@ -3,6 +3,7 @@ class System < ApplicationRecord
 
   # Associations
   belongs_to :discovered_by, class_name: 'User', optional: true
+  belongs_to :owner, class_name: 'User', optional: true
   has_many :buildings, dependent: :destroy
   has_many :ships, foreign_key: 'current_system_id'
   has_many :system_visits, dependent: :destroy
@@ -91,6 +92,20 @@ class System < ApplicationRecord
   # Check if this is The Cradle
   def is_cradle?
     x == 0 && y == 0 && z == 0
+  end
+
+  # ===========================================
+  # System Ownership
+  # ===========================================
+
+  # Check if system is owned by any player
+  def owned?
+    owner_id.present?
+  end
+
+  # Check if system is owned by a specific user
+  def owned_by?(user)
+    owner_id == user&.id
   end
 
   # ===========================================
