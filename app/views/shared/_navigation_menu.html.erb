@@ -64,7 +64,7 @@
       </ul>
     </li>
 
-    <li class="group" data-keyboard-navigation-target="menuItem"
+    <li data-keyboard-navigation-target="menuItem"
         data-menu-highlight-target="item"
         data-menu-item="ships"
         data-action="mouseenter->keyboard-navigation#selectItem">
@@ -73,24 +73,6 @@
           data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
         <span>Ships</span>
       <% end %>
-      <ul class="pl-6 mt-1 space-y-1 hidden group-hover:block">
-        <li data-keyboard-navigation-target="menuItem"
-            data-menu-highlight-target="item">
-          <%= link_to trading_ships_path,
-              class: "block px-3 py-1 hover:bg-blue-800 text-sm rounded",
-              data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
-            Trading
-          <% end %>
-        </li>
-        <li data-keyboard-navigation-target="menuItem"
-            data-menu-highlight-target="item">
-          <%= link_to combat_ships_path,
-              class: "block px-3 py-1 hover:bg-blue-800 text-sm rounded",
-              data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
-            Combat
-          <% end %>
-        </li>
-      </ul>
     </li>
 
     <li data-keyboard-navigation-target="menuItem"
