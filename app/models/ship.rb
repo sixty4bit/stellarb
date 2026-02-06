@@ -1,5 +1,6 @@
 class Ship < ApplicationRecord
   include TripleId
+  include Turbo::Broadcastable
 
   # Travel result struct for returning success/failure with details
   TravelResult = Struct.new(:success?, :error, keyword_init: true) do
@@ -504,6 +505,9 @@ class Ship < ApplicationRecord
 
     # Send discovery notification for first visits
     send_discovery_notification(arrived_at_system) if is_first_visit
+
+    # Broadcast arrival to user's ships stream
+    broadcast_arrival
   end
 
   def send_arrival_notification(system)
@@ -530,6 +534,24 @@ class Ship < ApplicationRecord
             "This discovery has been recorded in your flight log.",
       from: "Exploration Bureau",
       category: "discovery"
+    )
+  end
+
+  # Returns the Turbo Stream target for this user's ships stream
+  def broadcast_arrival_target
+    "ships_user_#{user_id}"
+  end
+
+  # Broadcasts ship arrival to user's ships stream via Turbo Streams
+  # Gracefully handles missing ActionCable in test environment
+  def broadcast_arrival
+    return unless defined?(ActionCable)
+
+    broadcast_replace_later_to(
+      broadcast_arrival_target,
+      target: ActionView::RecordIdentifier.dom_id(self),
+      partial: "ships/ship",
+      locals: { ship: self }
     )
   end
 
