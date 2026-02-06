@@ -96,6 +96,37 @@ class ComponentsTest < ActiveSupport::TestCase
     assert_equal price_by_hash, price_by_name
   end
 
+  test "base_price returns nil for unknown component" do
+    assert_nil Components.base_price("Unknown Component")
+  end
+
+  test "base_price is dynamically calculated from input mineral prices" do
+    # Verify price calculation for all components
+    Components::ALL.each do |component|
+      expected_input_cost = component[:inputs].sum do |mineral_name, quantity|
+        Minerals.find(mineral_name)[:base_price] * quantity
+      end
+      expected_price = (expected_input_cost * 1.5).round
+
+      actual_price = Components.base_price(component)
+      assert_equal expected_price, actual_price,
+        "#{component[:name]} price should be #{expected_price}, got #{actual_price}"
+    end
+  end
+
+  test "base_price applies exactly 1.5x multiplier to input cost" do
+    # Iron Plate: 2 Iron = 2 × 10 = 20 credits input
+    # Expected: 20 × 1.5 = 30 credits
+    assert_equal 30, Components.base_price("Iron Plate")
+
+    # Circuit Board: 2 Silicon + 1 Copper = (2 × 18) + (1 × 15) = 51 credits input
+    # Expected: 51 × 1.5 = 76.5, rounded to 77 (banker's rounding) or 76
+    circuit_board = Components.find("Circuit Board")
+    input_cost = (2 * 18) + (1 * 15) # 51
+    expected = (input_cost * 1.5).round # 77
+    assert_equal expected, Components.base_price(circuit_board)
+  end
+
   test "names returns all component names" do
     names = Components.names
     assert names.include?("Iron Plate")
