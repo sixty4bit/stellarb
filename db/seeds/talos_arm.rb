@@ -4,6 +4,17 @@
 
 module Seeds
   class TalosArm
+    # Base prices shared across all tutorial systems (in credits)
+    # These match The Cradle's commodities for consistent trading
+    BASE_PRICES = {
+      "iron" => 10,
+      "copper" => 15,
+      "water" => 5,
+      "food" => 20,
+      "fuel" => 30,
+      "luxury_goods" => 100
+    }.freeze
+
     # System configurations for the tutorial trade loop
     SYSTEMS = [
       {
@@ -17,18 +28,18 @@ module Seeds
           security_level: "high",
           specialty: "mining"
         },
-        # Cheap ore, expensive food/water
-        price_deltas: {
-          "ore" => -20,      # Cheap (base 50 - 20 = 30)
-          "food" => 15,      # Expensive (base 25 + 15 = 40)
-          "water" => 10,     # Slightly expensive
-          "fuel" => 0        # Normal
+        # Cheap iron/copper, expensive food/water
+        price_adjustments: {
+          "iron" => -5,
+          "copper" => -7,
+          "food" => 15,
+          "water" => 3
         }
       },
       {
         name: "Verdant Gardens",
         coords: [2, 3, 1],
-        description: "An agricultural hub with hydroponics bays. They need ore for expansion.",
+        description: "An agricultural hub with hydroponics bays. They need metals for expansion.",
         properties: {
           star_type: "yellow_dwarf",
           planet_count: 5,
@@ -36,31 +47,30 @@ module Seeds
           security_level: "high",
           specialty: "agriculture"
         },
-        # Cheap food/water, expensive ore
-        price_deltas: {
-          "ore" => 25,       # Expensive (base 50 + 25 = 75)
-          "food" => -15,     # Cheap (base 25 - 15 = 10)
-          "water" => -10,    # Cheap
-          "fuel" => 5        # Slightly expensive
+        # Cheap food/water, expensive metals
+        price_adjustments: {
+          "iron" => 5,
+          "copper" => 8,
+          "food" => -10,
+          "water" => -3
         }
       },
       {
         name: "Nexus Hub",
         coords: [1, 3, 2],
-        description: "A trade hub with electronics manufacturing. Needs raw materials.",
+        description: "A trade hub and transit point. Luxury goods are in demand here.",
         properties: {
           star_type: "blue_giant",
           planet_count: 4,
           hazard_level: 15,
           security_level: "medium",
-          specialty: "manufacturing"
+          specialty: "trade"
         },
-        # Cheap electronics, expensive ore and fuel
-        price_deltas: {
-          "electronics" => -50,  # Cheap (base 200 - 50 = 150)
-          "ore" => 30,           # Expensive
-          "fuel" => -15,         # Cheaper fuel
-          "food" => 5            # Slightly expensive
+        # Cheap fuel, expensive luxury goods
+        price_adjustments: {
+          "fuel" => -10,
+          "luxury_goods" => 25,
+          "copper" => 5
         }
       },
       {
@@ -75,11 +85,10 @@ module Seeds
           specialty: "refining"
         },
         # Cheap fuel, expensive food
-        price_deltas: {
-          "fuel" => -30,     # Very cheap (base 100 - 30 = 70)
-          "food" => 20,      # Expensive
-          "water" => 5,      # Slightly expensive
-          "medicine" => -20  # Cheaper medicine (workers get injured)
+        price_adjustments: {
+          "fuel" => -15,
+          "food" => 10,
+          "luxury_goods" => -20
         }
       }
     ].freeze
@@ -87,14 +96,15 @@ module Seeds
     class << self
       def seed!
         puts "Seeding Talos Arm tutorial systems..."
-        
+
         # Ensure The Cradle exists
         cradle = System.cradle
+        initialize_market_inventory(cradle)
         puts "  ✓ The Cradle at (0,0,0)"
 
         SYSTEMS.each do |config|
           system = create_or_update_system(config)
-          apply_price_deltas(system, config[:price_deltas])
+          initialize_market_inventory(system)
           puts "  ✓ #{system.name} at (#{config[:coords].join(',')})"
         end
 
@@ -108,6 +118,7 @@ module Seeds
           system = System.find_by(x: x, y: y, z: z)
           if system
             system.price_deltas.destroy_all
+            system.market_inventories.destroy_all
             system.destroy
             puts "  ✗ Removed #{config[:name]}"
           end
@@ -119,30 +130,33 @@ module Seeds
 
       def create_or_update_system(config)
         x, y, z = config[:coords]
-        
+
+        # Calculate system-specific base_prices with adjustments
+        system_prices = BASE_PRICES.dup
+        if config[:price_adjustments]
+          config[:price_adjustments].each do |commodity, adjustment|
+            if system_prices[commodity]
+              system_prices[commodity] = [system_prices[commodity] + adjustment, 1].max
+            end
+          end
+        end
+
         system = System.find_or_initialize_by(x: x, y: y, z: z)
         system.assign_attributes(
           name: config[:name],
           properties: config[:properties].merge(
             description: config[:description],
             is_tutorial_zone: true,
-            talos_arm: true
+            talos_arm: true,
+            base_prices: system_prices
           )
         )
         system.save!
         system
       end
 
-      def apply_price_deltas(system, deltas)
-        return unless deltas
-        
-        deltas.each do |commodity, delta|
-          price_delta = PriceDelta.find_or_initialize_by(
-            system: system,
-            commodity: commodity
-          )
-          price_delta.update!(delta_cents: delta * 100)  # Store in cents
-        end
+      def initialize_market_inventory(system)
+        MarketInventory.generate_for_system(system)
       end
     end
   end
