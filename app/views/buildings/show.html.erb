@@ -61,6 +61,61 @@
     </div>
   <% end %>
 
+  <!-- Tier Effects -->
+  <div class="tier-effects bg-blue-900 border border-blue-700 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-lime-400 mb-4">Tier <%= @building.tier %> Effects</h2>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+      <% effects = Building.effects_for(@building.function, @building.tier) %>
+      <% effects.each do |key, value| %>
+        <div>
+          <span class="text-gray-400 block"><%= key.to_s.humanize %></span>
+          <span class="text-white font-semibold"><%= value %></span>
+        </div>
+      <% end %>
+      <% if effects.empty? %>
+        <div class="text-gray-500 col-span-3">No special effects for this building type.</div>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @building.upgradeable? %>
+    <% upgrade_cost = @building.upgrade_cost %>
+    <% next_tier = @building.tier + 1 %>
+    <% next_effects = Building.effects_for(@building.function, next_tier) %>
+    <% can_afford = current_user.credits >= upgrade_cost %>
+    
+    <div class="upgrade-preview bg-orange-900/50 border border-orange-700 p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-orange-400">After Upgrade to Tier <%= next_tier %></h2>
+        <span class="text-sm <%= can_afford ? 'text-lime-400' : 'text-red-400' %>">
+          Cost: <%= number_with_delimiter(upgrade_cost) %> cr
+          <% unless can_afford %>
+            (Need <%= number_with_delimiter(upgrade_cost - current_user.credits) %> more)
+          <% end %>
+        </span>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+        <% current_effects = Building.effects_for(@building.function, @building.tier) %>
+        <% next_effects.each do |key, value| %>
+          <% current_value = current_effects[key] %>
+          <div>
+            <span class="text-gray-400 block"><%= key.to_s.humanize %></span>
+            <div class="flex items-center gap-2">
+              <% if current_value %>
+                <span class="text-gray-500 line-through"><%= current_value %></span>
+                <span class="text-orange-400">→</span>
+              <% end %>
+              <span class="text-orange-300 font-semibold"><%= value %></span>
+            </div>
+          </div>
+        <% end %>
+        <% if next_effects.empty? %>
+          <div class="text-gray-500 col-span-3">No special effects for this building type.</div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
   <!-- Building Stats -->
   <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
     <h2 class="text-lg font-semibold text-lime-400 mb-4">Building Stats</h2>
