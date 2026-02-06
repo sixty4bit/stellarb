@@ -166,13 +166,23 @@ class Building < ApplicationRecord
     !disabled? && status != 'destroyed'
   end
 
+  # ===========================================
+  # Mine Price Reduction Configuration
+  # ===========================================
+  # Price reduction per tier (-5% per tier)
+  # T1=-5%, T2=-10%, T3=-15%, T4=-20%, T5=-25%
+  MINE_PRICE_REDUCTION_PER_TIER = 0.05
+
   # Returns the price modifier this building applies to a commodity
-  # Base implementation returns 1.0 (no effect)
-  # Subclasses/concerns can override for specific building types
+  # Mines reduce the price of their target mineral by 5% per tier
   # @param commodity [String, nil] The commodity to check
   # @return [Float] Multiplier for commodity prices (1.0 = no effect)
-  def price_modifier_for(_commodity)
-    1.0
+  def price_modifier_for(commodity)
+    return 1.0 unless extraction? && operational?
+    return 1.0 unless commodity.to_s == specialization.to_s
+
+    # -5% per tier: T1=0.95, T2=0.90, T3=0.85, T4=0.80, T5=0.75
+    1.0 - (tier * MINE_PRICE_REDUCTION_PER_TIER)
   end
 
   # Check if construction is complete and transition to active
