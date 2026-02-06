@@ -3,21 +3,25 @@ import { Controller } from "@hotwired/stimulus"
 // Syncs menu highlighting with current URL after Turbo Frame navigation
 // Since Turbo Frames don't re-render the menu, this controller
 // listens for navigation events and updates highlights client-side
+//
+// This controller manages the ACTIVE state (URL-based highlighting).
+// The keyboard_navigation_controller manages SELECTED state (keyboard focus).
 export default class extends Controller {
   static targets = ["item"]
+  static classes = ["active", "activeText"]
 
   connect() {
     this.syncHighlight()
     
     // Listen for Turbo navigation events
     document.addEventListener("turbo:frame-load", this.boundSyncHighlight)
-    document.addEventListener("turbo:visit", this.boundSyncHighlight)
+    document.addEventListener("turbo:render", this.boundSyncHighlight)
     window.addEventListener("popstate", this.boundSyncHighlight)
   }
 
   disconnect() {
     document.removeEventListener("turbo:frame-load", this.boundSyncHighlight)
-    document.removeEventListener("turbo:visit", this.boundSyncHighlight)
+    document.removeEventListener("turbo:render", this.boundSyncHighlight)
     window.removeEventListener("popstate", this.boundSyncHighlight)
   }
 
@@ -33,19 +37,24 @@ export default class extends Controller {
     
     this.itemTargets.forEach(item => {
       const link = item.querySelector("a")
-      const span = item.querySelector("span")
+      const span = link?.querySelector("span")
       const menuPath = link?.getAttribute("href")
       
       // Check if this menu item matches the current path
       const isActive = this.pathMatches(currentPath, menuPath)
       
-      // Update visual state
+      // Update visual state using data-menu-highlight-active-class or defaults
+      const activeClass = this.hasActiveClass ? this.activeClass : "menu-active"
+      const activeTextClass = this.hasActiveTextClass ? this.activeTextClass : "text-orange-500"
+      
       if (isActive) {
-        item.classList.add("bg-blue-800")
-        if (span) span.classList.add("text-orange-500")
+        item.dataset.menuActive = "true"
+        link?.classList.add(activeClass)
+        if (span) span.classList.add(activeTextClass)
       } else {
-        item.classList.remove("bg-blue-800")
-        if (span) span.classList.remove("text-orange-500")
+        delete item.dataset.menuActive
+        link?.classList.remove(activeClass)
+        if (span) span.classList.remove(activeTextClass)
       }
     })
   }
@@ -53,11 +62,17 @@ export default class extends Controller {
   pathMatches(currentPath, menuPath) {
     if (!menuPath) return false
     
+    // Normalize paths (remove trailing slashes)
+    currentPath = currentPath.replace(/\/$/, '') || '/'
+    menuPath = menuPath.replace(/\/$/, '') || '/'
+    
     // Exact match
     if (currentPath === menuPath) return true
     
+    // Don't match root path as prefix for everything
+    if (menuPath === '/') return false
+    
     // Handle nested routes (e.g., /ships/123 matches /ships menu)
-    // But don't match /ships with /systems
     if (currentPath.startsWith(menuPath + "/")) return true
     
     return false
