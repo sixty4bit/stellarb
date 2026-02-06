@@ -73,4 +73,22 @@ class CountdownControllerTest < ApplicationSystemTestCase
     # After arrival check, ship should be docked
     assert(page.has_text?("Arrived!") || page.has_text?("Reachable Systems"))
   end
+
+  test "navigation automatically updates when ship arrives" do
+    # Set arrival to 2 seconds from now
+    @ship.update!(arrival_at: 2.seconds.from_now)
+
+    click_on "Navigation"
+
+    # Initially should show in-transit state
+    assert_text "En route to"
+    assert_text @destination.name
+
+    # Wait for countdown to complete and frame to reload (2s countdown + 1s delay + buffer)
+    sleep 5
+
+    # After auto-reload, should show docked state with travel options
+    assert_text "Reachable Systems"
+    assert_no_text "En route to"
+  end
 end
