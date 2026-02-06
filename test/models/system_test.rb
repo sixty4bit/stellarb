@@ -165,4 +165,41 @@ class SystemTest < ActiveSupport::TestCase
     assert_equal user, system.owner
     assert_includes user.reload.owned_systems, system
   end
+
+  # ===========================================
+  # Base Prices Tests
+  # ===========================================
+
+  test "base_prices returns base_prices from properties" do
+    system = System.cradle
+    system.update!(properties: { "base_prices" => { "iron" => 100, "gold" => 500 } })
+
+    assert_equal({ "iron" => 100, "gold" => 500 }, system.base_prices)
+  end
+
+  test "base_prices falls back to base_market_prices for backward compatibility" do
+    system = System.cradle
+    # Simulate old data with base_market_prices key
+    system.update!(properties: { "base_market_prices" => { "iron" => 150, "fuel" => 50 } })
+
+    assert_equal({ "iron" => 150, "fuel" => 50 }, system.base_prices)
+  end
+
+  test "base_prices prefers base_prices over base_market_prices" do
+    system = System.cradle
+    # Both keys present - should prefer base_prices
+    system.update!(properties: {
+      "base_prices" => { "iron" => 100 },
+      "base_market_prices" => { "iron" => 999 }
+    })
+
+    assert_equal({ "iron" => 100 }, system.base_prices)
+  end
+
+  test "base_prices returns empty hash when no price data exists" do
+    system = System.cradle
+    system.update!(properties: {})
+
+    assert_equal({}, system.base_prices)
+  end
 end

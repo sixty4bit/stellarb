@@ -209,7 +209,7 @@ class System < ApplicationRecord
   # Get base prices (no deltas applied)
   # @return [Hash] Commodity => base price
   def base_prices
-    properties&.dig("base_prices") || {}
+    properties&.dig("base_prices") || properties&.dig("base_market_prices") || {}
   end
 
   # ===========================================
