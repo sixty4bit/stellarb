@@ -19,6 +19,36 @@ class Building < ApplicationRecord
   MAX_TIER = 5
 
   # ===========================================
+  # Warehouse (Logistics) Capacity Configuration
+  # ===========================================
+  # Capacity bonus multipliers by tier (e.g., 0.5 = +50%)
+  WAREHOUSE_CAPACITY_BONUS = {
+    1 => 0.5,   # +50%
+    2 => 1.0,   # +100%
+    3 => 2.0,   # +200%
+    4 => 4.0,   # +400%
+    5 => 8.0    # +800%
+  }.freeze
+
+  # Maximum trade size limits by tier
+  WAREHOUSE_MAX_TRADE_SIZE = {
+    1 => 500,
+    2 => 1_000,
+    3 => 2_500,
+    4 => 5_000,
+    5 => 10_000
+  }.freeze
+
+  # Restock rate multipliers by tier
+  WAREHOUSE_RESTOCK_MULTIPLIER = {
+    1 => 1.25,  # +25%
+    2 => 1.5,   # +50%
+    3 => 2.0,   # +100%
+    4 => 3.0,   # +200%
+    5 => 5.0    # +400%
+  }.freeze
+
+  # ===========================================
   # Building Costs Configuration
   # ===========================================
   # Base credits cost for each function type by tier
@@ -194,6 +224,42 @@ class Building < ApplicationRecord
       regenerate_building_attributes!
       save!
     end
+  end
+
+  # ===========================================
+  # Warehouse (Logistics) Capacity Methods
+  # ===========================================
+
+  # Check if this building is a warehouse (logistics function)
+  # @return [Boolean]
+  def warehouse?
+    function == "logistics"
+  end
+
+  # Get the capacity bonus multiplier for this warehouse
+  # Increases market max_quantity by this percentage
+  # @return [Float] Bonus multiplier (0.5 = +50%), or 0 if not a warehouse/disabled
+  def warehouse_capacity_bonus
+    return 0 unless warehouse? && operational?
+
+    WAREHOUSE_CAPACITY_BONUS[tier] || 0
+  end
+
+  # Get the maximum trade size allowed by this warehouse
+  # @return [Integer, nil] Max units per trade, or nil if not a warehouse/disabled
+  def warehouse_max_trade_size
+    return nil unless warehouse? && operational?
+
+    WAREHOUSE_MAX_TRADE_SIZE[tier]
+  end
+
+  # Get the restock rate multiplier for this warehouse
+  # Multiplies the base restock rate for market inventory
+  # @return [Float] Multiplier (1.0 = no change), always 1.0 if not a warehouse/disabled
+  def warehouse_restock_multiplier
+    return 1.0 unless warehouse? && operational?
+
+    WAREHOUSE_RESTOCK_MULTIPLIER[tier] || 1.0
   end
 
   # Recalculate building attributes based on current tier
