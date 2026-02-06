@@ -62,6 +62,12 @@
               <span class="ml-4 text-lime-400">Crew: <%= ship.crew.count %></span>
             <% end %>
           </div>
+          <div class="text-sm text-gray-400">
+            Cargo: <%= ship.total_cargo_weight %> / <%= ship.cargo_capacity %>
+            <% if ship.cargo.present? %>
+              (<%= ship.cargo.map { |c, q| "#{q} #{c}" }.join(", ") %>)
+            <% end %>
+          </div>
         <% end %>
       <% end %>
     </div>
