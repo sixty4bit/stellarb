@@ -1,6 +1,7 @@
 class MarketController < ApplicationController
   before_action :set_system
   before_action :set_active_menu
+  before_action :set_system_visit, only: [:index]
 
   def index
     # Verify user has visited this system
@@ -9,8 +10,20 @@ class MarketController < ApplicationController
       return
     end
 
-    # Generate market data (prices are procedural based on system seed)
+    # Check if player has a ship docked at this system (real-time market access)
+    @has_ship_docked = current_user.ships.exists?(current_system: @system, status: "docked")
+
+    # Generate market data based on presence
     @market_data = generate_market_data
+    
+    # Set staleness info for the view
+    if @has_ship_docked
+      @price_source = :live
+      @staleness_label = nil
+    else
+      @price_source = :snapshot
+      @staleness_label = @system_visit&.staleness_label || "unknown"
+    end
 
     @breadcrumbs = [
       { name: current_user.name, path: root_path },
@@ -24,6 +37,9 @@ class MarketController < ApplicationController
     ship = find_trading_ship
     return unless ship
 
+    # For trading, always use live prices (ship being docked is already validated)
+    @has_ship_docked = true
+    
     commodity = params[:commodity]
     quantity = params[:quantity].to_i
 
@@ -62,6 +78,9 @@ class MarketController < ApplicationController
     ship = find_trading_ship
     return unless ship
 
+    # For trading, always use live prices (ship being docked is already validated)
+    @has_ship_docked = true
+    
     commodity = params[:commodity]
     quantity = params[:quantity].to_i
 
@@ -114,15 +133,23 @@ class MarketController < ApplicationController
     @system = System.find(params[:system_id])
   end
 
+  def set_system_visit
+    @system_visit = SystemVisit.find_by(user: current_user, system: @system)
+  end
+
   def set_active_menu(_unused = nil)
     @active_menu = :systems
   end
 
   def generate_market_data
-    # Get current prices (base prices + deltas) from the system
-    current_prices = @system.current_prices
+    # Use live prices if player has ship docked, otherwise use snapshot
+    prices = if @has_ship_docked
+      @system.current_prices
+    else
+      @system_visit&.remembered_prices || {}
+    end
     
-    current_prices.map do |commodity, base_price|
+    prices.map do |commodity, base_price|
       {
         commodity: commodity.to_s,
         buy_price: calculate_buy_price(base_price),
