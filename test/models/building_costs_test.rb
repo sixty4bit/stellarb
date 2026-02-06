@@ -122,26 +122,28 @@ class BuildingCostsTest < ActiveSupport::TestCase
 
   test "user can afford cheap building with sufficient credits" do
     user = users(:pilot)
-    user.update!(credits: 10000)
-    
-    assert user.can_afford_building?(function: "defense", tier: 1, race: "vex")
+    # Logistics tier 1 costs 5,000 credits per source doc
+    user.update!(credits: 10_000)
+
+    assert user.can_afford_building?(function: "logistics", tier: 1, race: "vex")
   end
 
   test "user cannot afford expensive building with insufficient credits" do
     user = users(:pilot)
     user.update!(credits: 100)
-    
+
     refute user.can_afford_building?(function: "defense", tier: 5, race: "krog")
   end
 
   test "deduct_building_cost removes credits from user" do
     user = users(:pilot)
-    user.update!(credits: 10000)
-    
-    cost = Building.cost_for(function: "defense", tier: 1, race: "vex")
-    user.deduct_building_cost!(function: "defense", tier: 1, race: "vex")
-    
-    assert_equal 10000 - cost, user.credits
+    # Logistics tier 1 costs 5,000 credits per source doc
+    user.update!(credits: 10_000)
+
+    cost = Building.cost_for(function: "logistics", tier: 1, race: "vex")
+    user.deduct_building_cost!(function: "logistics", tier: 1, race: "vex")
+
+    assert_equal 10_000 - cost, user.credits
   end
 
   test "deduct_building_cost raises if insufficient credits" do

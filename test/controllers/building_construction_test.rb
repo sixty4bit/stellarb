@@ -31,8 +31,8 @@ class BuildingConstructionTest < ActionDispatch::IntegrationTest
   test "new displays building costs" do
     get new_building_path(system_id: @system.id)
     assert_response :success
-    # Should show costs
-    assert_select "*", text: /1,000|1000/  # Extraction tier 1 cost
+    # Should show costs (extraction tier 1 = 10,000 per source doc)
+    assert_select "*", text: /10,000|10000/  # Extraction tier 1 cost
   end
 
   test "new shows user credits" do
