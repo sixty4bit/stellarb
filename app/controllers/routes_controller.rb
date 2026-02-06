@@ -53,8 +53,15 @@ class RoutesController < ApplicationController
   end
 
   def edit_stops
-    # TODO: Implement stop editing
-    redirect_to @route
+    @available_systems = System.order(:name).limit(50)
+    @breadcrumbs = [
+      { name: current_user.name, path: root_path },
+      { name: "Ships", path: ships_path },
+      { name: "Trading", path: trading_ships_path },
+      { name: "Routes", path: routes_path },
+      { name: @route.short_id, path: route_path(@route) },
+      { name: "Edit Stops" }
+    ]
   end
 
   private

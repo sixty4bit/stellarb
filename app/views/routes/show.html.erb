@@ -58,20 +58,41 @@
     <% if @route.stops.any? %>
       <div class="space-y-3">
         <% @route.stops.each_with_index do |stop, i| %>
-          <div class="flex items-center">
-            <div class="w-8 h-8 rounded-full bg-blue-800 flex items-center justify-center text-white font-bold">
+          <div class="flex items-start">
+            <div class="w-8 h-8 rounded-full bg-blue-800 flex items-center justify-center text-white font-bold mt-1">
               <%= i + 1 %>
             </div>
             <div class="ml-4 flex-1 border-b border-blue-700 pb-2">
               <div class="text-white"><%= stop["system"] || stop[:system] %></div>
-              <div class="text-sm">
-                <span class="text-<%= (stop["action"] || stop[:action]) == 'buy' ? 'orange' : 'lime' %>-400">
-                  <%= (stop["action"] || stop[:action])&.upcase %>
-                </span>
-                <span class="text-gray-400 ml-2">
-                  <%= stop["commodity"] || stop[:commodity] %> × <%= stop["quantity"] || stop[:quantity] %>
-                </span>
-              </div>
+              <%# Support both old (action/commodity) and new (intents) format %>
+              <% intents = stop["intents"] || stop[:intents] %>
+              <% if intents.present? %>
+                <% intents.each do |intent| %>
+                  <div class="text-sm">
+                    <span class="text-<%= %w[buy load].include?(intent['type'] || intent[:type]) ? 'orange' : 'lime' %>-400">
+                      <%= (intent["type"] || intent[:type])&.upcase %>
+                    </span>
+                    <span class="text-gray-400 ml-2">
+                      <%= intent["commodity"] || intent[:commodity] %> × <%= intent["quantity"] || intent[:quantity] %>
+                      <% if intent["max_price"] || intent[:max_price] %>
+                        (max: <%= intent["max_price"] || intent[:max_price] %> cr)
+                      <% elsif intent["min_price"] || intent[:min_price] %>
+                        (min: <%= intent["min_price"] || intent[:min_price] %> cr)
+                      <% end %>
+                    </span>
+                  </div>
+                <% end %>
+              <% else %>
+                <%# Old format fallback %>
+                <div class="text-sm">
+                  <span class="text-<%= (stop["action"] || stop[:action]) == 'buy' ? 'orange' : 'lime' %>-400">
+                    <%= (stop["action"] || stop[:action])&.upcase %>
+                  </span>
+                  <span class="text-gray-400 ml-2">
+                    <%= stop["commodity"] || stop[:commodity] %> × <%= stop["quantity"] || stop[:quantity] %>
+                  </span>
+                </div>
+              <% end %>
             </div>
           </div>
         <% end %>

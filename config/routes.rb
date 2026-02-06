@@ -65,7 +65,14 @@ Rails.application.routes.draw do
     member do
       post :pause
       post :resume
-      patch :edit_stops
+      get :edit_stops
+    end
+
+    # Stop management (nested resource with index as stop position)
+    resources :stops, only: [:create, :update, :destroy], controller: 'route_stops' do
+      member do
+        patch :reorder
+      end
     end
   end
 

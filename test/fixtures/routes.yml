@@ -7,15 +7,22 @@ trade_route:
   status: active
   loop_count: 15
   total_profit: 1250.0
+  uuid: 01900000-0000-7000-8000-000000000101
   stops:
-    - system: cradle
-      action: buy
-      commodity: ore
-      quantity: 100
-    - system: alpha_centauri
-      action: sell
-      commodity: ore
-      quantity: 100
+    - system_id: 1
+      system: cradle
+      intents:
+        - type: buy
+          commodity: ore
+          quantity: 100
+          max_price: 150
+    - system_id: 2
+      system: alpha_centauri
+      intents:
+        - type: sell
+          commodity: ore
+          quantity: 100
+          min_price: 200
 
 paused_route:
   user: pilot
@@ -25,4 +32,5 @@ paused_route:
   status: paused
   loop_count: 3
   total_profit: 0.0
+  uuid: 01900000-0000-7000-8000-000000000102
   stops: []
