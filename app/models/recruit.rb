@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Recruit < ApplicationRecord
+  include Turbo::Broadcastable
+
   # Custom errors for hire! method
   class AlreadyHiredError < StandardError; end
   class NotAvailableError < StandardError; end
@@ -104,6 +106,7 @@ class Recruit < ApplicationRecord
     recruit.seed = SecureRandom.hex(16)
     recruit.populate_attributes!
     recruit.save!
+    broadcast_pool_update(level_tier)
     recruit
   end
 
@@ -159,7 +162,22 @@ class Recruit < ApplicationRecord
 
   # Remove recruit from the available pool
   def expire!
+    tier = level_tier
     update!(expires_at: Time.current)
+    self.class.broadcast_pool_update(tier)
+  end
+
+  # Returns the Turbo Stream target for a specific tier's recruit pool
+  def self.broadcast_pool_target(tier)
+    "recruits_tier_#{tier}"
+  end
+
+  # Broadcasts recruit pool update to all users at a specific tier via Turbo Streams
+  # Gracefully handles missing ActionCable in test environment
+  def self.broadcast_pool_update(tier)
+    return unless defined?(ActionCable)
+
+    Turbo::StreamsChannel.broadcast_refresh_later_to(broadcast_pool_target(tier))
   end
 
   # Calculate wage based on skill and rarity
