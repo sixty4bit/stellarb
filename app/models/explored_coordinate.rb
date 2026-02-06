@@ -1,3 +1,5 @@
+# Tracks coordinates a user has explored in the galaxy
+# Used for discovery mechanics and exploration progress
 class ExploredCoordinate < ApplicationRecord
   belongs_to :user
 
@@ -29,5 +31,17 @@ class ExploredCoordinate < ApplicationRecord
     find_or_create_by!(user: user, x: x, y: y, z: z) do |coord|
       coord.has_system = has_system
     end
+  end
+
+  # Calculate distance from origin (0,0,0)
+  # @return [Float] Euclidean distance from origin
+  def distance_from_origin
+    Math.sqrt(x**2 + y**2 + z**2)
+  end
+
+  # Calculate orbital distance (rounded to nearest integer for bucketing)
+  # @return [Integer] Distance bucket for orbital rings
+  def orbital_distance
+    distance_from_origin.round
   end
 end

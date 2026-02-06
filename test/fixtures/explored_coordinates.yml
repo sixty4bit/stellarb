@@ -1,0 +1,21 @@
+# Test explored coordinate fixtures
+origin:
+  user: pilot
+  x: 0
+  y: 0
+  z: 0
+  has_system: true
+
+near_origin:
+  user: pilot
+  x: 1
+  y: 0
+  z: 0
+  has_system: false
+
+explored_by_traveler:
+  user: traveler
+  x: 0
+  y: 0
+  z: 0
+  has_system: true

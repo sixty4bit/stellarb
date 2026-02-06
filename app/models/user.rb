@@ -14,6 +14,7 @@ class User < ApplicationRecord
   # Associations
   has_many :ships, dependent: :destroy
   has_many :buildings, dependent: :destroy
+  has_many :explored_coordinates, dependent: :destroy
   has_many :discovered_systems, class_name: 'System', foreign_key: 'discovered_by_id'
   has_many :owned_systems, class_name: 'System', foreign_key: 'owner_id'
   has_many :hirings, dependent: :destroy

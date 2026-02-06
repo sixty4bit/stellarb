@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class ExploredCoordinateTest < ActiveSupport::TestCase
@@ -99,6 +101,37 @@ class ExploredCoordinateTest < ActiveSupport::TestCase
       coord = ExploredCoordinate.mark_explored!(user: @user, x: 10, y: 20, z: 30)
       assert_equal existing.id, coord.id
     end
+  end
+
+  # ===========================================
+  # Instance Methods (Orbital)
+  # ===========================================
+
+  test "distance_from_origin calculates correctly" do
+    coord = ExploredCoordinate.new(x: 3, y: 4, z: 0)
+    assert_equal 5.0, coord.distance_from_origin
+
+    coord2 = ExploredCoordinate.new(x: 1, y: 1, z: 1)
+    assert_in_delta Math.sqrt(3), coord2.distance_from_origin, 0.001
+  end
+
+  test "orbital_distance rounds to nearest integer" do
+    # Distance 1.4 should round to 1
+    coord1 = ExploredCoordinate.new(x: 1, y: 1, z: 0) # distance ~1.41
+    assert_equal 1, coord1.orbital_distance
+
+    # Distance 1.7 should round to 2
+    coord2 = ExploredCoordinate.new(x: 1, y: 1, z: 1) # distance ~1.73
+    assert_equal 2, coord2.orbital_distance
+
+    # Origin should be 0
+    coord3 = ExploredCoordinate.new(x: 0, y: 0, z: 0)
+    assert_equal 0, coord3.orbital_distance
+  end
+
+  test "has_system defaults to false" do
+    coord = ExploredCoordinate.create!(user: @user, x: 99, y: 99, z: 99)
+    assert_equal false, coord.has_system
   end
 
   # ===========================================
