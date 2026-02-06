@@ -68,7 +68,11 @@ class PirateEncounterJob < ApplicationJob
     base + skill_bonus + variance
   end
 
-  def perform(ship, arrived_via_warp: false)
+  # @param ship [Ship] The ship to check for pirate encounters
+  # @param arrived_via_warp [Boolean] Whether ship arrived via warp gate (protected)
+  # @param force_encounter [Float, nil] Override random roll for testing (0.0 = always encounter)
+  # @param force_marine_roll [Integer, nil] Override marine combat roll for testing
+  def perform(ship, arrived_via_warp: false, force_encounter: nil, force_marine_roll: nil)
     system = ship.current_system
     return safe_zone_result("Ship has no current system") unless system
 
@@ -85,13 +89,14 @@ class PirateEncounterJob < ApplicationJob
     marine_skill = assigned_marine_skill(ship)
     encounter_chance = self.class.encounter_chance_for(system, marine_skill: marine_skill)
 
-    # Roll for encounter
-    if self.class.random_roll >= encounter_chance
+    # Roll for encounter (use forced value for testing, or random)
+    encounter_roll = force_encounter || self.class.random_roll
+    if encounter_roll >= encounter_chance
       return { outcome: :no_encounter, chance: encounter_chance }
     end
 
-    # Combat roll determines outcome
-    roll = self.class.marine_roll(marine_skill)
+    # Combat roll determines outcome (use forced value for testing, or random)
+    roll = force_marine_roll || self.class.marine_roll(marine_skill)
     outcome = determine_outcome(roll)
 
     # Apply losses based on outcome
