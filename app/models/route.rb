@@ -100,6 +100,102 @@ class Route < ApplicationRecord
     end
   end
 
+  # ===========================================
+  # Stop & Intent Management (vsx.16)
+  # ===========================================
+
+  # Get intents for a specific stop by index
+  # @param stop_index [Integer] index of the stop
+  # @return [Array<Hash>] array of intents or empty array
+  def intents_at(stop_index)
+    return [] unless stops.is_a?(Array) && stops[stop_index]
+    stops[stop_index]["intents"] || []
+  end
+
+  # Add a new stop to the route
+  # @param system_id [Integer] the system ID
+  # @param system [String] the system name
+  # @return [Hash] the newly created stop
+  def add_stop(system_id:, system:)
+    self.stops ||= []
+    new_stop = {
+      "system_id" => system_id,
+      "system" => system,
+      "intents" => []
+    }
+    stops << new_stop
+    new_stop
+  end
+
+  # Remove a stop at the given index
+  # @param stop_index [Integer] index of the stop to remove
+  # @return [Hash, nil] the removed stop or nil
+  def remove_stop(stop_index)
+    return nil unless stops.is_a?(Array) && stops[stop_index]
+    stops.delete_at(stop_index)
+  end
+
+  # Reorder a stop from one position to another
+  # @param from [Integer] original index
+  # @param to [Integer] target index
+  def reorder_stop(from:, to:)
+    return unless stops.is_a?(Array) && stops[from]
+    stop = stops.delete_at(from)
+    stops.insert(to, stop)
+  end
+
+  # Add an intent to a stop
+  # @param stop_index [Integer] index of the stop
+  # @param type [String] intent type (buy/sell/load/unload)
+  # @param commodity [String] commodity name
+  # @param quantity [Integer] quantity
+  # @param max_price [Numeric, nil] max price for buy/load intents
+  # @param min_price [Numeric, nil] min price for sell/unload intents
+  # @return [Hash] the newly created intent
+  def add_intent(stop_index:, type:, commodity:, quantity:, max_price: nil, min_price: nil)
+    return nil unless stops.is_a?(Array) && stops[stop_index]
+
+    stops[stop_index]["intents"] ||= []
+    new_intent = {
+      "type" => type,
+      "commodity" => commodity,
+      "quantity" => quantity
+    }
+    new_intent["max_price"] = max_price if max_price
+    new_intent["min_price"] = min_price if min_price
+
+    stops[stop_index]["intents"] << new_intent
+    new_intent
+  end
+
+  # Remove an intent from a stop
+  # @param stop_index [Integer] index of the stop
+  # @param intent_index [Integer] index of the intent within the stop
+  # @return [Hash, nil] the removed intent or nil
+  def remove_intent(stop_index:, intent_index:)
+    return nil unless stops.is_a?(Array) && stops[stop_index]
+    intents = stops[stop_index]["intents"]
+    return nil unless intents.is_a?(Array) && intents[intent_index]
+
+    intents.delete_at(intent_index)
+  end
+
+  # Update an intent's properties
+  # @param stop_index [Integer] index of the stop
+  # @param intent_index [Integer] index of the intent
+  # @param attrs [Hash] attributes to update
+  def update_intent(stop_index:, intent_index:, **attrs)
+    return nil unless stops.is_a?(Array) && stops[stop_index]
+    intents = stops[stop_index]["intents"]
+    return nil unless intents.is_a?(Array) && intents[intent_index]
+
+    intent = intents[intent_index]
+    attrs.each do |key, value|
+      intent[key.to_s] = value
+    end
+    intent
+  end
+
   private
 
   # Callback: Check if this route's creation/update completes the tutorial
