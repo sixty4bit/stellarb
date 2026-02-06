@@ -46,7 +46,7 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :ships, only: [:index, :show, :new, :create] do
+  resources :ships, param: :short_id, only: [:index, :show, :new, :create] do
     member do
       post :repair
       patch :assign_crew

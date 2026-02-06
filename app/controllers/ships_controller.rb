@@ -203,7 +203,7 @@ class ShipsController < ApplicationController
   end
 
   def set_ship
-    @ship = current_user.ships.find(params[:id])
+    @ship = current_user.ships.find_by!(short_id: params[:short_id])
   end
 
   def ship_params

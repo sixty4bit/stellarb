@@ -396,6 +396,11 @@ class Ship < ApplicationRecord
   before_validation :generate_short_id, on: :create
   before_validation :generate_ship_attributes, on: :create
 
+  # URL parameter uses short_id instead of id
+  def to_param
+    short_id
+  end
+
   # Scopes
   scope :active, -> { where.not(status: 'destroyed') }
   scope :docked, -> { where(status: 'docked') }
