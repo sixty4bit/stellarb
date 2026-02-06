@@ -198,6 +198,13 @@
     </div>
   <% end %>
 
+  <!-- Explore Button -->
+  <div class="mt-6">
+    <%= link_to exploration_path, class: "inline-flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-600 text-white rounded", data: { turbo_frame: "content_panel" } do %>
+      🔭 Explore
+    <% end %>
+  </div>
+
   <div class="mt-6 text-sm text-gray-500">
     <p>
       <span class="text-purple-400">⚡ Warp</span> = instant via gate •
