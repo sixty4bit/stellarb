@@ -99,6 +99,33 @@
   </div>
   <% end %>
 
+  <!-- Build New Structures -->
+  <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-lime-400 mb-4">Build New Structures</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <%
+        buildable_types = [
+          { name: "Mine", function: "extraction", icon: "⛏️", desc: "Extract minerals" },
+          { name: "Warehouse", function: "logistics", icon: "📦", desc: "Store & trade goods" },
+          { name: "Marketplace", function: "civic", icon: "🏪", desc: "Trade hub" },
+          { name: "Factory", function: "refining", icon: "🏭", desc: "Refine materials" }
+        ]
+      %>
+      <% buildable_types.each do |building_type| %>
+        <div class="bg-blue-950 border border-blue-800 p-4 text-center">
+          <div class="text-2xl mb-2"><%= building_type[:icon] %></div>
+          <div class="text-white font-semibold mb-1"><%= building_type[:name] %></div>
+          <div class="text-xs text-gray-400 mb-3"><%= building_type[:desc] %></div>
+          <%= link_to new_building_path(system_id: @system.id, function: building_type[:function]),
+              class: "inline-block px-3 py-1 bg-orange-800 hover:bg-orange-700 border border-orange-600 text-sm transition-colors",
+              data: { turbo_frame: "content_panel" } do %>
+            Build
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
   <!-- Actions -->
   <div class="flex flex-wrap gap-4">
     <%= link_to systems_path,
