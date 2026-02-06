@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_06_044157) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_06_133653) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -34,6 +34,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_044157) do
     t.index ["system_id"], name: "index_buildings_on_system_id"
     t.index ["user_id"], name: "index_buildings_on_user_id"
     t.index ["uuid"], name: "index_buildings_on_uuid", unique: true
+  end
+
+  create_table "explored_coordinates", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "has_system", default: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.integer "x", null: false
+    t.integer "y", null: false
+    t.integer "z", null: false
+    t.index ["user_id", "x", "y", "z"], name: "index_explored_coordinates_on_user_id_and_x_and_y_and_z", unique: true
+    t.index ["user_id"], name: "index_explored_coordinates_on_user_id"
   end
 
   create_table "flight_records", force: :cascade do |t|
@@ -537,6 +549,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_044157) do
 
   add_foreign_key "buildings", "systems"
   add_foreign_key "buildings", "users"
+  add_foreign_key "explored_coordinates", "users"
   add_foreign_key "flight_records", "ships"
   add_foreign_key "flight_records", "systems", column: "from_system_id"
   add_foreign_key "flight_records", "systems", column: "to_system_id"
