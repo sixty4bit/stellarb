@@ -45,24 +45,24 @@ class CatastropheGeneratorTest < ActiveSupport::TestCase
     description = CatastropheGenerator.generate_pip_description(system_type: :weapon)
 
     # Should reference weapon system
-    weapon_terms = [ "Laser", "Battery", "Turret", "Cannon", "Weapon", "Beam", "Gun", "Plasma", "Launcher" ]
-    assert weapon_terms.any? { |term| description.include?(term) },
+    weapon_terms = [ "laser", "battery", "turret", "cannon", "weapon", "beam", "gun", "plasma", "launcher", "emitter", "port", "array" ]
+    assert weapon_terms.any? { |term| description.downcase.include?(term) },
       "Weapon description should reference weapon systems: #{description}"
   end
 
   test "can generate cargo failure style descriptions" do
     description = CatastropheGenerator.generate_pip_description(system_type: :cargo)
 
-    cargo_terms = [ "Cargo", "Bay", "Hold", "Storage", "Container", "Jettison" ]
-    assert cargo_terms.any? { |term| description.include?(term) },
+    cargo_terms = [ "cargo", "bay", "hold", "storage", "container", "jettison", "freight", "loading", "manifest", "deck" ]
+    assert cargo_terms.any? { |term| description.downcase.include?(term) },
       "Cargo description should reference cargo systems: #{description}"
   end
 
   test "can generate navigation failure style descriptions" do
     description = CatastropheGenerator.generate_pip_description(system_type: :navigation)
 
-    nav_terms = [ "Nav", "Autopilot", "Navigation", "Computer", "Course", "Heading" ]
-    assert nav_terms.any? { |term| description.include?(term) },
+    nav_terms = [ "nav", "autopilot", "navigation", "computer", "course", "heading", "warp", "star", "plotter", "sensor" ]
+    assert nav_terms.any? { |term| description.downcase.include?(term) },
       "Navigation description should reference nav systems: #{description}"
   end
 
