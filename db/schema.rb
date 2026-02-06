@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_06_043635) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_06_043912) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -462,6 +462,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_043635) do
     t.datetime "profile_completed_at"
     t.string "short_id"
     t.integer "sign_in_count", default: 0
+    t.boolean "sound_enabled", default: true, null: false
     t.string "tutorial_phase", default: "cradle", null: false
     t.datetime "updated_at", null: false
     t.string "uuid", limit: 36

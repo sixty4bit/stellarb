@@ -24,7 +24,7 @@
     </style>
   </head>
 
-  <body class="bg-blue-950 text-white">
+  <body class="bg-blue-950 text-white"<%= " data-sound-enabled=\"#{current_user.sound_enabled?}\"".html_safe if current_user %>>
     <% if current_user %>
       <% if defined?(ActionCable) %>
       <!-- Turbo Stream subscriptions for real-time updates -->
