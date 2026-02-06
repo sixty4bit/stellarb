@@ -36,6 +36,31 @@
     </div>
   <% end %>
 
+  <% if @building.status == 'under_construction' && @building.construction_ends_at %>
+    <div class="bg-yellow-900 border border-yellow-700 p-6 mb-6">
+      <h3 class="text-xl font-semibold text-yellow-400 mb-4">🏗️ Construction in Progress</h3>
+      <div class="bg-yellow-800 rounded p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="text-gray-400 text-sm">Completion ETA:</span>
+            <span class="text-yellow-300 text-lg ml-2" 
+                  data-controller="countdown" 
+                  data-countdown-arrival-value="<%= @building.construction_ends_at.iso8601 %>"
+                  data-countdown-frame-value="content_panel">
+              <%= distance_of_time_in_words(Time.current, @building.construction_ends_at) %>
+            </span>
+          </div>
+          <div class="text-sm text-gray-400">
+            Ready: <%= @building.construction_ends_at.strftime("%H:%M:%S") %>
+          </div>
+        </div>
+      </div>
+      <p class="text-sm text-gray-400 mt-3">
+        🔨 Construction bots at work • Building will become operational when complete
+      </p>
+    </div>
+  <% end %>
+
   <!-- Building Stats -->
   <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
     <h2 class="text-lg font-semibold text-lime-400 mb-4">Building Stats</h2>
