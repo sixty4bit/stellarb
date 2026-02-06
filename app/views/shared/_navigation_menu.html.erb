@@ -17,9 +17,7 @@
           class: "block px-3 py-2 hover:bg-blue-800 transition-colors rounded",
           data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
         <span>Inbox</span>
-        <%= turbo_frame_tag "inbox_unread_badge" do %>
-          <%= unread_badge(current_user) %>
-        <% end %>
+        <%= render "shared/unread_badge", user: current_user %>
       <% end %>
     </li>
 
