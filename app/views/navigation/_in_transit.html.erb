@@ -18,7 +18,7 @@
         <div class="flex items-center justify-between">
           <div>
             <span class="text-gray-400 text-sm">ETA:</span>
-            <span class="text-yellow-300 text-lg ml-2" data-controller="countdown" data-countdown-arrival-value="<%= ship.arrival_at.iso8601 %>">
+            <span class="text-yellow-300 text-lg ml-2" data-controller="countdown" data-countdown-arrival-value="<%= ship.arrival_at.iso8601 %>" data-countdown-frame-value="content_panel">
               <%= distance_of_time_in_words(Time.current, ship.arrival_at) %>
             </span>
           </div>
