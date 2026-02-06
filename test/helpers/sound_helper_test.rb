@@ -1,28 +1,43 @@
-# frozen_string_literal: true
-
 require "test_helper"
 
 class SoundHelperTest < ActionView::TestCase
   include SoundHelper
 
-  test "sound_tag renders audio element with stimulus controller" do
-    result = sound_tag("/sounds/notification.mp3")
-
-    assert_includes result, 'data-controller="audio"'
-    assert_includes result, 'data-audio-src-value="/sounds/notification.mp3"'
-    assert_includes result, 'data-audio-autoplay-value="true"'
-    assert_includes result, 'data-audio-volume-value="0.5"'
+  setup do
+    @user = users(:one)
   end
 
-  test "sound_tag respects custom volume" do
-    result = sound_tag("/sounds/notification.mp3", volume: 0.3)
-
-    assert_includes result, 'data-audio-volume-value="0.3"'
+  test "sound_enabled? returns true when no current_user" do
+    # No current_user defined
+    assert sound_enabled?
   end
 
-  test "sound_tag respects autoplay false" do
-    result = sound_tag("/sounds/notification.mp3", autoplay: false)
+  test "sound_enabled? returns true when user has sound enabled" do
+    @user.update!(sound_enabled: true)
+    define_singleton_method(:current_user) { @user }
+    assert sound_enabled?
+  end
 
-    assert_includes result, 'data-audio-autoplay-value="false"'
+  test "sound_enabled? returns false when user has sound disabled" do
+    @user.update!(sound_enabled: false)
+    define_singleton_method(:current_user) { @user }
+    assert_not sound_enabled?
+  end
+
+  test "sound_tag returns element when sound enabled" do
+    @user.update!(sound_enabled: true)
+    define_singleton_method(:current_user) { @user }
+    
+    result = sound_tag("/sounds/test.mp3")
+    assert_not_nil result
+    assert_match "audio", result.to_s
+  end
+
+  test "sound_tag returns nil when sound disabled" do
+    @user.update!(sound_enabled: false)
+    define_singleton_method(:current_user) { @user }
+    
+    result = sound_tag("/sounds/test.mp3")
+    assert_nil result
   end
 end

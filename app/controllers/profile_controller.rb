@@ -32,6 +32,6 @@ class ProfileController < ApplicationController
   private
 
   def profile_params
-    params.require(:user).permit(:name)
+    params.require(:user).permit(:name, :sound_enabled)
   end
 end

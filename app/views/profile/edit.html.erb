@@ -24,6 +24,16 @@
         <%= f.text_field :name, class: "w-full bg-blue-800 border border-blue-600 p-2 text-white" %>
       </div>
 
+      <div class="mb-6">
+        <label class="flex items-center gap-3 cursor-pointer">
+          <%= f.check_box :sound_enabled, 
+              class: "w-5 h-5 accent-orange-500 bg-blue-800 border border-blue-600",
+              data: { action: "change->audio#syncPreference" } %>
+          <span class="text-gray-300">Enable Sound Effects</span>
+        </label>
+        <p class="text-sm text-gray-500 mt-1 ml-8">Play audio feedback for game events</p>
+      </div>
+
       <div class="flex gap-4">
         <%= f.submit "Save Changes", class: "bg-orange-600 hover:bg-orange-500 px-4 py-2 cursor-pointer" %>
         <%= link_to "Cancel", profile_path, class: "bg-gray-600 hover:bg-gray-500 px-4 py-2" %>
