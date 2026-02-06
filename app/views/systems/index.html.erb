@@ -8,13 +8,17 @@
   <% if @systems.any? %>
     <div class="space-y-2">
       <% @systems.each do |system| %>
+        <% current_location = system == current_user.current_ship&.current_system %>
         <%= link_to system_path(system),
-            class: "block bg-blue-900 border border-blue-700 p-4 hover:border-orange-500 transition-colors",
+            class: "block p-4 hover:border-orange-500 transition-colors #{current_location ? 'bg-lime-900/30 border-2 border-lime-600' : 'bg-blue-900 border border-blue-700'}",
             data: { turbo_frame: "content_panel" } do %>
           <div class="flex items-center justify-between">
             <div>
               <span class="font-bold text-white"><%= system.name %></span>
               <span class="text-gray-500 text-sm ml-2">(<%= system.x %>, <%= system.y %>, <%= system.z %>)</span>
+              <% if current_location %>
+                <span class="text-lime-400 ml-2">📍 You are here</span>
+              <% end %>
               <% if system.is_cradle? %>
                 <span class="text-xs bg-lime-800 text-lime-200 px-2 py-0.5 ml-2 rounded">[HOME]</span>
               <% end %>
