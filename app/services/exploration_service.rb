@@ -95,7 +95,81 @@ class ExplorationService
     (explored_count.to_f / total_coordinates * 100).round(2)
   end
 
+  # ============================================
+  # Orbital Exploration
+  # ============================================
+
+  # Find the closest unexplored coordinate following orbital pattern
+  # - First searches at the same orbital distance as current position from origin
+  # - Then expands outward to the next distance ring
+  #
+  # @return [Hash, nil] {x:, y:, z:} or nil if all explored
+  def closest_unexplored_orbital
+    current_pos = current_position
+    current_distance = distance_from_origin(current_pos[:x], current_pos[:y], current_pos[:z]).round
+
+    # Search from current distance outward (within valid coordinate range)
+    max_distance = Math.sqrt(3 * (VALID_COORDS.max ** 2)).ceil
+    
+    (current_distance..max_distance).each do |ring_distance|
+      target = find_unexplored_at_orbital_distance(ring_distance, current_pos)
+      return target if target
+    end
+
+    # Also search inward if nothing found outward
+    (0...current_distance).reverse_each do |ring_distance|
+      target = find_unexplored_at_orbital_distance(ring_distance, current_pos)
+      return target if target
+    end
+
+    nil
+  end
+
+  # Get current position from ship system or default to origin
+  # @return [Hash] { x:, y:, z: }
+  def current_position
+    if @current_system
+      { x: @current_system.x, y: @current_system.y, z: @current_system.z }
+    else
+      { x: 0, y: 0, z: 0 }
+    end
+  end
+
   private
+
+  # Calculate distance from origin (0,0,0)
+  def distance_from_origin(x, y, z)
+    Math.sqrt(x**2 + y**2 + z**2)
+  end
+
+  # Find an unexplored coordinate at a specific distance from origin
+  # @param distance [Integer] The orbital ring distance
+  # @param current_pos [Hash] Current position for proximity sorting
+  # @return [Hash, nil] {x:, y:, z:} or nil
+  def find_unexplored_at_orbital_distance(distance, current_pos)
+    explored = explored_coordinates_set
+    tolerance = 0.5
+    candidates = []
+
+    VALID_COORDS.each do |x|
+      VALID_COORDS.each do |y|
+        VALID_COORDS.each do |z|
+          d = distance_from_origin(x, y, z)
+          if (d - distance).abs <= tolerance && !explored.include?([x, y, z])
+            candidates << { x: x, y: y, z: z }
+          end
+        end
+      end
+    end
+
+    # Sort by distance from current position (closest first)
+    candidates.min_by do |c|
+      dx = c[:x] - current_pos[:x]
+      dy = c[:y] - current_pos[:y]
+      dz = c[:z] - current_pos[:z]
+      dx**2 + dy**2 + dz**2
+    end
+  end
 
   # Build a set of explored coordinates for efficient lookup
   # Combines system visits AND explicitly marked explored coordinates

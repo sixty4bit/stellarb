@@ -208,6 +208,71 @@ class ExplorationServiceTest < ActiveSupport::TestCase
   end
 
   # ===========================================
+  # Orbital exploration tests
+  # ===========================================
+
+  test "closest_unexplored_orbital returns origin first when at origin" do
+    # Clear all visits to start fresh
+    @user.system_visits.destroy_all
+    @user.explored_coordinates.destroy_all
+
+    service = ExplorationService.new(@user, @ship)
+    result = service.closest_unexplored_orbital
+
+    # Should return origin (0,0,0) as it's at distance 0
+    assert_not_nil result
+    assert_equal 0, result[:x]
+    assert_equal 0, result[:y]
+    assert_equal 0, result[:z]
+  end
+
+  test "closest_unexplored_orbital expands to next ring after origin explored" do
+    # Origin is already explored (via setup)
+    service = ExplorationService.new(@user, @ship)
+    result = service.closest_unexplored_orbital
+
+    # Should return a coordinate at distance 3 (next ring with valid coords)
+    assert_not_nil result
+    distance = Math.sqrt(result[:x]**2 + result[:y]**2 + result[:z]**2)
+    assert_equal 3.0, distance
+  end
+
+  test "closest_unexplored_orbital returns nil when all explored" do
+    # Mark all coordinates as explored
+    ExplorationService::VALID_COORDS.each do |x|
+      ExplorationService::VALID_COORDS.each do |y|
+        ExplorationService::VALID_COORDS.each do |z|
+          system = System.discover_at(x: x, y: y, z: z, user: @user)
+          SystemVisit.record_visit(@user, system)
+        end
+      end
+    end
+
+    service = ExplorationService.new(@user, @ship)
+    result = service.closest_unexplored_orbital
+
+    assert_nil result
+  end
+
+  test "closest_unexplored_orbital prioritizes same orbital distance" do
+    # Move ship to (3,3,3) - orbital distance ~5.2
+    new_system = System.discover_at(x: 3, y: 3, z: 3, user: @user)
+    @ship.update!(current_system: new_system)
+    SystemVisit.record_visit(@user, new_system)
+
+    service = ExplorationService.new(@user, @ship)
+    result = service.closest_unexplored_orbital
+
+    # Should find coordinate at similar orbital distance (~5.2)
+    assert_not_nil result
+    result_distance = Math.sqrt(result[:x]**2 + result[:y]**2 + result[:z]**2)
+    ship_distance = Math.sqrt(3**2 + 3**2 + 3**2)
+    
+    # Should be within tolerance of same orbital ring
+    assert_in_delta ship_distance, result_distance, 1.0
+  end
+
+  # ===========================================
   # Edge cases
   # ===========================================
 
