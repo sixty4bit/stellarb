@@ -1,5 +1,6 @@
 class Building < ApplicationRecord
   include TripleId
+  include Turbo::Broadcastable
 
   # Custom Errors
   class UpgradeError < StandardError; end
@@ -134,6 +135,27 @@ class Building < ApplicationRecord
     self.status = "active"
     self.construction_ends_at = nil
     save!
+
+    # Broadcast completion to user's buildings stream
+    broadcast_construction_complete
+  end
+
+  # Returns the Turbo Stream target for this user's buildings stream
+  def broadcast_construction_complete_target
+    "buildings_user_#{user_id}"
+  end
+
+  # Broadcasts building construction complete to user's buildings stream via Turbo Streams
+  # Gracefully handles missing ActionCable in test environment
+  def broadcast_construction_complete
+    return unless defined?(ActionCable)
+
+    broadcast_replace_later_to(
+      broadcast_construction_complete_target,
+      target: ActionView::RecordIdentifier.dom_id(self),
+      partial: "buildings/building",
+      locals: { building: self }
+    )
   end
 
   # ===========================================
