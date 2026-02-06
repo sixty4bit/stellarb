@@ -1,37 +1,36 @@
 import { Controller } from "@hotwired/stimulus"
 
 // VI-style keyboard navigation controller
-// Syncs with URL after Turbo Frame navigation
+// Manages SELECTED state (keyboard focus) separately from ACTIVE state (URL-based)
+// The menu_highlight_controller manages which item is active based on URL
 export default class extends Controller {
   static targets = ["menuItem", "contentPanel"]
 
   connect() {
-    this.selectedIndex = 0
+    this.selectedIndex = -1 // Start with no selection until user navigates
     this.menuItems = this.menuItemTargets
     this.bindKeyboardEvents()
     this.bindTurboEvents()
-    this.highlightCurrentMenuItem()
+    this.syncSelectionToActive()
   }
 
   disconnect() {
     document.removeEventListener("keydown", this.handleKeyDown)
-    document.removeEventListener("turbo:frame-load", this.boundHighlight)
-    document.removeEventListener("turbo:visit", this.boundHighlight)
-    window.removeEventListener("popstate", this.boundHighlight)
+    document.removeEventListener("turbo:frame-load", this.boundSync)
+    document.removeEventListener("turbo:render", this.boundSync)
+    window.removeEventListener("popstate", this.boundSync)
   }
 
   bindKeyboardEvents() {
-    // Store bound function so we can remove it later
     this.handleKeyDown = this.onKeyDown.bind(this)
     document.addEventListener("keydown", this.handleKeyDown)
   }
 
   bindTurboEvents() {
-    // Re-sync selection after Turbo navigation
-    this.boundHighlight = this.highlightCurrentMenuItem.bind(this)
-    document.addEventListener("turbo:frame-load", this.boundHighlight)
-    document.addEventListener("turbo:visit", this.boundHighlight)
-    window.addEventListener("popstate", this.boundHighlight)
+    this.boundSync = this.syncSelectionToActive.bind(this)
+    document.addEventListener("turbo:frame-load", this.boundSync)
+    document.addEventListener("turbo:render", this.boundSync)
+    window.addEventListener("popstate", this.boundSync)
   }
 
   onKeyDown(event) {
@@ -72,33 +71,57 @@ export default class extends Controller {
   }
 
   selectNext() {
+    if (this.selectedIndex === -1) {
+      // First navigation - start from active item or first item
+      this.selectedIndex = this.findActiveIndex()
+    }
     this.selectedIndex = Math.min(this.selectedIndex + 1, this.menuItems.length - 1)
     this.updateSelection()
   }
 
   selectPrevious() {
+    if (this.selectedIndex === -1) {
+      // First navigation - start from active item or first item
+      this.selectedIndex = this.findActiveIndex()
+    }
     this.selectedIndex = Math.max(this.selectedIndex - 1, 0)
     this.updateSelection()
+  }
+
+  findActiveIndex() {
+    // Find the currently active menu item (set by menu_highlight_controller)
+    const activeIndex = this.menuItems.findIndex(item => item.dataset.menuActive === "true")
+    return activeIndex !== -1 ? activeIndex : 0
   }
 
   updateSelection() {
     this.menuItems.forEach((item, index) => {
       if (index === this.selectedIndex) {
-        item.classList.add("bg-blue-800", "selected")
+        item.classList.add("ring-2", "ring-orange-400", "ring-inset")
         item.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       } else {
-        item.classList.remove("bg-blue-800", "selected")
+        item.classList.remove("ring-2", "ring-orange-400", "ring-inset")
       }
     })
   }
 
+  clearSelection() {
+    this.menuItems.forEach(item => {
+      item.classList.remove("ring-2", "ring-orange-400", "ring-inset")
+    })
+    this.selectedIndex = -1
+  }
+
   activateSelected() {
+    // If nothing selected, use the active item
+    if (this.selectedIndex === -1) {
+      this.selectedIndex = this.findActiveIndex()
+    }
+    
     const selectedItem = this.menuItems[this.selectedIndex]
     if (selectedItem) {
       const link = selectedItem.querySelector('a') || selectedItem
       if (link.href) {
-        // Use Turbo.visit with action: "advance" to update the URL
-        // This matches the behavior of clicking the link with data-turbo-action="advance"
         const frameId = link.dataset.turboFrame
         if (frameId) {
           Turbo.visit(link.href, { 
@@ -113,7 +136,6 @@ export default class extends Controller {
   }
 
   goBack() {
-    // Check if we're in a nested view by looking for breadcrumbs
     const breadcrumb = document.querySelector('.breadcrumb a:last-child')
     if (breadcrumb) {
       breadcrumb.click()
@@ -142,7 +164,6 @@ export default class extends Controller {
     if (helpModal) {
       helpModal.classList.remove('hidden')
 
-      // Close on any key press
       const closeHelp = (e) => {
         e.preventDefault()
         helpModal.classList.add('hidden')
@@ -162,25 +183,9 @@ export default class extends Controller {
     }
   }
 
-  highlightCurrentMenuItem() {
-    // Find the menu item matching the current path
-    const currentPath = window.location.pathname
-    
-    this.menuItems.forEach((item, index) => {
-      const link = item.querySelector('a')
-      if (link) {
-        const linkPath = link.pathname
-        // Exact match or nested route (e.g., /ships/123 matches /ships)
-        const isMatch = currentPath === linkPath || 
-                       (linkPath !== '/' && currentPath.startsWith(linkPath + '/'))
-        
-        if (isMatch) {
-          this.selectedIndex = index
-        }
-      }
-    })
-    
-    this.updateSelection()
+  syncSelectionToActive() {
+    // After navigation, clear keyboard selection and let active state show through
+    this.clearSelection()
   }
 
   // Called by menu items on hover to update selection

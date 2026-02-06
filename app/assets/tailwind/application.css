@@ -50,3 +50,8 @@
 .unread-badge {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
+/* Active menu item highlight */
+.menu-active {
+  background-color: rgb(30 64 175); /* bg-blue-800 */
+}
