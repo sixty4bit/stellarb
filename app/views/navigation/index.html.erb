@@ -22,7 +22,7 @@
     <div class="grid grid-cols-2 gap-4 text-sm">
       <div>
         <span class="text-gray-400">System:</span>
-        <span class="text-white ml-2"><%= @current_system.name %></span>
+        <span class="text-white ml-2"><%= link_to @current_system.name, system_path(@current_system), class: "hover:text-orange-400 underline", data: { turbo_frame: "content_panel" } %></span>
       </div>
       <div>
         <span class="text-gray-400">Coordinates:</span>
@@ -66,7 +66,7 @@
     <% if @requested_destination && @requested_destination != @current_system %>
       <!-- Requested Destination -->
       <div class="bg-orange-900 border-2 border-orange-500 rounded p-4 mb-6">
-        <h3 class="text-lg font-semibold text-orange-400 mb-2">📍 Navigate to <%= @requested_destination.name %></h3>
+        <h3 class="text-lg font-semibold text-orange-400 mb-2">📍 Navigate to <%= link_to @requested_destination.name, system_path(@requested_destination), class: "hover:text-orange-300 underline", data: { turbo_frame: "content_panel" } %></h3>
         <% warp_dest = @warp_destinations.find { |d| d[:system].id == @requested_destination.id } %>
         <% nearby_dest = @nearby_systems.find { |d| d[:system].id == @requested_destination.id } %>
         <% if warp_dest %>
@@ -107,7 +107,7 @@
       </div>
     <% elsif @requested_destination && @requested_destination == @current_system %>
       <div class="bg-lime-900 border border-lime-600 rounded p-4 mb-6">
-        <p class="text-lime-400">✓ You are already at <%= @current_system.name %></p>
+        <p class="text-lime-400">✓ You are already at <%= link_to @current_system.name, system_path(@current_system), class: "hover:text-lime-300 underline", data: { turbo_frame: "content_panel" } %></p>
       </div>
     <% end %>
     <!-- Warp Gates (Instant Travel) -->
@@ -119,7 +119,7 @@
           <% @warp_destinations.each do |dest| %>
             <div class="flex items-center justify-between p-2 bg-blue-800 rounded">
               <div>
-                <span class="text-white"><%= dest[:system].name %></span>
+                <%= link_to dest[:system].name, system_path(dest[:system]), class: "text-white hover:text-orange-400 underline", data: { turbo_frame: "content_panel" } %>
                 <span class="text-gray-500 text-sm ml-2">(<%= dest[:distance] %> LY)</span>
               </div>
               <div class="flex items-center gap-4">
@@ -152,7 +152,7 @@
           <% @nearby_systems.each do |dest| %>
             <div class="flex items-center justify-between p-2 hover:bg-blue-800 rounded <%= dest[:can_reach] ? '' : 'opacity-50' %>">
               <div>
-                <span class="text-white"><%= dest[:system].name %></span>
+                <%= link_to dest[:system].name, system_path(dest[:system]), class: "text-white hover:text-orange-400 underline", data: { turbo_frame: "content_panel" } %>
                 <span class="text-gray-500 text-sm ml-2">(<%= dest[:distance] %> LY)</span>
               </div>
               <div class="flex items-center gap-4">
@@ -188,7 +188,7 @@
     <div class="bg-yellow-900 border border-yellow-700 rounded p-4 mb-6">
       <h3 class="text-lg font-semibold text-yellow-400 mb-2">🛸 In Transit</h3>
       <p class="text-gray-300">
-        En route to <strong class="text-white"><%= @ship.destination_system&.name || "Unknown" %></strong>
+        En route to <strong class="text-white"><% if @ship.destination_system %><%= link_to @ship.destination_system.name, system_path(@ship.destination_system), class: "hover:text-orange-400 underline", data: { turbo_frame: "content_panel" } %><% else %>Unknown<% end %></strong>
       </p>
       <% if @ship.arrival_at %>
         <p class="text-sm text-gray-400 mt-2">

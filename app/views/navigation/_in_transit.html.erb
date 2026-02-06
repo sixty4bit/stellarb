@@ -8,7 +8,7 @@
     <!-- Destination -->
     <div>
       <p class="text-gray-300 text-lg">
-        En route to <strong class="text-white text-xl"><%= ship.destination_system&.name || "Unknown" %></strong>
+        En route to <strong class="text-white text-xl"><% if ship.destination_system %><%= link_to ship.destination_system.name, system_path(ship.destination_system), class: "hover:text-orange-400 underline", data: { turbo_frame: "content_panel" } %><% else %>Unknown<% end %></strong>
       </p>
     </div>
 
