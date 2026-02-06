@@ -85,7 +85,7 @@ class TripleIdTest < ActiveSupport::TestCase
       name: "Test Building",
       user: user,
       system: system,
-      function: "extraction",
+      function: "defense",
       race: "vex",
       tier: 1,
       status: "active"

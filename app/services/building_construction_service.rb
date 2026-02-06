@@ -218,8 +218,17 @@ class BuildingConstructionService
       function: @type_def[:function],
       tier: @type_def[:tier],
       status: "under_construction",
-      construction_ends_at: Time.current + @type_def[:construction_time]
+      construction_ends_at: Time.current + @type_def[:construction_time],
+      specialization: building_specialization
     )
+  end
+
+  # Determine specialization for extraction buildings
+  # Uses the first available mineral in the system
+  def building_specialization
+    return nil unless @type_def[:function] == "extraction"
+
+    @system&.available_minerals&.first
   end
 
   def construction_finished?

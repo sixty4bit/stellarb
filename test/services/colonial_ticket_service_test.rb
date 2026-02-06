@@ -156,7 +156,7 @@ class ColonialTicketServiceTest < ActiveSupport::TestCase
       system: @system,
       name: "Test Extractor",
       race: "krog",
-      function: "extraction",
+      function: "defense",
       tier: 1,
       status: "active"
     )

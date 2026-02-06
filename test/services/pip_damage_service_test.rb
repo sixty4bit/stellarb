@@ -32,7 +32,7 @@ class PipDamageServiceTest < ActiveSupport::TestCase
       user: @user,
       system: @system,
       race: "krog",
-      function: "refining",
+      function: "defense",
       tier: 2
     )
   end

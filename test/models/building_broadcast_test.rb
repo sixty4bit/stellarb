@@ -11,7 +11,7 @@ class BuildingBroadcastTest < ActiveSupport::TestCase
       system: @system,
       name: "Test Facility",
       race: "vex",
-      function: "extraction",
+      function: "defense",
       tier: 1,
       status: "under_construction",
       construction_ends_at: 1.second.ago  # Construction already complete
@@ -59,7 +59,7 @@ class BuildingBroadcastTest < ActiveSupport::TestCase
       system: @system,
       name: "Active Building",
       race: "vex",
-      function: "refining",
+      function: "defense",
       tier: 1,
       status: "active"
     )

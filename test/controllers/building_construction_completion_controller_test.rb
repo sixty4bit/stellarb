@@ -79,7 +79,7 @@ class BuildingConstructionCompletionControllerTest < ActionDispatch::Integration
       user: @user,
       system: systems(:cradle),
       race: "vex",
-      function: "extraction",
+      function: "defense",
       tier: 1,
       status: "under_construction",
       construction_ends_at: 1.minute.ago,

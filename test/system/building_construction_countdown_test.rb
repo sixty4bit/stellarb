@@ -24,7 +24,7 @@ class BuildingConstructionCountdownTest < ApplicationSystemTestCase
       system: @system,
       name: "Test Extractor",
       race: "krog",
-      function: "extraction",
+      function: "defense",
       tier: 1,
       status: "under_construction",
       construction_ends_at: 30.seconds.from_now
@@ -76,7 +76,7 @@ class BuildingConstructionCountdownTest < ApplicationSystemTestCase
       system: @system,
       name: "Quick Build",
       race: "krog",
-      function: "extraction",
+      function: "defense",
       tier: 1,
       status: "under_construction",
       construction_ends_at: 2.seconds.from_now

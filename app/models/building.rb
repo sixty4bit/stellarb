@@ -135,6 +135,16 @@ class Building < ApplicationRecord
   validates :tier, presence: true, numericality: { in: 1..5 }
   validates :status, presence: true, inclusion: { in: STATUSES }
 
+  # Building type-specific validations
+  validate :mine_specialization_required, if: :extraction?
+  validate :mine_specialization_matches_system_minerals, if: :extraction?
+  validate :one_mine_per_mineral_per_system, if: :extraction?
+  validate :one_warehouse_per_system, if: :logistics?
+  validate :one_marketplace_per_system, if: :civic?
+  validate :factory_requires_marketplace, if: :refining?
+  validate :factory_specialization_required, if: :refining?
+  validate :unique_factory_specialization, if: :refining?
+
   # Callbacks
   before_validation :generate_short_id, on: :create
   before_validation :generate_building_attributes, on: :create
@@ -374,5 +384,109 @@ class Building < ApplicationRecord
     end
 
     self.building_attributes = base_stats
+  end
+
+  # ===========================================
+  # Function Type Helpers
+  # ===========================================
+
+  def extraction?
+    function == "extraction"
+  end
+
+  def refining?
+    function == "refining"
+  end
+
+  def logistics?
+    function == "logistics"
+  end
+
+  def civic?
+    function == "civic"
+  end
+
+  # ===========================================
+  # Building Validation Methods
+  # ===========================================
+
+  # Mine (extraction) validations
+
+  def mine_specialization_required
+    if specialization.blank?
+      errors.add(:specialization, "is required for extraction buildings")
+    end
+  end
+
+  def mine_specialization_matches_system_minerals
+    return if specialization.blank? || system.blank?
+
+    unless system.mineral_available?(specialization)
+      errors.add(:specialization, "must match a mineral available in this system")
+    end
+  end
+
+  def one_mine_per_mineral_per_system
+    return if specialization.blank? || system.blank?
+
+    existing = system.buildings.where(function: "extraction", specialization: specialization)
+    existing = existing.where.not(id: id) if persisted?
+
+    if existing.exists?
+      errors.add(:specialization, "already has a mine for this mineral in this system")
+    end
+  end
+
+  # Warehouse (logistics) validations
+
+  def one_warehouse_per_system
+    return if system.blank?
+
+    existing = system.buildings.where(function: "logistics")
+    existing = existing.where.not(id: id) if persisted?
+
+    if existing.exists?
+      errors.add(:function, "only one logistics building allowed per system")
+    end
+  end
+
+  # Marketplace (civic) validations
+
+  def one_marketplace_per_system
+    return if system.blank?
+
+    existing = system.buildings.where(function: "civic")
+    existing = existing.where.not(id: id) if persisted?
+
+    if existing.exists?
+      errors.add(:function, "only one civic building allowed per system")
+    end
+  end
+
+  # Factory (refining) validations
+
+  def factory_requires_marketplace
+    return if system.blank?
+
+    unless system.buildings.where(function: "civic").exists?
+      errors.add(:base, "requires a marketplace (civic building) in the system")
+    end
+  end
+
+  def factory_specialization_required
+    if specialization.blank?
+      errors.add(:specialization, "is required for refining buildings")
+    end
+  end
+
+  def unique_factory_specialization
+    return if specialization.blank? || system.blank?
+
+    existing = system.buildings.where(function: "refining", specialization: specialization)
+    existing = existing.where.not(id: id) if persisted?
+
+    if existing.exists?
+      errors.add(:specialization, "already has a factory with this specialization in this system")
+    end
   end
 end
