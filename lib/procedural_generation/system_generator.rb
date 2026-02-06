@@ -39,7 +39,7 @@ module ProceduralGeneration
         planet_count: planet_count,
         planets: planets,
         hazard_level: hazard_level,
-        base_market_prices: base_market_prices,
+        base_prices: base_market_prices,
         resource_distribution: resource_distribution
       }
     end

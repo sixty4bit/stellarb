@@ -49,4 +49,13 @@ class ProceduralGeneration::SystemGeneratorTest < ActiveSupport::TestCase
     # They should be different (very unlikely to be the same)
     refute_equal result1[:star_type], result2[:star_type]
   end
+
+  test "generates base_prices key for market data" do
+    result = ProceduralGeneration::SystemGenerator.call(seed: "market_test", x: 0, y: 0, z: 0)
+
+    assert result.key?(:base_prices), "Generator should produce :base_prices key"
+    assert_not result.key?(:base_market_prices), "Generator should NOT produce :base_market_prices key"
+    assert_kind_of Hash, result[:base_prices]
+    assert result[:base_prices].any?, "base_prices should not be empty"
+  end
 end
