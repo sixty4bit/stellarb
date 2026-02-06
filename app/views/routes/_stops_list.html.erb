@@ -1,0 +1,73 @@
+<div id="stops_list" class="space-y-4 mb-6">
+  <% route.stops.each_with_index do |stop, index| %>
+    <div class="bg-blue-900 border border-blue-700 p-4" id="stop_<%= index %>">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <span class="text-gray-400 font-bold"><%= index + 1 %>.</span>
+          <span class="text-white"><%= stop["system"] %></span>
+        </div>
+        <%= button_to route_stop_path(route, index), 
+            method: :delete, 
+            class: "text-red-400 hover:text-red-300",
+            data: { turbo_method: :delete, turbo_confirm: "Remove this stop?" } do %>
+          Remove
+        <% end %>
+      </div>
+      
+      <!-- Intents -->
+      <div class="mt-2 ml-8 space-y-2">
+        <% (stop["intents"] || []).each_with_index do |intent, intent_index| %>
+          <div class="flex items-center justify-between bg-blue-800 p-2 rounded" id="stop_<%= index %>_intent_<%= intent_index %>">
+            <div class="text-sm">
+              <span class="text-<%= %w[buy load].include?(intent['type']) ? 'orange' : 'lime' %>-400">
+                <%= intent["type"]&.upcase %>
+              </span>
+              <span class="text-gray-400 ml-2">
+                <%= intent["commodity"] %> × <%= intent["quantity"] %>
+                <% if intent["max_price"] %>
+                  (max: <%= intent["max_price"] %> cr)
+                <% elsif intent["min_price"] %>
+                  (min: <%= intent["min_price"] %> cr)
+                <% end %>
+              </span>
+            </div>
+            <%= button_to route_stop_intent_path(route, index, intent_index), 
+                method: :delete, 
+                class: "text-red-400 hover:text-red-300 text-sm",
+                data: { turbo_method: :delete, turbo_confirm: "Remove this intent?" } do %>
+              ×
+            <% end %>
+          </div>
+        <% end %>
+        
+        <!-- Add Intent Form -->
+        <%= form_with url: route_stop_intents_path(route, index), 
+            class: "flex gap-2 items-center mt-2",
+            data: { turbo_frame: "_top" } do |f| %>
+          <%= f.select :type, [["Buy", "buy"], ["Sell", "sell"], ["Load", "load"], ["Unload", "unload"]],
+              { prompt: "Type..." },
+              class: "bg-blue-800 border border-blue-600 text-white p-1 text-sm rounded" %>
+          <%= f.text_field :commodity, 
+              placeholder: "Commodity",
+              class: "bg-blue-800 border border-blue-600 text-white p-1 w-24 text-sm rounded" %>
+          <%= f.number_field :quantity, 
+              placeholder: "Qty",
+              class: "bg-blue-800 border border-blue-600 text-white p-1 w-16 text-sm rounded" %>
+          <%= f.number_field :max_price, 
+              placeholder: "Max price",
+              class: "bg-blue-800 border border-blue-600 text-white p-1 w-20 text-sm rounded" %>
+          <%= f.number_field :min_price, 
+              placeholder: "Min price",
+              class: "bg-blue-800 border border-blue-600 text-white p-1 w-20 text-sm rounded" %>
+          <%= f.submit "+", class: "px-2 py-1 bg-lime-800 text-white hover:bg-lime-700 rounded cursor-pointer text-sm" %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+  
+  <% if route.stops.empty? %>
+    <div class="text-gray-400 p-4 text-center">
+      No stops configured. Add your first stop below.
+    </div>
+  <% end %>
+</div>

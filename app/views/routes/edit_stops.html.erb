@@ -12,44 +12,7 @@
     <% end %>
   </div>
 
-  <!-- Stops List -->
-  <div id="stops_list" class="space-y-4 mb-6">
-    <% @route.stops.each_with_index do |stop, index| %>
-      <div class="bg-blue-900 border border-blue-700 p-4" id="stop_<%= index %>">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-4">
-            <span class="text-gray-400 font-bold"><%= index + 1 %>.</span>
-            <span class="text-white"><%= stop["system"] %></span>
-          </div>
-          <%= button_to route_stop_path(@route, index), 
-              method: :delete, 
-              class: "text-red-400 hover:text-red-300",
-              data: { turbo_method: :delete, turbo_confirm: "Remove this stop?" } do %>
-            Remove
-          <% end %>
-        </div>
-        
-        <!-- Intents -->
-        <div class="mt-2 ml-8 space-y-1">
-          <% (stop["intents"] || []).each do |intent| %>
-            <div class="text-sm">
-              <span class="text-<%= intent['type'] == 'buy' || intent['type'] == 'load' ? 'orange' : 'lime' %>-400">
-                <%= intent["type"]&.upcase %>
-              </span>
-              <span class="text-gray-400">
-                <%= intent["commodity"] %> × <%= intent["quantity"] %>
-                <% if intent["max_price"] %>
-                  (max: <%= intent["max_price"] %> cr)
-                <% elsif intent["min_price"] %>
-                  (min: <%= intent["min_price"] %> cr)
-                <% end %>
-              </span>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
-  </div>
+  <%= render "routes/stops_list", route: @route %>
 
   <!-- Add Stop Form -->
   <div class="bg-blue-900 border border-blue-700 p-4">
@@ -64,6 +27,11 @@
       </div>
       <%= f.submit "Add Stop", class: "px-4 py-2 bg-orange-800 text-white hover:bg-orange-700 rounded cursor-pointer" %>
     <% end %>
+  </div>
+
+  <div class="mt-4 text-sm text-gray-500">
+    <p>Add intents (buy/sell actions) to each stop using the forms above.</p>
+    <p class="mt-1">Buy/Load intents require max_price. Sell/Unload intents require min_price.</p>
   </div>
 </div>
 </turbo-frame>
