@@ -500,6 +500,9 @@ class Ship < ApplicationRecord
     self.pending_intent = nil
     save!
 
+    # Check for pirate encounters (conventional travel only)
+    PirateEncounterJob.perform_now(self, arrived_via_warp: false)
+
     # Send arrival notification to inbox
     send_arrival_notification(arrived_at_system)
 
