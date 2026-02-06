@@ -253,9 +253,11 @@ class Building < ApplicationRecord
   def price_modifier_for(commodity)
     return 1.0 unless operational?
 
+    commodity_lower = commodity.to_s.downcase
+
     # Mine price reduction (extraction buildings)
     if extraction?
-      return 1.0 unless commodity.to_s == specialization.to_s
+      return 1.0 unless commodity_lower == specialization.to_s.downcase
       # -5% per tier: T1=0.95, T2=0.90, T3=0.85, T4=0.80, T5=0.75
       return 1.0 - (tier * MINE_PRICE_REDUCTION_PER_TIER)
     end
@@ -263,12 +265,14 @@ class Building < ApplicationRecord
     # Factory pricing (refining buildings)
     if refining?
       # Check if commodity is a factory input (price increase)
-      if factory_inputs.include?(commodity.to_s)
+      inputs_lower = factory_inputs.map(&:downcase)
+      if inputs_lower.include?(commodity_lower)
         return input_price_modifier_for(commodity)
       end
 
       # Check if commodity is a factory output (price decrease)
-      if factory_outputs.include?(commodity.to_s)
+      outputs_lower = factory_outputs.map(&:downcase)
+      if outputs_lower.include?(commodity_lower)
         return output_price_modifier_for(commodity)
       end
     end

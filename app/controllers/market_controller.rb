@@ -212,26 +212,39 @@ class MarketController < ApplicationController
       z: @system.z
     )
     
-    # Use live prices if player has ship docked, otherwise use snapshot
-    prices = if @has_ship_docked
-      @system.current_prices
-    else
-      @system_visit&.remembered_prices || {}
-    end
-    
     # Filter to only available minerals and include tier/category
     available_minerals.map do |mineral|
       commodity = mineral[:name]
-      base_price = prices[commodity] || prices[commodity.to_s] || mineral[:base_price]
+      
+      # Get full price breakdown for this commodity
+      breakdown = if @has_ship_docked
+        @system.price_breakdown_for(commodity)
+      else
+        # For snapshot prices, construct a simpler breakdown
+        snapshot_price = @system_visit&.remembered_prices&.dig(commodity.to_s) || mineral[:base_price]
+        {
+          base_price: mineral[:base_price],
+          abundance_modifier: 1.0,
+          after_abundance: mineral[:base_price],
+          building_effects: [],
+          delta: 0,
+          final_price: snapshot_price,
+          stale: true
+        }
+      end
+      
+      # Final price for buy/sell calculations
+      final_price = breakdown&.dig(:final_price) || mineral[:base_price]
       
       {
         commodity: commodity.to_s,
-        buy_price: calculate_buy_price(base_price),
-        sell_price: calculate_sell_price(base_price),
+        buy_price: calculate_buy_price(final_price),
+        sell_price: calculate_sell_price(final_price),
         inventory: calculate_inventory(commodity),
         trend: calculate_trend(commodity),
         tier: mineral[:tier],
-        category: mineral[:category]
+        category: mineral[:category],
+        breakdown: breakdown
       }
     end
   end
