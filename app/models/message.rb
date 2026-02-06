@@ -24,6 +24,7 @@ class Message < ApplicationRecord
   # Callbacks
   before_create :generate_uuid
   after_create_commit :broadcast_unread_badge
+  after_create_commit :broadcast_notification_sound
   after_destroy_commit :broadcast_unread_badge
   after_update_commit :broadcast_unread_badge, if: :saved_change_to_read_at?
 
@@ -60,6 +61,18 @@ class Message < ApplicationRecord
       target: "inbox_unread_badge",
       partial: "shared/unread_badge",
       locals: { user: user }
+    )
+  end
+
+  # Broadcasts a notification sound to the user's #sounds container
+  # The sound partial respects user's sound_enabled preference
+  def broadcast_notification_sound
+    return unless defined?(ActionCable)
+
+    broadcast_append_later_to(
+      "user_#{user_id}_notifications",
+      target: "sounds",
+      partial: "shared/notification_sound"
     )
   end
 
