@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Talos Arm Tutorial Region Seeds
 # These systems provide the initial trading loop for new players
 # Located within easy travel distance of The Cradle (0,0,0)
@@ -5,14 +7,18 @@
 module Seeds
   class TalosArm
     # Base prices shared across all tutorial systems (in credits)
-    # These match The Cradle's commodities for consistent trading
+    # Using minerals from the Minerals module
     BASE_PRICES = {
-      "iron" => 10,
-      "copper" => 15,
-      "water" => 5,
-      "food" => 20,
-      "fuel" => 30,
-      "luxury_goods" => 100
+      "Iron" => 10,
+      "Copper" => 15,
+      "Aluminum" => 12,
+      "Silicon" => 18,
+      "Carbon" => 8,
+      "Sulfur" => 6,
+      "Graphite" => 14,
+      "Nickel" => 25,
+      "Zinc" => 22,
+      "Tungsten" => 55
     }.freeze
 
     # System configurations for the tutorial trade loop
@@ -20,7 +26,7 @@ module Seeds
       {
         name: "Mira Station",
         coords: [3, 2, 0],
-        description: "A mining outpost rich in raw ore. Miners here need food and water.",
+        description: "A mining outpost rich in raw ore. Miners here need processed metals.",
         properties: {
           star_type: "red_dwarf",
           planet_count: 3,
@@ -28,12 +34,11 @@ module Seeds
           security_level: "high",
           specialty: "mining"
         },
-        # Cheap iron/copper, expensive food/water
+        # Cheap Iron/Copper (mining), expensive processed metals like Tungsten
         price_adjustments: {
-          "iron" => -5,
-          "copper" => -7,
-          "food" => 15,
-          "water" => 3
+          "Iron" => -5,
+          "Copper" => -7,
+          "Tungsten" => 15
         }
       },
       {
@@ -47,18 +52,17 @@ module Seeds
           security_level: "high",
           specialty: "agriculture"
         },
-        # Cheap food/water, expensive metals
+        # Expensive Iron (need it), cheap Carbon (byproduct of agriculture)
         price_adjustments: {
-          "iron" => 5,
-          "copper" => 8,
-          "food" => -10,
-          "water" => -3
+          "Iron" => 5,
+          "Copper" => 8,
+          "Carbon" => -3
         }
       },
       {
         name: "Nexus Hub",
         coords: [1, 3, 2],
-        description: "A trade hub and transit point. Luxury goods are in demand here.",
+        description: "A trade hub and transit point. High-value metals are in demand here.",
         properties: {
           star_type: "blue_giant",
           planet_count: 4,
@@ -66,17 +70,17 @@ module Seeds
           security_level: "medium",
           specialty: "trade"
         },
-        # Cheap fuel, expensive luxury goods
+        # Tungsten in high demand, Graphite cheap
         price_adjustments: {
-          "fuel" => -10,
-          "luxury_goods" => 25,
-          "copper" => 5
+          "Graphite" => -5,
+          "Tungsten" => 25,
+          "Copper" => 5
         }
       },
       {
         name: "Beacon Refinery",
         coords: [1, 2, 1],
-        description: "A fuel refinery station. They produce fuel but need food for workers.",
+        description: "A refinery station. They produce refined metals but need raw materials.",
         properties: {
           star_type: "orange_dwarf",
           planet_count: 2,
@@ -84,11 +88,11 @@ module Seeds
           security_level: "medium",
           specialty: "refining"
         },
-        # Cheap fuel, expensive food
+        # Cheap Tungsten (they produce it), expensive raw Iron
         price_adjustments: {
-          "fuel" => -15,
-          "food" => 10,
-          "luxury_goods" => -20
+          "Tungsten" => -20,
+          "Iron" => 8,
+          "Nickel" => 10
         }
       }
     ].freeze
@@ -104,6 +108,7 @@ module Seeds
 
         SYSTEMS.each do |config|
           system = create_or_update_system(config)
+          apply_price_deltas(system, config[:price_adjustments])
           initialize_market_inventory(system)
           puts "  ✓ #{system.name} at (#{config[:coords].join(',')})"
         end
@@ -131,16 +136,6 @@ module Seeds
       def create_or_update_system(config)
         x, y, z = config[:coords]
 
-        # Calculate system-specific base_prices with adjustments
-        system_prices = BASE_PRICES.dup
-        if config[:price_adjustments]
-          config[:price_adjustments].each do |commodity, adjustment|
-            if system_prices[commodity]
-              system_prices[commodity] = [system_prices[commodity] + adjustment, 1].max
-            end
-          end
-        end
-
         system = System.find_or_initialize_by(x: x, y: y, z: z)
         system.assign_attributes(
           name: config[:name],
@@ -148,15 +143,43 @@ module Seeds
             description: config[:description],
             is_tutorial_zone: true,
             talos_arm: true,
-            base_prices: system_prices
+            base_prices: BASE_PRICES
           )
         )
         system.save!
         system
       end
 
+      # Create PriceDeltas for the price adjustments
+      # Converts credit adjustments to cents for storage
+      def apply_price_deltas(system, adjustments)
+        return unless adjustments
+
+        adjustments.each do |commodity, adjustment|
+          # Store as cents (adjustment * 100)
+          PriceDelta.find_or_initialize_by(system: system, commodity: commodity).tap do |delta|
+            delta.delta_cents = adjustment * 100
+            delta.save!
+          end
+        end
+      end
+
       def initialize_market_inventory(system)
-        MarketInventory.generate_for_system(system)
+        # Create inventory for available minerals
+        available_minerals = MineralAvailability.for_system(
+          star_type: system.properties&.dig("star_type") || "yellow_dwarf",
+          x: system.x,
+          y: system.y,
+          z: system.z
+        )
+
+        available_minerals.each do |mineral|
+          MarketInventory.find_or_create_by!(system: system, commodity: mineral[:name]) do |inv|
+            inv.quantity = 500
+            inv.max_quantity = 1000
+            inv.restock_rate = 10
+          end
+        end
       end
     end
   end

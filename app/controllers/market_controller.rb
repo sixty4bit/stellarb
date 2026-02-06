@@ -81,7 +81,7 @@ class MarketController < ApplicationController
       inventory.decrease_stock!(quantity)
       
       # Pay tax to system owner (if any, and buyer isn't owner)
-      base_price = @system.current_price(commodity)
+      base_price = get_commodity_price(commodity)
       tax_paid = pay_owner_tax(base_price, quantity, :buy)
       
       # Simulate market demand - buying drives prices up
@@ -137,7 +137,7 @@ class MarketController < ApplicationController
       inventory&.increase_stock!(quantity)
       
       # Pay tax to system owner (if any, and seller isn't owner)
-      base_price = @system.current_price(commodity)
+      base_price = get_commodity_price(commodity)
       tax_paid = pay_owner_tax(base_price, quantity, :sell)
       
       # Simulate market supply - selling drives prices down
@@ -175,6 +175,14 @@ class MarketController < ApplicationController
   end
 
   def generate_market_data
+    # Get available minerals based on system type and distance from Cradle
+    available_minerals = MineralAvailability.for_system(
+      star_type: @system.properties&.dig("star_type") || "yellow_dwarf",
+      x: @system.x,
+      y: @system.y,
+      z: @system.z
+    )
+    
     # Use live prices if player has ship docked, otherwise use snapshot
     prices = if @has_ship_docked
       @system.current_prices
@@ -182,13 +190,19 @@ class MarketController < ApplicationController
       @system_visit&.remembered_prices || {}
     end
     
-    prices.map do |commodity, base_price|
+    # Filter to only available minerals and include tier/category
+    available_minerals.map do |mineral|
+      commodity = mineral[:name]
+      base_price = prices[commodity] || prices[commodity.to_s] || mineral[:base_price]
+      
       {
         commodity: commodity.to_s,
         buy_price: calculate_buy_price(base_price),
         sell_price: calculate_sell_price(base_price),
         inventory: calculate_inventory(commodity),
-        trend: calculate_trend(commodity)
+        trend: calculate_trend(commodity),
+        tier: mineral[:tier],
+        category: mineral[:category]
       }
     end
   end
@@ -226,6 +240,18 @@ class MarketController < ApplicationController
     
     @system.owner.update!(credits: @system.owner.credits + total_tax)
     total_tax
+  end
+  
+  # Get the current price for a commodity, with fallback to Minerals module
+  # @param commodity [String] The commodity name
+  # @return [Integer] Current price
+  def get_commodity_price(commodity)
+    price = @system.current_price(commodity)
+    return price if price
+    
+    # Fall back to Minerals module base price
+    mineral = Minerals.find(commodity)
+    mineral&.fetch(:base_price, nil)
   end
   
   # Get actual inventory from MarketInventory model

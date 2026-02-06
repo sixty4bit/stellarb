@@ -60,6 +60,7 @@ class PriceDelta < ApplicationRecord
 
     # Get current price for a commodity in a system
     # Returns base price if no delta exists
+    # Falls back to Minerals module base_price if system has no custom price
     #
     # @param system [System] The system
     # @param commodity [String] The commodity name
@@ -71,7 +72,11 @@ class PriceDelta < ApplicationRecord
         delta.current_price
       else
         base_prices = system.properties&.dig("base_prices") || {}
-        base_prices[commodity.to_s] || base_prices[commodity.to_sym]
+        price = base_prices[commodity.to_s] || base_prices[commodity.to_sym]
+        
+        # Fall back to Minerals module base price
+        price ||= Minerals.find(commodity)&.fetch(:base_price, nil)
+        price
       end
     end
 
@@ -119,6 +124,7 @@ class PriceDelta < ApplicationRecord
     # @param demand_factor [Float] Price increase per unit (default 0.5%)
     def simulate_buy(system, commodity, quantity, demand_factor: 0.005)
       current = current_price_for(system, commodity)
+      current ||= Minerals.find(commodity)&.fetch(:base_price, nil)
       return nil unless current
 
       # Price increases based on quantity and demand factor
@@ -133,6 +139,7 @@ class PriceDelta < ApplicationRecord
     # @param supply_factor [Float] Price decrease per unit (default 0.5%)
     def simulate_sell(system, commodity, quantity, supply_factor: 0.005)
       current = current_price_for(system, commodity)
+      current ||= Minerals.find(commodity)&.fetch(:base_price, nil)
       return nil unless current
 
       # Price decreases based on quantity and supply factor

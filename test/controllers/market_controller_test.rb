@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class MarketControllerTest < ActionDispatch::IntegrationTest
@@ -28,9 +30,16 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
       last_visited_at: Time.current
     )
     
-    # Create market inventory for The Cradle commodities
-    @system.base_prices.each do |commodity, _price|
-      MarketInventory.find_or_create_by!(system: @system, commodity: commodity) do |inv|
+    # Create market inventory for available minerals at The Cradle
+    available_minerals = MineralAvailability.for_system(
+      star_type: @system.properties&.dig("star_type") || "yellow_dwarf",
+      x: @system.x,
+      y: @system.y,
+      z: @system.z
+    )
+    
+    available_minerals.each do |mineral|
+      MarketInventory.find_or_create_by!(system: @system, commodity: mineral[:name]) do |inv|
         inv.quantity = 500
         inv.max_quantity = 1000
         inv.restock_rate = 10
@@ -48,13 +57,13 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
 
   test "buy adds commodity to ship cargo" do
     post buy_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: 10
     }
 
     assert_redirected_to system_market_index_path(@system)
     @ship.reload
-    assert_equal 10, @ship.cargo["iron"]
+    assert_equal 10, @ship.cargo["Iron"]
   end
 
   test "buy deducts credits from user" do
@@ -64,7 +73,7 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
     expected_cost = quantity * 11
 
     post buy_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: quantity
     }
 
@@ -75,20 +84,20 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
     @user.update!(credits: 10)
 
     post buy_system_market_index_path(@system), params: {
-      commodity: "luxury_goods", # Base 100, buy price 110 per unit
+      commodity: "Tungsten", # Base 55, buy price 61 per unit
       quantity: 10
     }
 
     assert_redirected_to system_market_index_path(@system)
     assert_match /insufficient credits/i, flash[:alert]
-    assert_nil @ship.reload.cargo["luxury_goods"]
+    assert_nil @ship.reload.cargo["Tungsten"]
   end
 
   test "buy fails if insufficient cargo space" do
-    @ship.update!(cargo: { "iron" => 195 }) # Only 5 space left
+    @ship.update!(cargo: { "Iron" => 195 }) # Only 5 space left
 
     post buy_system_market_index_path(@system), params: {
-      commodity: "water",
+      commodity: "Copper",
       quantity: 10 # Needs 10 space
     }
 
@@ -100,7 +109,7 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
     @ship.update!(status: "in_transit")
 
     post buy_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: 10
     }
 
@@ -109,26 +118,26 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sell removes commodity from ship cargo" do
-    @ship.update!(cargo: { "iron" => 50 })
+    @ship.update!(cargo: { "Iron" => 50 })
 
     post sell_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: 20
     }
 
     assert_redirected_to system_market_index_path(@system)
-    assert_equal 30, @ship.reload.cargo["iron"]
+    assert_equal 30, @ship.reload.cargo["Iron"]
   end
 
   test "sell adds credits to user" do
-    @ship.update!(cargo: { "iron" => 50 })
+    @ship.update!(cargo: { "Iron" => 50 })
     initial_credits = @user.credits
     quantity = 10
     # Iron base price is 10, sell price = 10 * 0.90 = 9
     expected_income = quantity * 9
 
     post sell_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: quantity
     }
 
@@ -136,23 +145,23 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sell fails if insufficient cargo" do
-    @ship.update!(cargo: { "iron" => 5 })
+    @ship.update!(cargo: { "Iron" => 5 })
 
     post sell_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: 10
     }
 
     assert_redirected_to system_market_index_path(@system)
     assert_match /insufficient/i, flash[:alert]
-    assert_equal 5, @ship.reload.cargo["iron"] # Unchanged
+    assert_equal 5, @ship.reload.cargo["Iron"] # Unchanged
   end
 
   test "sell fails for commodity not in cargo" do
     @ship.update!(cargo: {})
 
     post sell_system_market_index_path(@system), params: {
-      commodity: "copper",
+      commodity: "Copper",
       quantity: 5
     }
 
@@ -161,10 +170,10 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sell fails without docked ship" do
-    @ship.update!(cargo: { "iron" => 50 }, status: "in_transit")
+    @ship.update!(cargo: { "Iron" => 50 }, status: "in_transit")
 
     post sell_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: 10
     }
 
@@ -177,26 +186,26 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
   # ===========================================
 
   test "buy fails if insufficient market stock" do
-    # Set iron inventory to only 5 units
-    inventory = MarketInventory.find_by(system: @system, commodity: "iron")
+    # Set Iron inventory to only 5 units
+    inventory = MarketInventory.find_by(system: @system, commodity: "Iron")
     inventory.update!(quantity: 5)
 
     post buy_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: 10
     }
 
     assert_redirected_to system_market_index_path(@system)
     assert_match /insufficient stock/i, flash[:alert]
-    assert_nil @ship.reload.cargo["iron"]
+    assert_nil @ship.reload.cargo["Iron"]
   end
 
   test "buy decreases market inventory" do
-    inventory = MarketInventory.find_by(system: @system, commodity: "iron")
+    inventory = MarketInventory.find_by(system: @system, commodity: "Iron")
     initial_stock = inventory.quantity
 
     post buy_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: 10
     }
 
@@ -205,12 +214,12 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sell increases market inventory" do
-    @ship.update!(cargo: { "iron" => 50 })
-    inventory = MarketInventory.find_by(system: @system, commodity: "iron")
+    @ship.update!(cargo: { "Iron" => 50 })
+    inventory = MarketInventory.find_by(system: @system, commodity: "Iron")
     initial_stock = inventory.quantity
 
     post sell_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: 20
     }
 
@@ -219,12 +228,12 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sell caps market inventory at max_quantity" do
-    @ship.update!(cargo: { "iron" => 1000 })
-    inventory = MarketInventory.find_by(system: @system, commodity: "iron")
+    @ship.update!(cargo: { "Iron" => 1000 })
+    inventory = MarketInventory.find_by(system: @system, commodity: "Iron")
     inventory.update!(quantity: 990, max_quantity: 1000)
 
     post sell_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: 50
     }
 
@@ -246,48 +255,48 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
 
   test "buy increases price via price delta" do
     # Clear any existing delta
-    PriceDelta.where(system: @system, commodity: "iron").delete_all
+    PriceDelta.where(system: @system, commodity: "Iron").delete_all
     
     # Make a purchase
     post buy_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: 50
     }
     
     assert_redirected_to system_market_index_path(@system)
     
     # Price delta should exist and be positive
-    delta = PriceDelta.find_by(system: @system, commodity: "iron")
+    delta = PriceDelta.find_by(system: @system, commodity: "Iron")
     assert_not_nil delta, "PriceDelta should be created after buy"
     assert_operator delta.delta_cents, :>, 0, "Delta should be positive after purchase"
   end
 
   test "sell decreases price via price delta" do
-    @ship.update!(cargo: { "iron" => 100 })
+    @ship.update!(cargo: { "Iron" => 100 })
     
     # Clear any existing delta
-    PriceDelta.where(system: @system, commodity: "iron").delete_all
+    PriceDelta.where(system: @system, commodity: "Iron").delete_all
     
     # Make a sale
     post sell_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: 50
     }
     
     assert_redirected_to system_market_index_path(@system)
     
     # Price delta should exist and be negative
-    delta = PriceDelta.find_by(system: @system, commodity: "iron")
+    delta = PriceDelta.find_by(system: @system, commodity: "Iron")
     assert_not_nil delta, "PriceDelta should be created after sell"
     assert_operator delta.delta_cents, :<, 0, "Delta should be negative after sale"
   end
 
   test "large purchase shows upward trend" do
     # Clear any existing delta
-    PriceDelta.where(system: @system, commodity: "iron").delete_all
+    PriceDelta.where(system: @system, commodity: "Iron").delete_all
     
     # Create a significant positive delta (> 10 cents)
-    PriceDelta.create!(system: @system, commodity: "iron", delta_cents: 15)
+    PriceDelta.create!(system: @system, commodity: "Iron", delta_cents: 15)
     
     get system_market_index_path(@system)
     
@@ -297,10 +306,10 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
 
   test "large sale shows downward trend" do
     # Clear any existing delta
-    PriceDelta.where(system: @system, commodity: "iron").delete_all
+    PriceDelta.where(system: @system, commodity: "Iron").delete_all
     
     # Create a significant negative delta (< -10 cents)
-    PriceDelta.create!(system: @system, commodity: "iron", delta_cents: -15)
+    PriceDelta.create!(system: @system, commodity: "Iron", delta_cents: -15)
     
     get system_market_index_path(@system)
     
@@ -310,10 +319,10 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
 
   test "small delta shows stable trend" do
     # Clear any existing delta
-    PriceDelta.where(system: @system, commodity: "iron").delete_all
+    PriceDelta.where(system: @system, commodity: "Iron").delete_all
     
     # Create a small delta (within ±10 cents)
-    PriceDelta.create!(system: @system, commodity: "iron", delta_cents: 5)
+    PriceDelta.create!(system: @system, commodity: "Iron", delta_cents: 5)
     
     get system_market_index_path(@system)
     
