@@ -241,10 +241,13 @@ class System < ApplicationRecord
     distribution = mineral_distribution
     return 1.0 if distribution.blank?
 
+    commodity_lower = commodity.to_s.downcase
+
     # Find the planet/node that has this commodity
     distribution.each do |_planet_idx, planet_data|
       minerals = planet_data["minerals"] || planet_data[:minerals] || []
-      next unless minerals.include?(commodity.to_s)
+      minerals_lower = minerals.map(&:downcase)
+      next unless minerals_lower.include?(commodity_lower)
 
       abundance = (planet_data["abundance"] || planet_data[:abundance]).to_s
       return ABUNDANCE_MODIFIERS[abundance] || 1.0
@@ -294,6 +297,51 @@ class System < ApplicationRecord
   # @return [Hash] Commodity => base price
   def base_prices
     properties&.dig("base_prices") || properties&.dig("base_market_prices") || {}
+  end
+
+  # Get a detailed price breakdown for a commodity showing all modifiers
+  # @param commodity [String] The commodity name
+  # @return [Hash, nil] Breakdown with all price components, or nil if unknown commodity
+  def price_breakdown_for(commodity)
+    commodity_key = commodity.to_s.downcase
+    base = base_prices[commodity_key] || base_prices[commodity.to_s] || base_prices[commodity.to_sym]
+    return nil unless base
+
+    breakdown = {
+      base_price: base,
+      abundance_modifier: abundance_modifier(commodity),
+      after_abundance: nil,
+      building_effects: [],
+      delta: 0,
+      final_price: nil
+    }
+
+    # Apply abundance modifier
+    price = base * breakdown[:abundance_modifier]
+    breakdown[:after_abundance] = price.round
+
+    # Collect and apply all building effects
+    buildings.each do |building|
+      next unless building.respond_to?(:operational?) && building.operational?
+
+      modifier = building.price_modifier_for(commodity)
+      next if modifier == 1.0  # Skip buildings with no effect
+
+      price *= modifier
+      breakdown[:building_effects] << {
+        building_name: building.name,
+        modifier: modifier,
+        price_after: price.round
+      }
+    end
+
+    # Get price delta
+    delta = price_deltas.find_by(commodity: commodity.to_s)
+    breakdown[:delta] = delta&.delta_cents || 0
+
+    # Calculate final price
+    breakdown[:final_price] = [price.round + breakdown[:delta], 1].max
+    breakdown
   end
 
   # ===========================================

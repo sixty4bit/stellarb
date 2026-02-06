@@ -109,59 +109,167 @@
     </div>
     
     <% @market_data.each do |item| %>
-      <div class="grid grid-cols-9 gap-2 p-3 border-b border-blue-700 items-center hover:bg-blue-800 transition-colors">
-        <div class="text-white font-bold"><%= item[:commodity] %></div>
-        <div>
-          <% tier_colors = { common: 'bg-gray-600', uncommon: 'bg-green-700', rare: 'bg-blue-600', exotic: 'bg-purple-600', futuristic: 'bg-orange-600' } %>
-          <span class="tier-badge px-2 py-0.5 text-xs rounded <%= tier_colors[item[:tier]] || 'bg-gray-600' %>">
-            <%= item[:tier]&.to_s&.capitalize || 'Unknown' %>
-          </span>
-        </div>
-        <div class="text-right text-orange-400"><%= item[:buy_price] %> cr</div>
-        <div class="text-right text-lime-400"><%= item[:sell_price] %> cr</div>
-        <div class="text-right text-white"><%= number_with_delimiter(item[:inventory]) %></div>
-        <div class="text-center">
-          <% case item[:trend] %>
-          <% when :up %>
-            <span class="text-lime-400" title="Price trending up">↑</span>
-          <% when :down %>
-            <span class="text-red-400" title="Price trending down">↓</span>
-          <% else %>
-            <span class="text-gray-400" title="Price stable">→</span>
-          <% end %>
-        </div>
-        
-        <!-- Quantity Input -->
-        <div class="text-center">
-          <input type="number" 
-                 id="qty_<%= item[:commodity] %>" 
-                 value="1" 
-                 min="1" 
-                 max="<%= item[:inventory] %>"
-                 class="w-16 bg-blue-950 border border-blue-600 text-white text-center rounded px-2 py-1 text-sm">
-        </div>
-        
-        <!-- Buy/Sell Buttons -->
-        <div class="flex gap-2 col-span-2 justify-center">
-          <%= form_with url: buy_system_market_index_path(@system), method: :post, local: true, class: "inline" do |f| %>
-            <%= f.hidden_field :commodity, value: item[:commodity] %>
-            <%= f.hidden_field :price, value: item[:buy_price] %>
-            <input type="hidden" name="quantity" value="1" data-commodity="<%= item[:commodity] %>" class="qty-input">
-            <%= f.submit "Buy", 
-                class: "px-3 py-1 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded cursor-pointer transition-colors",
-                title: "Buy at #{item[:buy_price]} cr each" %>
-          <% end %>
+      <% breakdown = item[:breakdown] %>
+      <details class="border-b border-blue-700">
+        <summary class="grid grid-cols-9 gap-2 p-3 items-center hover:bg-blue-800 transition-colors cursor-pointer list-none">
+          <div class="text-white font-bold"><%= item[:commodity] %></div>
+          <div>
+            <% tier_colors = { common: 'bg-gray-600', uncommon: 'bg-green-700', rare: 'bg-blue-600', exotic: 'bg-purple-600', futuristic: 'bg-orange-600' } %>
+            <span class="tier-badge px-2 py-0.5 text-xs rounded <%= tier_colors[item[:tier]] || 'bg-gray-600' %>">
+              <%= item[:tier]&.to_s&.capitalize || 'Unknown' %>
+            </span>
+          </div>
+          <div class="text-right text-orange-400"><%= item[:buy_price] %> cr</div>
+          <div class="text-right text-lime-400"><%= item[:sell_price] %> cr</div>
+          <div class="text-right text-white"><%= number_with_delimiter(item[:inventory]) %></div>
+          <div class="text-center">
+            <% case item[:trend] %>
+            <% when :up %>
+              <span class="text-lime-400" title="Price trending up">↑</span>
+            <% when :down %>
+              <span class="text-red-400" title="Price trending down">↓</span>
+            <% else %>
+              <span class="text-gray-400" title="Price stable">→</span>
+            <% end %>
+          </div>
           
-          <%= form_with url: sell_system_market_index_path(@system), method: :post, local: true, class: "inline" do |f| %>
-            <%= f.hidden_field :commodity, value: item[:commodity] %>
-            <%= f.hidden_field :price, value: item[:sell_price] %>
-            <input type="hidden" name="quantity" value="1" data-commodity="<%= item[:commodity] %>" class="qty-input">
-            <%= f.submit "Sell", 
-                class: "px-3 py-1 bg-lime-700 hover:bg-lime-600 text-white text-sm rounded cursor-pointer transition-colors",
-                title: "Sell at #{item[:sell_price]} cr each" %>
-          <% end %>
+          <!-- Quantity Input -->
+          <div class="text-center">
+            <input type="number" 
+                   id="qty_<%= item[:commodity] %>" 
+                   value="1" 
+                   min="1" 
+                   max="<%= item[:inventory] %>"
+                   class="w-16 bg-blue-950 border border-blue-600 text-white text-center rounded px-2 py-1 text-sm"
+                   onclick="event.stopPropagation()">
+          </div>
+          
+          <!-- Buy/Sell Buttons -->
+          <div class="flex gap-2 col-span-2 justify-center" onclick="event.stopPropagation()">
+            <%= form_with url: buy_system_market_index_path(@system), method: :post, local: true, class: "inline" do |f| %>
+              <%= f.hidden_field :commodity, value: item[:commodity] %>
+              <%= f.hidden_field :price, value: item[:buy_price] %>
+              <input type="hidden" name="quantity" value="1" data-commodity="<%= item[:commodity] %>" class="qty-input">
+              <%= f.submit "Buy", 
+                  class: "px-3 py-1 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded cursor-pointer transition-colors",
+                  title: "Buy at #{item[:buy_price]} cr each" %>
+            <% end %>
+            
+            <%= form_with url: sell_system_market_index_path(@system), method: :post, local: true, class: "inline" do |f| %>
+              <%= f.hidden_field :commodity, value: item[:commodity] %>
+              <%= f.hidden_field :price, value: item[:sell_price] %>
+              <input type="hidden" name="quantity" value="1" data-commodity="<%= item[:commodity] %>" class="qty-input">
+              <%= f.submit "Sell", 
+                  class: "px-3 py-1 bg-lime-700 hover:bg-lime-600 text-white text-sm rounded cursor-pointer transition-colors",
+                  title: "Sell at #{item[:sell_price]} cr each" %>
+            <% end %>
+          </div>
+        </summary>
+        
+        <!-- Price Breakdown Panel -->
+        <% if breakdown %>
+        <div class="price-breakdown p-4 bg-blue-950 border-t border-blue-700">
+          <h4 class="text-sm font-semibold text-gray-400 mb-3">💰 Price Breakdown for <%= item[:commodity].capitalize %></h4>
+          
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <!-- Left column: Price calculation steps -->
+            <div class="space-y-2">
+              <!-- Base Price -->
+              <div class="flex justify-between items-center">
+                <span class="text-gray-400">Base Price:</span>
+                <span class="base-price text-white font-mono"><%= breakdown[:base_price] %> cr</span>
+              </div>
+              
+              <!-- Abundance Modifier -->
+              <% if breakdown[:abundance_modifier] != 1.0 %>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-400">Abundance:</span>
+                  <span class="abundance-modifier <%= breakdown[:abundance_modifier] < 1.0 ? 'text-lime-400' : 'text-red-400' %>">
+                    <%= breakdown[:abundance_modifier] < 1.0 ? '-' : '+' %><%= ((1.0 - breakdown[:abundance_modifier]).abs * 100).round %>%
+                    <span class="text-gray-500">(→ <%= breakdown[:after_abundance] %> cr)</span>
+                  </span>
+                </div>
+              <% else %>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-400">Abundance:</span>
+                  <span class="abundance-modifier text-gray-500">Normal (±0%)</span>
+                </div>
+              <% end %>
+              
+              <!-- Building Effects -->
+              <% if breakdown[:building_effects].any? %>
+                <% breakdown[:building_effects].each do |effect| %>
+                  <div class="flex justify-between items-center">
+                    <span class="text-gray-400 building-effect"><%= effect[:building_name] %>:</span>
+                    <span class="building-effect <%= effect[:modifier] < 1.0 ? 'text-lime-400' : 'text-red-400' %>">
+                      <%= effect[:modifier] < 1.0 ? '-' : '+' %><%= ((1.0 - effect[:modifier]).abs * 100).round %>%
+                      <span class="text-gray-500">(→ <%= effect[:price_after] %> cr)</span>
+                    </span>
+                  </div>
+                <% end %>
+              <% else %>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-400">Building Effects:</span>
+                  <span class="text-gray-500">None</span>
+                </div>
+              <% end %>
+              
+              <!-- Price Delta (from trading activity) -->
+              <% if breakdown[:delta] != 0 %>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-400">Market Activity:</span>
+                  <span class="<%= breakdown[:delta] > 0 ? 'text-red-400' : 'text-lime-400' %>">
+                    <%= breakdown[:delta] > 0 ? '+' : '' %><%= breakdown[:delta] %> cr
+                  </span>
+                </div>
+              <% end %>
+              
+              <!-- Divider -->
+              <div class="border-t border-blue-700 pt-2 mt-2">
+                <div class="flex justify-between items-center font-bold">
+                  <span class="text-white">Final Price:</span>
+                  <span class="final-price text-orange-400 font-mono"><%= breakdown[:final_price] %> cr</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Right column: Buy/Sell calculation -->
+            <div class="space-y-2 border-l border-blue-700 pl-4">
+              <div class="text-gray-400 text-xs mb-2">With Market Spread:</div>
+              
+              <div class="flex justify-between items-center">
+                <span class="text-gray-400">You Buy At:</span>
+                <span class="text-orange-400 font-mono">
+                  <% if @system.owned_by?(current_user) %>
+                    <%= breakdown[:final_price] %> cr <span class="text-xs text-lime-400">(owner)</span>
+                  <% else %>
+                    <%= item[:buy_price] %> cr <span class="text-xs text-gray-500">(+10%)</span>
+                  <% end %>
+                </span>
+              </div>
+              
+              <div class="flex justify-between items-center">
+                <span class="text-gray-400">You Sell At:</span>
+                <span class="text-lime-400 font-mono">
+                  <% if @system.owned_by?(current_user) %>
+                    <%= breakdown[:final_price] %> cr <span class="text-xs text-lime-400">(owner)</span>
+                  <% else %>
+                    <%= item[:sell_price] %> cr <span class="text-xs text-gray-500">(-10%)</span>
+                  <% end %>
+                </span>
+              </div>
+              
+              <% if @marketplace&.operational? %>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-gray-500">Marketplace Fee:</span>
+                  <span class="text-gray-400">+<%= (@marketplace.marketplace_fee_rate * 100).round %>% on trades</span>
+                </div>
+              <% end %>
+            </div>
+          </div>
         </div>
-      </div>
+        <% end %>
+      </details>
     <% end %>
   </div>
 
