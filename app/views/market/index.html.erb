@@ -24,6 +24,33 @@
     </div>
   <% end %>
 
+  <!-- System Ownership Banner -->
+  <% if @system.owned? %>
+    <div class="mb-4 p-3 bg-purple-900 border border-purple-700 rounded">
+      <div class="flex items-center gap-2">
+        <span class="text-purple-400">👑</span>
+        <span class="text-purple-300">
+          <% if @system.owned_by?(current_user) %>
+            <strong class="text-lime-400">You own this system!</strong>
+            <span class="text-gray-400">Trade at base prices with no spread. You receive 10% of all trade taxes.</span>
+          <% else %>
+            System owned by <strong class="text-white"><%= @system.owner.name %></strong>
+            <span class="text-gray-400">— 10% of spread goes to the owner as tax.</span>
+          <% end %>
+        </span>
+      </div>
+    </div>
+  <% else %>
+    <div class="mb-4 p-3 bg-gray-800 border border-gray-700 rounded">
+      <div class="flex items-center gap-2">
+        <span class="text-gray-500">🏴</span>
+        <span class="text-gray-400">
+          <strong>Unclaimed system</strong> — Build a Starbase Administration Hub to claim ownership.
+        </span>
+      </div>
+    </div>
+  <% end %>
+
   <!-- Market Stats -->
   <div class="grid grid-cols-3 gap-4 mb-6">
     <div class="bg-blue-900 border border-blue-700 p-4">
