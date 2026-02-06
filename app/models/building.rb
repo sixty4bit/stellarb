@@ -101,6 +101,55 @@ class Building < ApplicationRecord
   }.freeze
 
   # ===========================================
+  # Factory (Refining) Specialization Configuration
+  # ===========================================
+  # 8 factory specializations with their input minerals and output components
+  # Factories INCREASE input prices (demand) and DECREASE output prices (supply)
+  FACTORY_SPECIALIZATIONS = {
+    "basic" => {
+      inputs: %w[iron copper aluminum coal],
+      outputs: %w[basic_components hull_plating]
+    },
+    "electronics" => {
+      inputs: %w[silicon copper gold silver],
+      outputs: %w[electronics_components circuit_boards sensors]
+    },
+    "structural" => {
+      inputs: %w[iron titanium carbon steel],
+      outputs: %w[structural_components reinforced_plating frameworks]
+    },
+    "power" => {
+      inputs: %w[uranium thorium lithium cobalt],
+      outputs: %w[power_cells reactor_cores capacitors]
+    },
+    "propulsion" => {
+      inputs: %w[tungsten titanium helium hydrogen],
+      outputs: %w[engine_components thrusters fuel_injectors]
+    },
+    "weapons" => {
+      inputs: %w[tungsten chromium platinum neodymium],
+      outputs: %w[weapon_components targeting_systems ammunition]
+    },
+    "defense" => {
+      inputs: %w[titanium lead iridium osmium],
+      outputs: %w[shield_generators armor_plating defense_modules]
+    },
+    "advanced" => {
+      inputs: %w[platinum palladium quantium stellarium],
+      outputs: %w[advanced_components quantum_processors ftl_cores]
+    }
+  }.freeze
+
+  # Factory input price increase per tier (+10% base, +5% per additional tier)
+  # T1=+10%, T2=+15%, T3=+20%, T4=+25%, T5=+30%
+  FACTORY_INPUT_PRICE_INCREASE_BASE = 0.10
+  FACTORY_INPUT_PRICE_INCREASE_PER_TIER = 0.05
+
+  # Factory output price decrease per tier (-5% per tier)
+  # T1=-5%, T2=-10%, T3=-15%, T4=-20%, T5=-25%
+  FACTORY_OUTPUT_PRICE_DECREASE_PER_TIER = 0.05
+
+  # ===========================================
   # Building Cost Calculations
   # ===========================================
 
@@ -165,6 +214,7 @@ class Building < ApplicationRecord
   validate :one_marketplace_per_system, if: :civic?
   validate :factory_requires_marketplace, if: :refining?
   validate :factory_specialization_required, if: :refining?
+  validate :factory_specialization_valid, if: :refining?
   validate :unique_factory_specialization, if: :refining?
 
   # Callbacks
@@ -185,7 +235,7 @@ class Building < ApplicationRecord
   end
 
   def operational?
-    !disabled? && status != 'destroyed'
+    !disabled? && status == 'active'
   end
 
   # ===========================================
@@ -197,14 +247,85 @@ class Building < ApplicationRecord
 
   # Returns the price modifier this building applies to a commodity
   # Mines reduce the price of their target mineral by 5% per tier
+  # Factories increase input prices by 10-30% and decrease output prices by 5-25%
   # @param commodity [String, nil] The commodity to check
   # @return [Float] Multiplier for commodity prices (1.0 = no effect)
   def price_modifier_for(commodity)
-    return 1.0 unless extraction? && operational?
-    return 1.0 unless commodity.to_s == specialization.to_s
+    return 1.0 unless operational?
+
+    # Mine price reduction (extraction buildings)
+    if extraction?
+      return 1.0 unless commodity.to_s == specialization.to_s
+      # -5% per tier: T1=0.95, T2=0.90, T3=0.85, T4=0.80, T5=0.75
+      return 1.0 - (tier * MINE_PRICE_REDUCTION_PER_TIER)
+    end
+
+    # Factory pricing (refining buildings)
+    if refining?
+      # Check if commodity is a factory input (price increase)
+      if factory_inputs.include?(commodity.to_s)
+        return input_price_modifier_for(commodity)
+      end
+
+      # Check if commodity is a factory output (price decrease)
+      if factory_outputs.include?(commodity.to_s)
+        return output_price_modifier_for(commodity)
+      end
+    end
+
+    1.0
+  end
+
+  # ===========================================
+  # Factory (Refining) Pricing Methods
+  # ===========================================
+
+  # Check if this building is a factory (refining function)
+  # @return [Boolean]
+  def factory?
+    function == "refining"
+  end
+
+  # Get the input commodities for this factory's specialization
+  # @return [Array<String>] Input commodity names, or empty array if not a factory
+  def factory_inputs
+    return [] unless factory? && specialization.present?
+
+    FACTORY_SPECIALIZATIONS.dig(specialization, :inputs) || []
+  end
+
+  # Get the output commodities for this factory's specialization
+  # @return [Array<String>] Output commodity names, or empty array if not a factory
+  def factory_outputs
+    return [] unless factory? && specialization.present?
+
+    FACTORY_SPECIALIZATIONS.dig(specialization, :outputs) || []
+  end
+
+  # Calculate the input price modifier for a factory
+  # Factories INCREASE input mineral prices (demand drives prices up)
+  # T1=+10%, T2=+15%, T3=+20%, T4=+25%, T5=+30%
+  # @param commodity [String] The input commodity
+  # @return [Float] Multiplier (1.10 to 1.30)
+  def input_price_modifier_for(commodity)
+    return 1.0 unless factory? && operational?
+    return 1.0 unless factory_inputs.include?(commodity.to_s)
+
+    # +10% base + 5% per tier above 1: T1=1.10, T2=1.15, T3=1.20, T4=1.25, T5=1.30
+    (1.0 + FACTORY_INPUT_PRICE_INCREASE_BASE + ((tier - 1) * FACTORY_INPUT_PRICE_INCREASE_PER_TIER)).round(2)
+  end
+
+  # Calculate the output price modifier for a factory
+  # Factories DECREASE output component prices (supply drives prices down)
+  # T1=-5%, T2=-10%, T3=-15%, T4=-20%, T5=-25%
+  # @param commodity [String] The output commodity
+  # @return [Float] Multiplier (0.75 to 0.95)
+  def output_price_modifier_for(commodity)
+    return 1.0 unless factory? && operational?
+    return 1.0 unless factory_outputs.include?(commodity.to_s)
 
     # -5% per tier: T1=0.95, T2=0.90, T3=0.85, T4=0.80, T5=0.75
-    1.0 - (tier * MINE_PRICE_REDUCTION_PER_TIER)
+    (1.0 - (tier * FACTORY_OUTPUT_PRICE_DECREASE_PER_TIER)).round(2)
   end
 
   # Check if construction is complete and transition to active
@@ -547,6 +668,14 @@ class Building < ApplicationRecord
   def factory_specialization_required
     if specialization.blank?
       errors.add(:specialization, "is required for refining buildings")
+    end
+  end
+
+  def factory_specialization_valid
+    return if specialization.blank?
+
+    unless FACTORY_SPECIALIZATIONS.key?(specialization)
+      errors.add(:specialization, "must be a valid factory specialization")
     end
   end
 

@@ -240,9 +240,9 @@ class BuildingValidationTest < ActiveSupport::TestCase
     factory = Building.new(
       user: @user,
       system: @system,
-      name: "Steel Factory",
+      name: "Basic Factory",
       function: "refining",
-      specialization: "steel",
+      specialization: "basic",
       race: "vex",
       tier: 1
     )
@@ -264,9 +264,9 @@ class BuildingValidationTest < ActiveSupport::TestCase
     factory = Building.new(
       user: @user,
       system: @system,
-      name: "Steel Factory",
+      name: "Basic Factory",
       function: "refining",
-      specialization: "steel",
+      specialization: "basic",
       race: "vex",
       tier: 1
     )
@@ -288,9 +288,9 @@ class BuildingValidationTest < ActiveSupport::TestCase
     Building.create!(
       user: @user,
       system: @system,
-      name: "Steel Factory",
+      name: "Basic Factory",
       function: "refining",
-      specialization: "steel",
+      specialization: "basic",
       race: "vex",
       tier: 1
     )
@@ -299,9 +299,9 @@ class BuildingValidationTest < ActiveSupport::TestCase
     alloy_factory = Building.new(
       user: @user,
       system: @system,
-      name: "Alloy Factory",
+      name: "Electronics Factory",
       function: "refining",
-      specialization: "alloys",
+      specialization: "electronics",
       race: "vex",
       tier: 1
     )
@@ -323,9 +323,9 @@ class BuildingValidationTest < ActiveSupport::TestCase
     Building.create!(
       user: @user,
       system: @system,
-      name: "Steel Factory Alpha",
+      name: "Basic Factory Alpha",
       function: "refining",
-      specialization: "steel",
+      specialization: "basic",
       race: "vex",
       tier: 1
     )
@@ -334,9 +334,9 @@ class BuildingValidationTest < ActiveSupport::TestCase
     second_steel = Building.new(
       user: @user,
       system: @system,
-      name: "Steel Factory Beta",
+      name: "Basic Factory Beta",
       function: "refining",
-      specialization: "steel",
+      specialization: "basic",
       race: "vex",
       tier: 1
     )
