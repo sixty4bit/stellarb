@@ -27,8 +27,10 @@
   <body class="bg-blue-950 text-white">
     <% if current_user %>
       <% if defined?(ActionCable) %>
-      <!-- Turbo Stream subscription for inbox updates -->
+      <!-- Turbo Stream subscriptions for real-time updates -->
       <%= turbo_stream_from "inbox_unread_badge_user_#{current_user.id}" %>
+      <%= turbo_stream_from "ships_user_#{current_user.id}" %>
+      <%= turbo_stream_from "buildings_user_#{current_user.id}" %>
       <% end %>
 
       <!-- Main Game Layout -->

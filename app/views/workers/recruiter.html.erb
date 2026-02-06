@@ -1,4 +1,7 @@
 <turbo-frame id="content_panel">
+<% if defined?(ActionCable) %>
+  <%= turbo_stream_from Recruit.broadcast_pool_target(current_user.level_tier) %>
+<% end %>
 <%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
 
 <div class="max-w-6xl">
