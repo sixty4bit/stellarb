@@ -104,14 +104,46 @@ class MarketController < ApplicationController
   end
 
   def generate_market_data
-    # Placeholder market data - would use procedural generation in production
-    [
-      { commodity: "ore", buy_price: 50, sell_price: 45, inventory: 1000, trend: :up },
-      { commodity: "water", buy_price: 30, sell_price: 27, inventory: 500, trend: :stable },
-      { commodity: "fuel", buy_price: 100, sell_price: 90, inventory: 250, trend: :down },
-      { commodity: "food", buy_price: 25, sell_price: 22, inventory: 800, trend: :stable },
-      { commodity: "electronics", buy_price: 200, sell_price: 180, inventory: 100, trend: :up },
-      { commodity: "medicine", buy_price: 150, sell_price: 135, inventory: 50, trend: :up }
-    ]
+    # Get current prices (base prices + deltas) from the system
+    current_prices = @system.current_prices
+    
+    current_prices.map do |commodity, base_price|
+      {
+        commodity: commodity.to_s,
+        buy_price: calculate_buy_price(base_price),
+        sell_price: calculate_sell_price(base_price),
+        inventory: calculate_inventory(commodity),
+        trend: calculate_trend(commodity)
+      }
+    end
+  end
+  
+  # Buy price is 10% higher than base (player pays more)
+  def calculate_buy_price(base_price)
+    (base_price * 1.10).round
+  end
+  
+  # Sell price is 10% lower than base (player receives less)
+  def calculate_sell_price(base_price)
+    (base_price * 0.90).round
+  end
+  
+  # Inventory is procedurally generated (placeholder for now)
+  def calculate_inventory(commodity)
+    # Use system seed to generate consistent inventory levels
+    seed = Digest::SHA256.hexdigest("#{@system.id}|#{commodity}|inventory")
+    100 + (seed[0, 4].to_i(16) % 900) # 100-1000 units
+  end
+  
+  # Trend is based on recent price deltas (placeholder for now)
+  def calculate_trend(commodity)
+    delta = PriceDelta.find_by(system: @system, commodity: commodity.to_s)
+    return :stable unless delta
+    
+    case delta.delta_cents
+    when 1.. then :up
+    when ..-1 then :down
+    else :stable
+    end
   end
 end

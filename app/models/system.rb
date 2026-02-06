@@ -260,7 +260,15 @@ class System < ApplicationRecord
         planet_count: 5,
         hazard_level: 0,
         security_level: 'high',
-        is_tutorial_zone: true
+        is_tutorial_zone: true,
+        base_prices: {
+          "iron" => 10,
+          "copper" => 15,
+          "water" => 5,
+          "food" => 20,
+          "fuel" => 30,
+          "luxury_goods" => 100
+        }
       }
     else
       # Use procedural generation for other systems

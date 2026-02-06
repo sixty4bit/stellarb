@@ -40,24 +40,24 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
   test "buy adds commodity to ship cargo" do
     post buy_system_market_index_path(@system), params: {
       ship_id: @ship.id,
-      commodity: "ore",
+      commodity: "iron",
       quantity: 10
     }
     
     assert_redirected_to system_market_index_path(@system)
     @ship.reload
-    assert_equal 10, @ship.cargo["ore"]
+    assert_equal 10, @ship.cargo["iron"]
   end
 
   test "buy deducts credits from user" do
     initial_credits = @user.credits
     quantity = 10
-    # Ore buy price is 50 from generate_market_data
-    expected_cost = quantity * 50
+    # Iron base price is 10, buy price = 10 * 1.10 = 11
+    expected_cost = quantity * 11
     
     post buy_system_market_index_path(@system), params: {
       ship_id: @ship.id,
-      commodity: "ore",
+      commodity: "iron",
       quantity: quantity
     }
     
@@ -69,17 +69,17 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
     
     post buy_system_market_index_path(@system), params: {
       ship_id: @ship.id,
-      commodity: "electronics", # 200 per unit
+      commodity: "luxury_goods", # Base 100, buy price 110 per unit
       quantity: 10
     }
     
     assert_redirected_to system_market_index_path(@system)
     assert_match /insufficient credits/i, flash[:alert]
-    assert_nil @ship.reload.cargo["electronics"]
+    assert_nil @ship.reload.cargo["luxury_goods"]
   end
 
   test "buy fails if insufficient cargo space" do
-    @ship.update!(cargo: { "ore" => 195 }) # Only 5 space left
+    @ship.update!(cargo: { "iron" => 195 }) # Only 5 space left
     
     post buy_system_market_index_path(@system), params: {
       ship_id: @ship.id,
@@ -92,28 +92,28 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sell removes commodity from ship cargo" do
-    @ship.update!(cargo: { "ore" => 50 })
+    @ship.update!(cargo: { "iron" => 50 })
     
     post sell_system_market_index_path(@system), params: {
       ship_id: @ship.id,
-      commodity: "ore",
+      commodity: "iron",
       quantity: 20
     }
     
     assert_redirected_to system_market_index_path(@system)
-    assert_equal 30, @ship.reload.cargo["ore"]
+    assert_equal 30, @ship.reload.cargo["iron"]
   end
 
   test "sell adds credits to user" do
-    @ship.update!(cargo: { "ore" => 50 })
+    @ship.update!(cargo: { "iron" => 50 })
     initial_credits = @user.credits
     quantity = 10
-    # Ore sell price is 45 from generate_market_data
-    expected_income = quantity * 45
+    # Iron base price is 10, sell price = 10 * 0.90 = 9
+    expected_income = quantity * 9
     
     post sell_system_market_index_path(@system), params: {
       ship_id: @ship.id,
-      commodity: "ore",
+      commodity: "iron",
       quantity: quantity
     }
     
@@ -121,17 +121,17 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sell fails if insufficient cargo" do
-    @ship.update!(cargo: { "ore" => 5 })
+    @ship.update!(cargo: { "iron" => 5 })
     
     post sell_system_market_index_path(@system), params: {
       ship_id: @ship.id,
-      commodity: "ore",
+      commodity: "iron",
       quantity: 10
     }
     
     assert_redirected_to system_market_index_path(@system)
     assert_match /insufficient/i, flash[:alert]
-    assert_equal 5, @ship.reload.cargo["ore"] # Unchanged
+    assert_equal 5, @ship.reload.cargo["iron"] # Unchanged
   end
 
   test "sell fails for commodity not in cargo" do
@@ -139,7 +139,7 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
     
     post sell_system_market_index_path(@system), params: {
       ship_id: @ship.id,
-      commodity: "electronics",
+      commodity: "copper",
       quantity: 5
     }
     
