@@ -13,6 +13,9 @@ class NavigationController < ApplicationController
     # Get nearby systems within conventional travel range
     @nearby_systems = build_nearby_systems
 
+    # Pre-select destination if passed from system show page
+    @requested_destination = System.find_by(id: params[:destination_id])
+
     # Set breadcrumbs
     @breadcrumbs = [
       { name: current_user.name, path: root_path },
