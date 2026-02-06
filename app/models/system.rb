@@ -12,6 +12,7 @@ class System < ApplicationRecord
   has_many :arrivals, -> { where(event_type: 'arrival') }, class_name: 'FlightRecord', foreign_key: 'to_system_id', dependent: :destroy
   has_many :price_deltas, dependent: :destroy
   has_many :market_inventories, dependent: :destroy
+  has_many :system_auctions, dependent: :destroy
 
   # Validations
   validates :x, presence: true, numericality: { in: 0..999_999 }
@@ -106,6 +107,31 @@ class System < ApplicationRecord
   # Check if system is owned by a specific user
   def owned_by?(user)
     owner_id == user&.id
+  end
+
+  # Record an owner visit (resets inactivity timer)
+  # If an auction is active, it gets cancelled and bids refunded
+  def record_owner_visit!(user)
+    return unless owned_by?(user)
+
+    transaction do
+      # Cancel any active auction (owner reclaimed)
+      active_auction = system_auctions.where(status: %w[pending active]).first
+      active_auction&.cancel!(reason: "owner_reclaimed")
+
+      # Reset the inactivity timer
+      update!(owner_last_visit_at: Time.current)
+    end
+  end
+
+  # Get the current active auction for this system
+  def active_auction
+    system_auctions.where(status: %w[pending active]).first
+  end
+
+  # Check if system is currently up for auction
+  def under_auction?
+    active_auction.present?
   end
 
   # ===========================================

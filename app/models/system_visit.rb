@@ -29,6 +29,10 @@ class SystemVisit < ApplicationRecord
     visit.snapshot_prices!
 
     visit.save!
+
+    # Record owner visit if applicable (resets inactivity timer, cancels auctions)
+    system.record_owner_visit!(user)
+
     visit
   end
 
