@@ -73,6 +73,9 @@ Rails.application.routes.draw do
       member do
         patch :reorder
       end
+
+      # Intent management (nested under stops, index as intent position)
+      resources :intents, only: [:create, :update, :destroy], controller: 'route_intents'
     end
   end
 
