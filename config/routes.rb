@@ -97,6 +97,13 @@ Rails.application.routes.draw do
     end
   end
 
+  # Auctions (system seizure/sale)
+  resources :auctions, only: [:index, :show] do
+    member do
+      post :bid
+    end
+  end
+
   # Emigration (Phase 3: Hub Selection)
   resource :emigration, only: [:show, :create], controller: 'emigration'
 

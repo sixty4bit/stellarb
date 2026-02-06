@@ -424,6 +424,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_044157) do
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
+  create_table "system_auction_bids", force: :cascade do |t|
+    t.decimal "amount", precision: 15, scale: 2, null: false
+    t.bigint "auction_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "placed_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.string "uuid", limit: 36
+    t.index ["auction_id", "amount"], name: "index_system_auction_bids_on_auction_id_and_amount", order: { amount: :desc }
+    t.index ["auction_id"], name: "index_system_auction_bids_on_auction_id"
+    t.index ["user_id"], name: "index_system_auction_bids_on_user_id"
+    t.index ["uuid"], name: "index_system_auction_bids_on_uuid", unique: true
+  end
+
+  create_table "system_auctions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "ends_at"
+    t.bigint "previous_owner_id"
+    t.datetime "started_at"
+    t.string "status", default: "pending", null: false
+    t.bigint "system_id", null: false
+    t.datetime "updated_at", null: false
+    t.string "uuid", limit: 36
+    t.bigint "winning_bid_id"
+    t.index ["ends_at"], name: "index_system_auctions_on_ends_at", where: "((status)::text = 'active'::text)"
+    t.index ["previous_owner_id"], name: "index_system_auctions_on_previous_owner_id"
+    t.index ["status"], name: "index_system_auctions_on_status"
+    t.index ["system_id"], name: "index_system_auctions_on_system_id"
+    t.index ["uuid"], name: "index_system_auctions_on_uuid", unique: true
+    t.index ["winning_bid_id"], name: "index_system_auctions_on_winning_bid_id"
+  end
+
   create_table "system_visits", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "first_visited_at", null: false
@@ -444,6 +476,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_044157) do
     t.datetime "discovery_date"
     t.string "name"
     t.bigint "owner_id"
+    t.datetime "owner_last_visit_at"
     t.jsonb "properties"
     t.string "short_id"
     t.datetime "updated_at", null: false
@@ -453,6 +486,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_044157) do
     t.integer "z"
     t.index ["discovered_by_id"], name: "index_systems_on_discovered_by_id"
     t.index ["owner_id"], name: "index_systems_on_owner_id"
+    t.index ["owner_last_visit_at"], name: "index_systems_on_owner_last_visit_at", where: "(owner_id IS NOT NULL)"
     t.index ["short_id"], name: "index_systems_on_short_id", unique: true
     t.index ["uuid"], name: "index_systems_on_uuid", unique: true
     t.index ["x", "y", "z"], name: "index_systems_on_x_and_y_and_z", unique: true
@@ -531,6 +565,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_044157) do
   add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "system_auction_bids", "system_auctions", column: "auction_id"
+  add_foreign_key "system_auction_bids", "users"
+  add_foreign_key "system_auctions", "system_auction_bids", column: "winning_bid_id"
+  add_foreign_key "system_auctions", "systems"
+  add_foreign_key "system_auctions", "users", column: "previous_owner_id"
   add_foreign_key "system_visits", "systems"
   add_foreign_key "system_visits", "users"
   add_foreign_key "systems", "users", column: "discovered_by_id"

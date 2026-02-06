@@ -56,6 +56,13 @@ shared: &shared
     queue: default
     schedule: every hour at minute 0
 
+  # System Ownership Check - handle inactive owners and auctions
+  # Run daily at 2:00 AM to check for seizures and finalize auctions
+  system_ownership_check:
+    class: SystemOwnershipCheckJob
+    queue: default
+    schedule: at 2am every day
+
 # ============================================
 # Environment-specific configuration
 # ============================================
