@@ -47,6 +47,19 @@
                 <span class="text-xs bg-red-900 text-red-400 px-2 py-0.5 rounded">
                   DISABLED
                 </span>
+              <% elsif building.status == 'under_construction' %>
+                <span class="text-xs text-orange-400">
+                  [UNDER CONSTRUCTION]
+                </span>
+                <% if building.construction_ends_at %>
+                  <span class="text-xs text-yellow-400 ml-1"
+                        data-controller="countdown"
+                        data-countdown-arrival-value="<%= building.construction_ends_at.iso8601 %>"
+                        data-countdown-frame-value="content_panel"
+                        data-countdown-refresh-value="true">
+                    (<%= distance_of_time_in_words(Time.current, building.construction_ends_at) %>)
+                  </span>
+                <% end %>
               <% elsif building.status != 'active' %>
                 <span class="text-xs text-orange-400">
                   [<%= building.status.upcase.tr('_', ' ') %>]
