@@ -108,7 +108,11 @@ Rails.application.routes.draw do
   resource :emigration, only: [:show, :create], controller: 'emigration'
 
   # Exploration
-  resource :exploration, only: [:show], controller: 'exploration'
+  resource :exploration, only: [:show], controller: 'exploration' do
+    post :single_direction
+    post :growing_arcs
+    post :orbit
+  end
 
   # User Profile
   resource :profile, only: [:show, :edit, :update], controller: 'profile'
