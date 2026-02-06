@@ -106,7 +106,7 @@
     <%= link_to "Set Navigation", "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
     <%= link_to "Manage Cargo", "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
     <%= link_to "Assign to Route", "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
-    <%= link_to "Repair", repair_ship_path(@ship), method: :post, class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
+    <%= button_to "Repair", repair_ship_path(@ship), method: :post, class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
   </div>
 
   <div class="mt-8 text-sm text-gray-500">
