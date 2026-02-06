@@ -19,6 +19,28 @@ class Building < ApplicationRecord
   MAX_TIER = 5
 
   # ===========================================
+  # Marketplace (Civic) Configuration
+  # ===========================================
+  # Fee rates by tier (5% at T1, decreasing to 1% at T5)
+  MARKETPLACE_FEE_RATES = {
+    1 => 0.05,  # 5%
+    2 => 0.04,  # 4%
+    3 => 0.03,  # 3%
+    4 => 0.02,  # 2%
+    5 => 0.01   # 1%
+  }.freeze
+
+  # NPC volume multiplier by tier (1x at T1, up to 25x at T5)
+  # This affects market inventory and restock rates
+  MARKETPLACE_NPC_VOLUME = {
+    1 => 1,   # 1x
+    2 => 7,   # 7x
+    3 => 13,  # 13x
+    4 => 19,  # 19x
+    5 => 25   # 25x
+  }.freeze
+
+  # ===========================================
   # Warehouse (Logistics) Capacity Configuration
   # ===========================================
   # Capacity bonus multipliers by tier (e.g., 0.5 = +50%)
@@ -253,6 +275,45 @@ class Building < ApplicationRecord
   # @return [Boolean]
   def warehouse?
     function == "logistics"
+  end
+
+  # Check if this building is a marketplace (civic function)
+  # @return [Boolean]
+  def marketplace?
+    function == "civic"
+  end
+
+  # ===========================================
+  # Marketplace (Civic) Methods
+  # ===========================================
+
+  # Get the fee rate for this marketplace
+  # Returns nil for non-marketplace buildings
+  # @return [Float, nil] Fee rate (0.05 = 5%), or nil if not a marketplace
+  def marketplace_fee_rate
+    return nil unless marketplace? && operational?
+
+    MARKETPLACE_FEE_RATES[tier]
+  end
+
+  # Calculate the fee amount for a transaction
+  # @param amount [Integer] Transaction amount in credits
+  # @return [Integer] Fee amount in credits
+  def calculate_fee(amount)
+    rate = marketplace_fee_rate
+    return 0 unless rate
+
+    (amount * rate).round
+  end
+
+  # Get the NPC volume multiplier for this marketplace
+  # Affects market inventory quantity and restock rates
+  # Returns nil for non-marketplace buildings
+  # @return [Integer, nil] Volume multiplier, or nil if not a marketplace
+  def npc_volume_multiplier
+    return nil unless marketplace? && operational?
+
+    MARKETPLACE_NPC_VOLUME[tier]
   end
 
   # Get the capacity bonus multiplier for this warehouse

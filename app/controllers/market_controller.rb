@@ -2,8 +2,12 @@ class MarketController < ApplicationController
   before_action :set_system
   before_action :set_active_menu
   before_action :set_system_visit, only: [:index]
+  before_action :require_marketplace, only: [:buy, :sell]
 
   def index
+    # Check if trading is enabled for view purposes
+    @trading_enabled = @system.trading_enabled?
+    @marketplace = @system.marketplace
     # Verify user has visited this system
     unless current_user.visited_systems.include?(@system)
       redirect_to systems_path, alert: "You must visit a system before viewing its market."
@@ -73,10 +77,20 @@ class MarketController < ApplicationController
       return
     end
 
+    # Calculate marketplace fee
+    marketplace_fee = @system.marketplace.calculate_fee(total_cost)
+    total_with_fee = total_cost + marketplace_fee
+
+    # Check credits again with fee included
+    if current_user.credits < total_with_fee
+      redirect_to system_market_index_path(@system), alert: "Insufficient credits (need #{total_with_fee}, have #{current_user.credits.to_i})"
+      return
+    end
+
     # Execute purchase
     tax_paid = nil
     ActiveRecord::Base.transaction do
-      current_user.update!(credits: current_user.credits - total_cost)
+      current_user.update!(credits: current_user.credits - total_with_fee)
       ship.add_cargo!(commodity, quantity)
       inventory.decrease_stock!(quantity)
       
@@ -89,6 +103,7 @@ class MarketController < ApplicationController
     end
 
     notice = "Purchased #{quantity} #{commodity} for #{total_cost} credits"
+    notice += " (#{marketplace_fee} cr marketplace fee)" if marketplace_fee > 0
     notice += " (#{tax_paid} cr tax to system owner)" if tax_paid
     redirect_to system_market_index_path(@system), notice: notice
   end
@@ -124,12 +139,16 @@ class MarketController < ApplicationController
     end
 
     price = market_item[:sell_price]
-    total_income = price * quantity
+    gross_income = price * quantity
+    
+    # Calculate marketplace fee (deducted from proceeds)
+    marketplace_fee = @system.marketplace.calculate_fee(gross_income)
+    net_income = gross_income - marketplace_fee
 
     # Execute sale
     tax_paid = nil
     ActiveRecord::Base.transaction do
-      current_user.update!(credits: current_user.credits + total_income)
+      current_user.update!(credits: current_user.credits + net_income)
       ship.remove_cargo!(commodity, quantity)
       
       # Increase market inventory (capped at max)
@@ -144,7 +163,8 @@ class MarketController < ApplicationController
       PriceDelta.simulate_sell(@system, commodity, quantity)
     end
 
-    notice = "Sold #{quantity} #{commodity} for #{total_income} credits"
+    notice = "Sold #{quantity} #{commodity} for #{net_income} credits"
+    notice += " (#{marketplace_fee} cr marketplace fee)" if marketplace_fee > 0
     notice += " (#{tax_paid} cr tax to system owner)" if tax_paid
     redirect_to system_market_index_path(@system), notice: notice
   end
@@ -172,6 +192,15 @@ class MarketController < ApplicationController
 
   def set_active_menu(_unused = nil)
     @active_menu = :systems
+  end
+
+  # Ensure a marketplace exists and is operational before trading
+  def require_marketplace
+    unless @system.trading_enabled?
+      redirect_to system_market_index_path(@system), alert: "Trading disabled: no marketplace in this system"
+      return false
+    end
+    true
   end
 
   def generate_market_data

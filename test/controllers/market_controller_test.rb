@@ -6,6 +6,17 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
     @user.update!(credits: 5000)
     @system = System.cradle
     
+    # Create a marketplace (civic building) to enable trading
+    Building.find_or_create_by!(
+      user: @user,
+      system: @system,
+      function: "civic"
+    ) do |b|
+      b.name = "Cradle Central Market"
+      b.race = "vex"
+      b.tier = 1
+    end
+    
     # Create a ship with cargo space
     @ship = Ship.create!(
       name: "Trade Vessel",
@@ -61,7 +72,10 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
     initial_credits = @user.credits
     quantity = 10
     # Iron base price is 10, buy price = 10 * 1.10 = 11
-    expected_cost = quantity * 11
+    # Plus 5% marketplace fee (T1): 110 + 6 = 116
+    base_cost = quantity * 11
+    marketplace_fee = (base_cost * 0.05).round
+    expected_cost = base_cost + marketplace_fee
 
     post buy_system_market_index_path(@system), params: {
       commodity: "iron",
@@ -125,7 +139,10 @@ class MarketControllerTest < ActionDispatch::IntegrationTest
     initial_credits = @user.credits
     quantity = 10
     # Iron base price is 10, sell price = 10 * 0.90 = 9
-    expected_income = quantity * 9
+    # Minus 5% marketplace fee (T1): 90 - 5 = 85
+    gross_income = quantity * 9
+    marketplace_fee = (gross_income * 0.05).round
+    expected_income = gross_income - marketplace_fee
 
     post sell_system_market_index_path(@system), params: {
       commodity: "iron",
