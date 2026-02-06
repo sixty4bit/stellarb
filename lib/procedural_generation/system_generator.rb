@@ -81,15 +81,10 @@ module ProceduralGeneration
     end
 
     def base_market_prices
-      # Generate base prices for common resources
-      price_seed = extract_from_seed(system_seed, 8, 4, 2**32)
-
-      {
-        fuel: 10 + (price_seed % 20),
-        water: 5 + (price_seed >> 8) % 10,
-        food: 8 + (price_seed >> 16) % 15,
-        minerals: 20 + (price_seed >> 24) % 30
-      }
+      # Generate base prices for all 60 minerals from Minerals constant
+      Minerals::ALL.each_with_object({}) do |mineral, prices|
+        prices[mineral[:name]] = mineral[:base_price]
+      end
     end
 
     def resource_distribution

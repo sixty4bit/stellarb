@@ -58,4 +58,28 @@ class ProceduralGeneration::SystemGeneratorTest < ActiveSupport::TestCase
     assert_kind_of Hash, result[:base_prices]
     assert result[:base_prices].any?, "base_prices should not be empty"
   end
+
+  test "base_prices includes all 60 minerals" do
+    result = ProceduralGeneration::SystemGenerator.call(seed: "minerals_test", x: 0, y: 0, z: 0)
+    base_prices = result[:base_prices]
+
+    assert_equal 60, base_prices.size, "Should have prices for all 60 minerals"
+
+    # Spot check some minerals exist
+    assert base_prices.key?("Iron"), "Should include Iron"
+    assert base_prices.key?("Gold"), "Should include Gold"
+    assert base_prices.key?("Stellarium"), "Should include Stellarium"
+  end
+
+  test "base_prices match Minerals base prices" do
+    result = ProceduralGeneration::SystemGenerator.call(seed: "price_test", x: 0, y: 0, z: 0)
+    base_prices = result[:base_prices]
+
+    # Prices should match the Minerals constant base prices
+    assert_equal 10, base_prices["Iron"]
+    assert_equal 100, base_prices["Gold"]
+    assert_equal 400, base_prices["Plutonium"]
+    assert_equal 500, base_prices["Stellarium"]
+    assert_equal 1000, base_prices["Exotite"]
+  end
 end
