@@ -44,7 +44,7 @@
       <% end %>
     </li>
 
-    <li class="group" data-keyboard-navigation-target="menuItem"
+    <li data-keyboard-navigation-target="menuItem"
         data-menu-highlight-target="item"
         data-action="mouseenter->keyboard-navigation#selectItem">
       <%= link_to systems_path,
@@ -52,16 +52,17 @@
           data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
         <span>Systems</span>
       <% end %>
-      <ul class="pl-6 mt-1 space-y-1 hidden group-hover:block">
-        <li data-keyboard-navigation-target="menuItem"
-            data-menu-highlight-target="item">
-          <%= link_to buildings_path,
-              class: "block px-3 py-1 hover:bg-blue-800 text-sm rounded",
-              data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
-            Buildings
-          <% end %>
-        </li>
-      </ul>
+    </li>
+
+    <li data-keyboard-navigation-target="menuItem"
+        data-menu-highlight-target="item"
+        data-menu-item="buildings"
+        data-action="mouseenter->keyboard-navigation#selectItem">
+      <%= link_to buildings_path,
+          class: "block px-3 py-2 hover:bg-blue-800 transition-colors rounded",
+          data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
+        <span>Buildings</span>
+      <% end %>
     </li>
 
     <li class="group" data-keyboard-navigation-target="menuItem"
