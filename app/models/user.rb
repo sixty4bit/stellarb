@@ -27,6 +27,7 @@ class User < ApplicationRecord
   has_many :messages, dependent: :destroy
   has_many :system_auction_bids, dependent: :destroy
   has_many :explored_coordinates, dependent: :destroy
+  has_many :mineral_discoveries, dependent: :destroy
 
   # Validations
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
@@ -81,6 +82,23 @@ class User < ApplicationRecord
   def travel_log(limit: nil)
     visits = system_visits.by_last_visit
     limit ? visits.limit(limit) : visits
+  end
+
+  # ===========================================
+  # Mineral Discovery (Futuristic Minerals)
+  # ===========================================
+
+  # Check if the user has discovered a specific futuristic mineral
+  # @param mineral_name [String] Name of the mineral
+  # @return [Boolean]
+  def mineral_discovered?(mineral_name)
+    mineral_discoveries.exists?(mineral_name: mineral_name)
+  end
+
+  # Get list of all futuristic minerals the user has discovered
+  # @return [Array<String>] List of mineral names
+  def discovered_futuristic_minerals
+    mineral_discoveries.pluck(:mineral_name)
   end
 
   # ===========================================
