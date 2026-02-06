@@ -1,12 +1,15 @@
 import { Controller } from "@hotwired/stimulus"
 
 // VI-style keyboard navigation controller
-// Syncs with URL after Turbo Frame navigation
+// Supports two focus zones: menu sidebar and content panel
+// Tab switches between zones, j/k navigates within current zone
 export default class extends Controller {
-  static targets = ["menuItem", "contentPanel"]
+  static targets = ["menuItem", "contentItem", "contentPanel"]
 
   connect() {
-    this.selectedIndex = 0
+    this.focusZone = 'menu' // 'menu' or 'content'
+    this.menuIndex = 0
+    this.contentIndex = 0
     this.menuItems = this.menuItemTargets
     this.bindKeyboardEvents()
     this.bindTurboEvents()
@@ -16,12 +19,12 @@ export default class extends Controller {
   disconnect() {
     document.removeEventListener("keydown", this.handleKeyDown)
     document.removeEventListener("turbo:frame-load", this.boundHighlight)
+    document.removeEventListener("turbo:frame-load", this.boundContentRefresh)
     document.removeEventListener("turbo:visit", this.boundHighlight)
     window.removeEventListener("popstate", this.boundHighlight)
   }
 
   bindKeyboardEvents() {
-    // Store bound function so we can remove it later
     this.handleKeyDown = this.onKeyDown.bind(this)
     document.addEventListener("keydown", this.handleKeyDown)
   }
@@ -29,9 +32,24 @@ export default class extends Controller {
   bindTurboEvents() {
     // Re-sync selection after Turbo navigation
     this.boundHighlight = this.highlightCurrentMenuItem.bind(this)
+    this.boundContentRefresh = this.refreshContentItems.bind(this)
     document.addEventListener("turbo:frame-load", this.boundHighlight)
+    document.addEventListener("turbo:frame-load", this.boundContentRefresh)
     document.addEventListener("turbo:visit", this.boundHighlight)
-    window.addEventListener("popstate", this.boundHighlight)
+    window.removeEventListener("popstate", this.boundHighlight)
+  }
+
+  get contentItems() {
+    // Dynamically query content items since they change with Turbo navigation
+    return Array.from(document.querySelectorAll('[data-keyboard-navigation-target="contentItem"]'))
+  }
+
+  refreshContentItems() {
+    // Reset content index when content changes
+    this.contentIndex = 0
+    if (this.focusZone === 'content') {
+      this.updateContentSelection()
+    }
   }
 
   onKeyDown(event) {
@@ -39,6 +57,10 @@ export default class extends Controller {
     if (event.target.matches('input, textarea, select')) return
 
     switch(event.key) {
+      case 'Tab':
+        event.preventDefault()
+        this.toggleFocusZone()
+        break
       case 'j':
         event.preventDefault()
         this.selectNext()
@@ -71,19 +93,43 @@ export default class extends Controller {
     }
   }
 
+  toggleFocusZone() {
+    const contentItems = this.contentItems
+    if (this.focusZone === 'menu' && contentItems.length > 0) {
+      this.focusZone = 'content'
+      this.clearMenuSelection()
+      this.updateContentSelection()
+    } else {
+      this.focusZone = 'menu'
+      this.clearContentSelection()
+      this.updateMenuSelection()
+    }
+  }
+
   selectNext() {
-    this.selectedIndex = Math.min(this.selectedIndex + 1, this.menuItems.length - 1)
-    this.updateSelection()
+    if (this.focusZone === 'menu') {
+      this.menuIndex = Math.min(this.menuIndex + 1, this.menuItems.length - 1)
+      this.updateMenuSelection()
+    } else {
+      const items = this.contentItems
+      this.contentIndex = Math.min(this.contentIndex + 1, items.length - 1)
+      this.updateContentSelection()
+    }
   }
 
   selectPrevious() {
-    this.selectedIndex = Math.max(this.selectedIndex - 1, 0)
-    this.updateSelection()
+    if (this.focusZone === 'menu') {
+      this.menuIndex = Math.max(this.menuIndex - 1, 0)
+      this.updateMenuSelection()
+    } else {
+      this.contentIndex = Math.max(this.contentIndex - 1, 0)
+      this.updateContentSelection()
+    }
   }
 
-  updateSelection() {
+  updateMenuSelection() {
     this.menuItems.forEach((item, index) => {
-      if (index === this.selectedIndex) {
+      if (index === this.menuIndex) {
         item.classList.add("bg-blue-800", "selected")
         item.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       } else {
@@ -92,13 +138,46 @@ export default class extends Controller {
     })
   }
 
+  updateContentSelection() {
+    const items = this.contentItems
+    items.forEach((item, index) => {
+      if (index === this.contentIndex) {
+        item.classList.add("content-focused")
+        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      } else {
+        item.classList.remove("content-focused")
+      }
+    })
+  }
+
+  clearMenuSelection() {
+    this.menuItems.forEach(item => {
+      item.classList.remove("bg-blue-800", "selected")
+    })
+  }
+
+  clearContentSelection() {
+    this.contentItems.forEach(item => {
+      item.classList.remove("content-focused")
+    })
+  }
+
+  // Legacy method for compatibility
+  updateSelection() {
+    this.updateMenuSelection()
+  }
+
   activateSelected() {
-    const selectedItem = this.menuItems[this.selectedIndex]
+    let selectedItem
+    if (this.focusZone === 'menu') {
+      selectedItem = this.menuItems[this.menuIndex]
+    } else {
+      selectedItem = this.contentItems[this.contentIndex]
+    }
+
     if (selectedItem) {
-      const link = selectedItem.querySelector('a') || selectedItem
-      if (link.href) {
-        // Use Turbo.visit with action: "advance" to update the URL
-        // This matches the behavior of clicking the link with data-turbo-action="advance"
+      const link = selectedItem.matches('a') ? selectedItem : selectedItem.querySelector('a')
+      if (link && link.href) {
         const frameId = link.dataset.turboFrame
         if (frameId) {
           Turbo.visit(link.href, { 
@@ -108,12 +187,19 @@ export default class extends Controller {
         } else {
           Turbo.visit(link.href, { action: "advance" })
         }
+      } else if (selectedItem.matches('button')) {
+        selectedItem.click()
       }
     }
   }
 
   goBack() {
-    // Check if we're in a nested view by looking for breadcrumbs
+    // If in content zone, switch back to menu first
+    if (this.focusZone === 'content') {
+      this.toggleFocusZone()
+      return
+    }
+
     const breadcrumb = document.querySelector('.breadcrumb a:last-child')
     if (breadcrumb) {
       breadcrumb.click()
@@ -142,7 +228,6 @@ export default class extends Controller {
     if (helpModal) {
       helpModal.classList.remove('hidden')
 
-      // Close on any key press
       const closeHelp = (e) => {
         e.preventDefault()
         helpModal.classList.add('hidden')
@@ -163,24 +248,24 @@ export default class extends Controller {
   }
 
   highlightCurrentMenuItem() {
-    // Find the menu item matching the current path
     const currentPath = window.location.pathname
     
     this.menuItems.forEach((item, index) => {
       const link = item.querySelector('a')
       if (link) {
         const linkPath = link.pathname
-        // Exact match or nested route (e.g., /ships/123 matches /ships)
         const isMatch = currentPath === linkPath || 
                        (linkPath !== '/' && currentPath.startsWith(linkPath + '/'))
         
         if (isMatch) {
-          this.selectedIndex = index
+          this.menuIndex = index
         }
       }
     })
     
-    this.updateSelection()
+    if (this.focusZone === 'menu') {
+      this.updateMenuSelection()
+    }
   }
 
   // Called by menu items on hover to update selection
@@ -188,8 +273,23 @@ export default class extends Controller {
     const item = event.currentTarget
     const index = this.menuItems.indexOf(item)
     if (index !== -1) {
-      this.selectedIndex = index
-      this.updateSelection()
+      this.focusZone = 'menu'
+      this.clearContentSelection()
+      this.menuIndex = index
+      this.updateMenuSelection()
+    }
+  }
+
+  // Called by content items on hover
+  selectContentItem(event) {
+    const item = event.currentTarget
+    const items = this.contentItems
+    const index = items.indexOf(item)
+    if (index !== -1) {
+      this.focusZone = 'content'
+      this.clearMenuSelection()
+      this.contentIndex = index
+      this.updateContentSelection()
     }
   }
 }

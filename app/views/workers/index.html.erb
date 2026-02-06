@@ -31,7 +31,7 @@
         <% assigned = hiring&.assignable.present? %>
         <%= link_to worker_path(worker),
             class: "block bg-blue-900 border border-blue-700 p-4 hover:border-orange-500 transition-colors",
-            data: { turbo_frame: "content_panel" } do %>
+            data: { turbo_frame: "content_panel", keyboard_navigation_target: "contentItem", action: "mouseenter->keyboard-navigation#selectContentItem" } do %>
           <div class="flex items-center justify-between">
             <%# Worker Name & Rarity %>
             <div>
@@ -97,7 +97,7 @@
   <% end %>
 
   <div class="mt-8 text-sm text-gray-500">
-    <p>Keyboard: j/k to navigate, Enter to view details, r for recruiter</p>
+    <p>Keyboard: Tab to focus list, j/k to navigate, Enter to view details</p>
   </div>
 </div>
 </turbo-frame>
