@@ -30,11 +30,11 @@ class PipEscalationJobTest < ActiveJob::TestCase
       current_system: @system
     )
     @building = Building.create!(
-      name: "Refinery Alpha",
+      name: "Defense Platform Alpha",
       user: @user,
       system: @system,
       race: "krog",
-      function: "refining",
+      function: "defense",
       tier: 2
     )
   end

@@ -31,11 +31,11 @@ class PipInfestationJobTest < ActiveJob::TestCase
       current_system: @system
     )
     @building = Building.create!(
-      name: "Refinery Alpha",
+      name: "Defense Platform Alpha",
       user: @user,
       system: @system,
       race: "krog",
-      function: "refining",
+      function: "defense",
       tier: 2
     )
   end
@@ -95,7 +95,7 @@ class PipInfestationJobTest < ActiveJob::TestCase
         user: @user,
         system: @system,
         race: "krog",
-        function: "extraction",
+        function: "defense",
         tier: 1
       )
     end

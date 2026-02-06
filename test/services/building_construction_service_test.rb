@@ -151,7 +151,7 @@ class BuildingConstructionServiceTest < ActiveSupport::TestCase
       system: @system,
       name: "Existing Mine",
       race: "krog",
-      function: "extraction",
+      function: "defense",
       tier: 1,
       status: "active"
     )

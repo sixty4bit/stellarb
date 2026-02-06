@@ -50,7 +50,7 @@ class BuildingConstructionTest < ActionDispatch::IntegrationTest
       post buildings_path, params: {
         building: {
           name: "My New Facility",
-          function: "extraction",
+          function: "defense",
           tier: 1,
           race: "vex",
           system_id: @system.id
@@ -65,12 +65,12 @@ class BuildingConstructionTest < ActionDispatch::IntegrationTest
 
   test "create deducts credits from user" do
     initial_credits = @user.credits
-    cost = Building.cost_for(function: "extraction", tier: 1, race: "vex")
+    cost = Building.cost_for(function: "defense", tier: 1, race: "vex")
 
     post buildings_path, params: {
       building: {
         name: "My New Facility",
-        function: "extraction",
+        function: "defense",
         tier: 1,
         race: "vex",
         system_id: @system.id
@@ -85,7 +85,7 @@ class BuildingConstructionTest < ActionDispatch::IntegrationTest
     post buildings_path, params: {
       building: {
         name: "My New Facility",
-        function: "extraction",
+        function: "defense",
         tier: 1,
         race: "vex",
         system_id: @system.id
@@ -100,7 +100,7 @@ class BuildingConstructionTest < ActionDispatch::IntegrationTest
     post buildings_path, params: {
       building: {
         name: "My New Facility",
-        function: "extraction",
+        function: "defense",
         tier: 1,
         race: "vex",
         system_id: @system.id
@@ -135,7 +135,7 @@ class BuildingConstructionTest < ActionDispatch::IntegrationTest
       post buildings_path, params: {
         building: {
           name: "",
-          function: "extraction",
+          function: "defense",
           tier: 1,
           race: "vex",
           system_id: @system.id
@@ -167,7 +167,7 @@ class BuildingConstructionTest < ActionDispatch::IntegrationTest
       post buildings_path, params: {
         building: {
           name: "My Facility",
-          function: "extraction",
+          function: "defense",
           tier: 1,
           race: "invalid",
           system_id: @system.id
@@ -183,7 +183,7 @@ class BuildingConstructionTest < ActionDispatch::IntegrationTest
       post buildings_path, params: {
         building: {
           name: "My Facility",
-          function: "extraction",
+          function: "defense",
           tier: 0,
           race: "vex",
           system_id: @system.id

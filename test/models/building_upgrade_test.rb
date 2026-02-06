@@ -30,8 +30,8 @@ class BuildingUpgradeTest < ActiveSupport::TestCase
   end
 
   test "upgrade_cost scales with tier progression" do
-    tier_1_building = Building.new(function: "extraction", tier: 1, race: "vex")
-    tier_3_building = Building.new(function: "extraction", tier: 3, race: "vex")
+    tier_1_building = Building.new(function: "defense", tier: 1, race: "vex")
+    tier_3_building = Building.new(function: "defense", tier: 3, race: "vex")
     
     # Higher tier upgrades should cost more
     assert tier_3_building.upgrade_cost > tier_1_building.upgrade_cost
@@ -154,28 +154,29 @@ class BuildingUpgradeTest < ActiveSupport::TestCase
   # ===========================================
 
   test "regenerate_building_attributes! updates stats based on tier" do
-    @building.update!(tier: 3)
+    # Use defense function (no specialization required)
+    @building.update!(tier: 3, function: "defense")
     @building.regenerate_building_attributes!
     
-    # Stats should scale with tier
-    assert @building.building_attributes["maintenance_rate"] == 60  # 20 * tier
-    assert @building.building_attributes["hardpoints"] == 3        # tier
-    assert @building.building_attributes["storage_capacity"] == 3000  # 1000 * tier
-    assert @building.building_attributes["power_consumption"] == 15   # 5 * tier
-    assert @building.building_attributes["durability"] == 1500        # 500 * tier
+    # Stats should scale with tier (defense has some modifiers)
+    assert_equal 60, @building.building_attributes["maintenance_rate"]  # 20 * tier
+    assert_equal 6, @building.building_attributes["hardpoints"]         # tier * 2 for defense
+    assert_equal 3000, @building.building_attributes["storage_capacity"]  # 1000 * tier
+    assert_equal 15, @building.building_attributes["power_consumption"]   # 5 * tier
+    assert_equal 2250, @building.building_attributes["durability"]        # 500 * tier * 1.5 for defense
   end
 
   test "regenerate_building_attributes! applies function bonuses" do
-    extraction_building = Building.new(
-      function: "extraction", tier: 2, race: "vex", 
+    defense_building = Building.new(
+      function: "defense", tier: 2, race: "vex", 
       name: "Test", system: systems(:alpha_centauri), user: @user
     )
-    extraction_building.regenerate_building_attributes!
+    defense_building.regenerate_building_attributes!
     
-    # Extraction gets 2x output rate
-    base_output = 10 * (2 ** 1.5)
-    expected_output = (base_output * 2).to_i
-    assert_equal expected_output, extraction_building.building_attributes["output_rate"].to_i
+    # Defense gets 2x hardpoints
+    base_hardpoints = 2  # tier
+    expected_hardpoints = base_hardpoints * 2
+    assert_equal expected_hardpoints, defense_building.building_attributes["hardpoints"]
   end
 
   test "regenerate_building_attributes! applies racial bonuses" do

@@ -45,14 +45,14 @@ class BuildingCostsTest < ActiveSupport::TestCase
   # ===========================================
 
   test "cost_for calculates base cost for function and tier" do
-    cost = Building.cost_for(function: "extraction", tier: 1, race: "vex")
+    cost = Building.cost_for(function: "defense", tier: 1, race: "vex")
     assert cost.is_a?(Integer)
     assert cost > 0
   end
 
   test "cost_for applies racial modifier" do
-    vex_cost = Building.cost_for(function: "extraction", tier: 1, race: "vex")
-    krog_cost = Building.cost_for(function: "extraction", tier: 1, race: "krog")
+    vex_cost = Building.cost_for(function: "defense", tier: 1, race: "vex")
+    krog_cost = Building.cost_for(function: "defense", tier: 1, race: "krog")
     # Different races may have different modifiers
     assert vex_cost > 0
     assert krog_cost > 0
@@ -66,16 +66,16 @@ class BuildingCostsTest < ActiveSupport::TestCase
 
   test "cost_for raises for invalid race" do
     assert_raises(ArgumentError) do
-      Building.cost_for(function: "extraction", tier: 1, race: "invalid")
+      Building.cost_for(function: "defense", tier: 1, race: "invalid")
     end
   end
 
   test "cost_for raises for invalid tier" do
     assert_raises(ArgumentError) do
-      Building.cost_for(function: "extraction", tier: 0, race: "vex")
+      Building.cost_for(function: "defense", tier: 0, race: "vex")
     end
     assert_raises(ArgumentError) do
-      Building.cost_for(function: "extraction", tier: 6, race: "vex")
+      Building.cost_for(function: "defense", tier: 6, race: "vex")
     end
   end
 
@@ -124,7 +124,7 @@ class BuildingCostsTest < ActiveSupport::TestCase
     user = users(:pilot)
     user.update!(credits: 10000)
     
-    assert user.can_afford_building?(function: "extraction", tier: 1, race: "vex")
+    assert user.can_afford_building?(function: "defense", tier: 1, race: "vex")
   end
 
   test "user cannot afford expensive building with insufficient credits" do
@@ -138,8 +138,8 @@ class BuildingCostsTest < ActiveSupport::TestCase
     user = users(:pilot)
     user.update!(credits: 10000)
     
-    cost = Building.cost_for(function: "extraction", tier: 1, race: "vex")
-    user.deduct_building_cost!(function: "extraction", tier: 1, race: "vex")
+    cost = Building.cost_for(function: "defense", tier: 1, race: "vex")
+    user.deduct_building_cost!(function: "defense", tier: 1, race: "vex")
     
     assert_equal 10000 - cost, user.credits
   end

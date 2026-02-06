@@ -25,7 +25,7 @@ class IncidentServiceTest < ActiveSupport::TestCase
       user: @user,
       system: @system,
       race: "krog",
-      function: "extraction",
+      function: "defense",
       tier: 3
     )
 

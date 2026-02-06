@@ -5,7 +5,7 @@ mining_facility:
   short_id: bl-ext1
   uuid: 01900000-0000-7000-8000-000000000001
   race: vex
-  function: extraction
+  function: defense
   tier: 1
   status: active
   building_attributes:
