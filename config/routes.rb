@@ -107,6 +107,13 @@ Rails.application.routes.draw do
   # Emigration (Phase 3: Hub Selection)
   resource :emigration, only: [:show, :create], controller: 'emigration'
 
+  # Exploration
+  resource :exploration, only: [:show], controller: 'exploration' do
+    post :single_direction
+    post :growing_arcs
+    post :orbit
+  end
+
   # User Profile
   resource :profile, only: [:show, :edit, :update], controller: 'profile'
 

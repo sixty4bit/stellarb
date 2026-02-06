@@ -1,0 +1,38 @@
+<%= tag.div class: "exploration-panel" do %>
+  <h1>Exploration</h1>
+
+  <section class="exploration-stats">
+    <div class="stat-card">
+      <span class="stat-value"><%= @explored_count %></span>
+      <span class="stat-label">Systems Explored</span>
+    </div>
+  </section>
+
+  <% if notice.present? %>
+    <div class="notice"><%= notice %></div>
+  <% end %>
+
+  <section class="exploration-modes">
+    <h2>Exploration Modes</h2>
+
+    <div class="mode-cards">
+      <%= tag.div class: "mode-card" do %>
+        <h3>Single Direction</h3>
+        <p>Explore in one direction from your current position. Simple and straightforward path through space.</p>
+        <%= button_to "Explore", single_direction_exploration_path, class: "btn btn-primary" %>
+      <% end %>
+
+      <%= tag.div class: "mode-card" do %>
+        <h3>Growing Arcs</h3>
+        <p>Explore in expanding arcs from your position. Covers more area with each sweep.</p>
+        <%= button_to "Explore", growing_arcs_exploration_path, class: "btn btn-primary" %>
+      <% end %>
+
+      <%= tag.div class: "mode-card" do %>
+        <h3>Orbit</h3>
+        <p>Explore in an orbital pattern around a point. Systematic coverage of a region.</p>
+        <%= button_to "Explore", orbit_exploration_path, class: "btn btn-primary" %>
+      <% end %>
+    </div>
+  </section>
+<% end %>
