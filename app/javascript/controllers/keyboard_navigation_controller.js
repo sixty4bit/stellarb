@@ -1,13 +1,16 @@
 import { Controller } from "@hotwired/stimulus"
 
 // VI-style keyboard navigation controller
-// Manages SELECTED state (keyboard focus) separately from ACTIVE state (URL-based)
-// The menu_highlight_controller manages which item is active based on URL
+// Supports two focus zones: menu sidebar and content panel
+// Tab switches between zones, j/k navigates within current zone
+// Manages SELECTED state separately from ACTIVE state (URL-based)
 export default class extends Controller {
-  static targets = ["menuItem", "contentPanel"]
+  static targets = ["menuItem", "contentItem", "contentPanel"]
 
   connect() {
-    this.selectedIndex = -1 // Start with no selection until user navigates
+    this.focusZone = 'menu' // 'menu' or 'content'
+    this.menuIndex = -1 // Start with no selection until user navigates
+    this.contentIndex = 0
     this.menuItems = this.menuItemTargets
     this.bindKeyboardEvents()
     this.bindTurboEvents()
@@ -17,6 +20,7 @@ export default class extends Controller {
   disconnect() {
     document.removeEventListener("keydown", this.handleKeyDown)
     document.removeEventListener("turbo:frame-load", this.boundSync)
+    document.removeEventListener("turbo:frame-load", this.boundContentRefresh)
     document.removeEventListener("turbo:render", this.boundSync)
     window.removeEventListener("popstate", this.boundSync)
   }
@@ -28,9 +32,24 @@ export default class extends Controller {
 
   bindTurboEvents() {
     this.boundSync = this.syncSelectionToActive.bind(this)
+    this.boundContentRefresh = this.refreshContentItems.bind(this)
     document.addEventListener("turbo:frame-load", this.boundSync)
+    document.addEventListener("turbo:frame-load", this.boundContentRefresh)
     document.addEventListener("turbo:render", this.boundSync)
     window.addEventListener("popstate", this.boundSync)
+  }
+
+  get contentItems() {
+    // Dynamically query content items since they change with Turbo navigation
+    return Array.from(document.querySelectorAll('[data-keyboard-navigation-target="contentItem"]'))
+  }
+
+  refreshContentItems() {
+    // Reset content index when content changes
+    this.contentIndex = 0
+    if (this.focusZone === 'content') {
+      this.updateContentSelection()
+    }
   }
 
   onKeyDown(event) {
@@ -38,6 +57,10 @@ export default class extends Controller {
     if (event.target.matches('input, textarea, select')) return
 
     switch(event.key) {
+      case 'Tab':
+        event.preventDefault()
+        this.toggleFocusZone()
+        break
       case 'j':
         event.preventDefault()
         this.selectNext()
@@ -70,22 +93,50 @@ export default class extends Controller {
     }
   }
 
-  selectNext() {
-    if (this.selectedIndex === -1) {
-      // First navigation - start from active item or first item
-      this.selectedIndex = this.findActiveIndex()
+  toggleFocusZone() {
+    const contentItems = this.contentItems
+    if (this.focusZone === 'menu' && contentItems.length > 0) {
+      this.focusZone = 'content'
+      this.clearMenuSelection()
+      this.updateContentSelection()
+    } else {
+      this.focusZone = 'menu'
+      this.clearContentSelection()
+      // Initialize menu selection if not set
+      if (this.menuIndex === -1) {
+        this.menuIndex = this.findActiveIndex()
+      }
+      this.updateMenuSelection()
     }
-    this.selectedIndex = Math.min(this.selectedIndex + 1, this.menuItems.length - 1)
-    this.updateSelection()
+  }
+
+  selectNext() {
+    if (this.focusZone === 'menu') {
+      if (this.menuIndex === -1) {
+        // First navigation - start from active item or first item
+        this.menuIndex = this.findActiveIndex()
+      }
+      this.menuIndex = Math.min(this.menuIndex + 1, this.menuItems.length - 1)
+      this.updateMenuSelection()
+    } else {
+      const items = this.contentItems
+      this.contentIndex = Math.min(this.contentIndex + 1, items.length - 1)
+      this.updateContentSelection()
+    }
   }
 
   selectPrevious() {
-    if (this.selectedIndex === -1) {
-      // First navigation - start from active item or first item
-      this.selectedIndex = this.findActiveIndex()
+    if (this.focusZone === 'menu') {
+      if (this.menuIndex === -1) {
+        // First navigation - start from active item or first item
+        this.menuIndex = this.findActiveIndex()
+      }
+      this.menuIndex = Math.max(this.menuIndex - 1, 0)
+      this.updateMenuSelection()
+    } else {
+      this.contentIndex = Math.max(this.contentIndex - 1, 0)
+      this.updateContentSelection()
     }
-    this.selectedIndex = Math.max(this.selectedIndex - 1, 0)
-    this.updateSelection()
   }
 
   findActiveIndex() {
@@ -94,9 +145,9 @@ export default class extends Controller {
     return activeIndex !== -1 ? activeIndex : 0
   }
 
-  updateSelection() {
+  updateMenuSelection() {
     this.menuItems.forEach((item, index) => {
-      if (index === this.selectedIndex) {
+      if (index === this.menuIndex) {
         item.classList.add("ring-2", "ring-orange-400", "ring-inset")
         item.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       } else {
@@ -105,23 +156,50 @@ export default class extends Controller {
     })
   }
 
-  clearSelection() {
+  updateContentSelection() {
+    const items = this.contentItems
+    items.forEach((item, index) => {
+      if (index === this.contentIndex) {
+        item.classList.add("content-focused")
+        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      } else {
+        item.classList.remove("content-focused")
+      }
+    })
+  }
+
+  clearMenuSelection() {
     this.menuItems.forEach(item => {
       item.classList.remove("ring-2", "ring-orange-400", "ring-inset")
     })
-    this.selectedIndex = -1
+  }
+
+  clearContentSelection() {
+    this.contentItems.forEach(item => {
+      item.classList.remove("content-focused")
+    })
+  }
+
+  // Legacy method for compatibility
+  updateSelection() {
+    this.updateMenuSelection()
   }
 
   activateSelected() {
-    // If nothing selected, use the active item
-    if (this.selectedIndex === -1) {
-      this.selectedIndex = this.findActiveIndex()
+    let selectedItem
+    if (this.focusZone === 'menu') {
+      // If nothing selected, use the active item
+      if (this.menuIndex === -1) {
+        this.menuIndex = this.findActiveIndex()
+      }
+      selectedItem = this.menuItems[this.menuIndex]
+    } else {
+      selectedItem = this.contentItems[this.contentIndex]
     }
-    
-    const selectedItem = this.menuItems[this.selectedIndex]
+
     if (selectedItem) {
-      const link = selectedItem.querySelector('a') || selectedItem
-      if (link.href) {
+      const link = selectedItem.matches('a') ? selectedItem : selectedItem.querySelector('a')
+      if (link && link.href) {
         const frameId = link.dataset.turboFrame
         if (frameId) {
           Turbo.visit(link.href, { 
@@ -131,11 +209,19 @@ export default class extends Controller {
         } else {
           Turbo.visit(link.href, { action: "advance" })
         }
+      } else if (selectedItem.matches('button')) {
+        selectedItem.click()
       }
     }
   }
 
   goBack() {
+    // If in content zone, switch back to menu first
+    if (this.focusZone === 'content') {
+      this.toggleFocusZone()
+      return
+    }
+
     const breadcrumb = document.querySelector('.breadcrumb a:last-child')
     if (breadcrumb) {
       breadcrumb.click()
@@ -185,7 +271,11 @@ export default class extends Controller {
 
   syncSelectionToActive() {
     // After navigation, clear keyboard selection and let active state show through
-    this.clearSelection()
+    this.clearMenuSelection()
+    this.clearContentSelection()
+    this.menuIndex = -1
+    this.contentIndex = 0
+    this.focusZone = 'menu'
   }
 
   // Called by menu items on hover to update selection
@@ -193,8 +283,23 @@ export default class extends Controller {
     const item = event.currentTarget
     const index = this.menuItems.indexOf(item)
     if (index !== -1) {
-      this.selectedIndex = index
-      this.updateSelection()
+      this.focusZone = 'menu'
+      this.clearContentSelection()
+      this.menuIndex = index
+      this.updateMenuSelection()
+    }
+  }
+
+  // Called by content items on hover
+  selectContentItem(event) {
+    const item = event.currentTarget
+    const items = this.contentItems
+    const index = items.indexOf(item)
+    if (index !== -1) {
+      this.focusZone = 'content'
+      this.clearMenuSelection()
+      this.contentIndex = index
+      this.updateContentSelection()
     }
   }
 }

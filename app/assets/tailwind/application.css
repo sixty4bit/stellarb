@@ -55,3 +55,10 @@
 .menu-active {
   background-color: rgb(30 64 175); /* bg-blue-800 */
 }
+
+/* Content panel keyboard focus indicator */
+.content-focused {
+  outline: 2px solid rgb(249 115 22); /* orange-500 */
+  outline-offset: 2px;
+  background-color: rgb(30 58 138 / 0.5) !important; /* blue-900 with opacity */
+}
