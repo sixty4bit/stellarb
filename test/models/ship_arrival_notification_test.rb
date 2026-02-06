@@ -8,6 +8,15 @@ class ShipArrivalNotificationTest < ActiveSupport::TestCase
     @origin = systems(:cradle)
     @destination = systems(:alpha_centauri)
 
+    # Mark destination as previously visited so no discovery message is created
+    SystemVisit.create!(
+      user: @user,
+      system: @destination,
+      visit_count: 1,
+      first_visited_at: 1.day.ago,
+      last_visited_at: 1.hour.ago
+    )
+
     @ship = Ship.create!(
       name: "Notification Test Ship",
       user: @user,
