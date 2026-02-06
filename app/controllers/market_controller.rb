@@ -65,10 +65,19 @@ class MarketController < ApplicationController
       return
     end
 
+    # Check inventory stock
+    inventory = MarketInventory.for_system_commodity(@system, commodity)
+    unless inventory&.available?(quantity)
+      available = inventory&.quantity || 0
+      redirect_to system_market_index_path(@system), alert: "Insufficient stock (only #{available} available)"
+      return
+    end
+
     # Execute purchase
     ActiveRecord::Base.transaction do
       current_user.update!(credits: current_user.credits - total_cost)
       ship.add_cargo!(commodity, quantity)
+      inventory.decrease_stock!(quantity)
     end
 
     redirect_to system_market_index_path(@system), notice: "Purchased #{quantity} #{commodity} for #{total_cost} credits"
@@ -111,6 +120,10 @@ class MarketController < ApplicationController
     ActiveRecord::Base.transaction do
       current_user.update!(credits: current_user.credits + total_income)
       ship.remove_cargo!(commodity, quantity)
+      
+      # Increase market inventory (capped at max)
+      inventory = MarketInventory.for_system_commodity(@system, commodity)
+      inventory&.increase_stock!(quantity)
     end
 
     redirect_to system_market_index_path(@system), notice: "Sold #{quantity} #{commodity} for #{total_income} credits"
@@ -170,11 +183,10 @@ class MarketController < ApplicationController
     (base_price * 0.90).round
   end
   
-  # Inventory is procedurally generated (placeholder for now)
+  # Get actual inventory from MarketInventory model
   def calculate_inventory(commodity)
-    # Use system seed to generate consistent inventory levels
-    seed = Digest::SHA256.hexdigest("#{@system.id}|#{commodity}|inventory")
-    100 + (seed[0, 4].to_i(16) % 900) # 100-1000 units
+    inventory = MarketInventory.for_system_commodity(@system, commodity)
+    inventory&.quantity || 0
   end
   
   # Trend is based on recent price deltas (placeholder for now)

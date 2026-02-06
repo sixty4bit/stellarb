@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_06_043635) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_06_044157) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -109,6 +109,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_043635) do
     t.index ["hired_recruit_id"], name: "index_incidents_on_hired_recruit_id"
     t.index ["is_pip_infestation"], name: "index_incidents_on_is_pip_infestation", where: "((is_pip_infestation = true) AND (resolved_at IS NULL))"
     t.index ["uuid"], name: "index_incidents_on_uuid", unique: true
+  end
+
+  create_table "market_inventories", force: :cascade do |t|
+    t.string "commodity", null: false
+    t.datetime "created_at", null: false
+    t.integer "max_quantity", null: false
+    t.integer "quantity", default: 0, null: false
+    t.integer "restock_rate", default: 10, null: false
+    t.bigint "system_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["system_id", "commodity"], name: "index_market_inventories_on_system_id_and_commodity", unique: true
+    t.index ["system_id"], name: "index_market_inventories_on_system_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -462,6 +474,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_043635) do
     t.datetime "profile_completed_at"
     t.string "short_id"
     t.integer "sign_in_count", default: 0
+    t.boolean "sound_enabled", default: true, null: false
     t.string "tutorial_phase", default: "cradle", null: false
     t.datetime "updated_at", null: false
     t.string "uuid", limit: 36
@@ -498,6 +511,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_043635) do
   add_foreign_key "hirings", "hired_recruits"
   add_foreign_key "hirings", "users"
   add_foreign_key "incidents", "hired_recruits"
+  add_foreign_key "market_inventories", "systems"
   add_foreign_key "messages", "users"
   add_foreign_key "player_hubs", "systems"
   add_foreign_key "player_hubs", "users", column: "owner_id"

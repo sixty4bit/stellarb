@@ -10,6 +10,7 @@ class System < ApplicationRecord
   has_many :departures, -> { where(event_type: 'departure') }, class_name: 'FlightRecord', foreign_key: 'from_system_id', dependent: :destroy
   has_many :arrivals, -> { where(event_type: 'arrival') }, class_name: 'FlightRecord', foreign_key: 'to_system_id', dependent: :destroy
   has_many :price_deltas, dependent: :destroy
+  has_many :market_inventories, dependent: :destroy
 
   # Validations
   validates :x, presence: true, numericality: { in: 0..999_999 }
