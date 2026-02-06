@@ -49,7 +49,7 @@ class ExploredCoordinateTest < ActiveSupport::TestCase
     with_system = ExploredCoordinate.create!(user: @user, x: 1, y: 0, z: 0, has_system: true)
     ExploredCoordinate.create!(user: @user, x: 2, y: 0, z: 0, has_system: false)
 
-    results = ExploredCoordinate.with_systems
+    results = @user.explored_coordinates.with_systems
     assert_includes results, with_system
     assert_equal 1, results.count
   end
@@ -58,7 +58,7 @@ class ExploredCoordinateTest < ActiveSupport::TestCase
     ExploredCoordinate.create!(user: @user, x: 1, y: 0, z: 0, has_system: true)
     empty = ExploredCoordinate.create!(user: @user, x: 2, y: 0, z: 0, has_system: false)
 
-    results = ExploredCoordinate.empty
+    results = @user.explored_coordinates.empty
     assert_includes results, empty
     assert_equal 1, results.count
   end

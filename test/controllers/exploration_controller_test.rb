@@ -54,9 +54,16 @@ class ExplorationControllerTest < ActionDispatch::IntegrationTest
   # ===========================================
 
   test "orbit explores a new coordinate when unexplored exists" do
-    @user.explored_coordinates.destroy_all
+    # Use fresh user so we control the starting state
+    fresh_user = User.create!(
+      email: "orbit_test@example.com",
+      name: "Orbit Tester",
+      tutorial_phase: :proving_ground,
+      profile_completed_at: Time.current
+    )
+    sign_in_as(fresh_user)
 
-    assert_difference -> { @user.explored_coordinates.count }, 1 do
+    assert_difference -> { fresh_user.explored_coordinates.count }, 1 do
       post orbit_exploration_path
     end
 
@@ -69,7 +76,8 @@ class ExplorationControllerTest < ActionDispatch::IntegrationTest
     fresh_user = User.create!(
       email: "shipless@example.com",
       name: "Shipless Explorer",
-      tutorial_phase: :proving_ground
+      tutorial_phase: :proving_ground,
+      profile_completed_at: Time.current
     )
     sign_in_as(fresh_user)
 
@@ -86,41 +94,75 @@ class ExplorationControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "orbit expands to next ring when origin is explored" do
-    @user.explored_coordinates.destroy_all
+    # Use fresh user to avoid fixture ship positions
+    fresh_user = User.create!(
+      email: "orbital_ring@example.com",
+      name: "Orbital Ring Tester",
+      tutorial_phase: :proving_ground,
+      profile_completed_at: Time.current
+    )
+    sign_in_as(fresh_user)
+
     # Mark origin as explored
-    @user.explored_coordinates.create!(x: 0, y: 0, z: 0, has_system: false)
+    fresh_user.explored_coordinates.create!(x: 0, y: 0, z: 0, has_system: false)
+    initial_count = fresh_user.explored_coordinates.count
 
     post orbit_exploration_path
 
-    coord = @user.explored_coordinates.order(created_at: :desc).first
+    fresh_user.reload
+    # Get the newly created coordinate (not origin)
+    new_coords = fresh_user.explored_coordinates.where.not(x: 0, y: 0, z: 0)
+    assert_equal 1, new_coords.count, "Should have created one new coordinate (not origin)"
+
+    coord = new_coords.first
     # Should be at distance ~1 (next ring)
     distance = Math.sqrt(coord.x**2 + coord.y**2 + coord.z**2)
     assert_in_delta 1.0, distance, 0.5, "Should explore at distance ~1"
   end
 
   test "orbit records has_system when system exists at coordinate" do
-    @user.explored_coordinates.destroy_all
+    # Use fresh user to control state
+    fresh_user = User.create!(
+      email: "system_test@example.com",
+      name: "System Tester",
+      tutorial_phase: :proving_ground,
+      profile_completed_at: Time.current
+    )
+    sign_in_as(fresh_user)
 
     # Clear any existing system at origin and create the Cradle
     System.where(x: 0, y: 0, z: 0).destroy_all
     System.cradle # Creates system at 0,0,0
 
-    post orbit_exploration_path
+    assert_difference -> { fresh_user.explored_coordinates.count }, 1 do
+      post orbit_exploration_path
+    end
 
-    coord = @user.explored_coordinates.find_by(x: 0, y: 0, z: 0)
+    fresh_user.reload
+    coord = fresh_user.explored_coordinates.find_by(x: 0, y: 0, z: 0)
     assert_not_nil coord, "Should have explored origin"
     assert coord.has_system, "Should record has_system as true when system exists"
   end
 
   test "orbit records has_system as false when no system at coordinate" do
-    @user.explored_coordinates.destroy_all
+    # Use fresh user to control state
+    fresh_user = User.create!(
+      email: "no_system_test@example.com",
+      name: "No System Tester",
+      tutorial_phase: :proving_ground,
+      profile_completed_at: Time.current
+    )
+    sign_in_as(fresh_user)
 
     # Ensure no system at origin
     System.where(x: 0, y: 0, z: 0).destroy_all
 
-    post orbit_exploration_path
+    assert_difference -> { fresh_user.explored_coordinates.count }, 1 do
+      post orbit_exploration_path
+    end
 
-    coord = @user.explored_coordinates.find_by(x: 0, y: 0, z: 0)
+    fresh_user.reload
+    coord = fresh_user.explored_coordinates.find_by(x: 0, y: 0, z: 0)
     assert_not_nil coord, "Should have explored origin"
     assert_not coord.has_system, "Should record has_system as false when no system"
   end

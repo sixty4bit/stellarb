@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_06_133805) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_06_133653) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -38,7 +38,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_133805) do
 
   create_table "explored_coordinates", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.boolean "has_system", default: false, null: false
+    t.boolean "has_system", default: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.integer "x", null: false
@@ -46,7 +46,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_133805) do
     t.integer "z", null: false
     t.index ["user_id", "x", "y", "z"], name: "index_explored_coordinates_on_user_id_and_x_and_y_and_z", unique: true
     t.index ["user_id"], name: "index_explored_coordinates_on_user_id"
-    t.index ["x", "y", "z"], name: "index_explored_coordinates_on_x_and_y_and_z"
   end
 
   create_table "flight_records", force: :cascade do |t|

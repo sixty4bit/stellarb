@@ -28,11 +28,6 @@ class ExplorationController < ApplicationController
     end
   end
 
-  def orbit
-    # Placeholder - to be implemented in 2bj.5
-    redirect_to exploration_path, notice: "Orbit exploration coming soon!"
-  end
-
   # Explore coordinates in an orbital pattern around current position
   # Prioritizes same distance from origin, then expands outward
   def orbit
@@ -42,7 +37,8 @@ class ExplorationController < ApplicationController
     target = service.closest_unexplored_orbital
 
     if target
-      current_user.explored_coordinates.create!(
+      ExploredCoordinate.mark_explored!(
+        user: current_user,
         x: target[:x],
         y: target[:y],
         z: target[:z],
