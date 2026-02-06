@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 require_relative "../../db/seeds/talos_arm"
 
@@ -24,31 +26,35 @@ class TalosArmSeedTest < ActiveSupport::TestCase
     end
   end
 
-  test "Mira Station has cheap ore and expensive food" do
+  test "Mira Station has cheap Iron and expensive Tungsten" do
     Seeds::TalosArm.seed!
     
     mira = System.find_by(name: "Mira Station")
     assert mira, "Mira Station should exist"
     
     # Check price deltas create arbitrage opportunity
-    ore_delta = PriceDelta.find_by(system: mira, commodity: "ore")
-    food_delta = PriceDelta.find_by(system: mira, commodity: "food")
+    iron_delta = PriceDelta.find_by(system: mira, commodity: "Iron")
+    tungsten_delta = PriceDelta.find_by(system: mira, commodity: "Tungsten")
     
-    assert_operator ore_delta.delta_cents, :<, 0, "Ore should be cheaper than base"
-    assert_operator food_delta.delta_cents, :>, 0, "Food should be more expensive than base"
+    assert_not_nil iron_delta, "Iron should have a price delta"
+    assert_not_nil tungsten_delta, "Tungsten should have a price delta"
+    assert_operator iron_delta.delta_cents, :<, 0, "Iron should be cheaper than base"
+    assert_operator tungsten_delta.delta_cents, :>, 0, "Tungsten should be more expensive than base"
   end
 
-  test "Verdant Gardens has cheap food and expensive ore" do
+  test "Verdant Gardens has expensive Iron and cheap Carbon" do
     Seeds::TalosArm.seed!
     
     verdant = System.find_by(name: "Verdant Gardens")
     assert verdant, "Verdant Gardens should exist"
     
-    ore_delta = PriceDelta.find_by(system: verdant, commodity: "ore")
-    food_delta = PriceDelta.find_by(system: verdant, commodity: "food")
+    iron_delta = PriceDelta.find_by(system: verdant, commodity: "Iron")
+    carbon_delta = PriceDelta.find_by(system: verdant, commodity: "Carbon")
     
-    assert_operator ore_delta.delta_cents, :>, 0, "Ore should be more expensive"
-    assert_operator food_delta.delta_cents, :<, 0, "Food should be cheaper"
+    assert_not_nil iron_delta, "Iron should have a price delta"
+    assert_not_nil carbon_delta, "Carbon should have a price delta"
+    assert_operator iron_delta.delta_cents, :>, 0, "Iron should be more expensive"
+    assert_operator carbon_delta.delta_cents, :<, 0, "Carbon should be cheaper"
   end
 
   test "all Talos Arm systems are within 5 units of The Cradle" do
@@ -90,16 +96,22 @@ class TalosArmSeedTest < ActiveSupport::TestCase
     mira = System.find_by(name: "Mira Station")
     verdant = System.find_by(name: "Verdant Gardens")
     
-    # Buy ore at Mira (cheap) and sell at Verdant (expensive)
-    # Base price is 50, deltas in cents need to be converted
-    mira_delta = PriceDelta.find_by(system: mira, commodity: "ore").delta_cents / 100.0
-    verdant_delta = PriceDelta.find_by(system: verdant, commodity: "ore").delta_cents / 100.0
+    # Buy Iron at Mira (cheap) and sell at Verdant (expensive)
+    # Base price is 10, deltas in cents need to be converted
+    mira_delta = PriceDelta.find_by(system: mira, commodity: "Iron")
+    verdant_delta = PriceDelta.find_by(system: verdant, commodity: "Iron")
     
-    ore_buy_price = 50 + mira_delta
-    ore_sell_price = 50 + verdant_delta
+    assert_not_nil mira_delta, "Mira should have Iron price delta"
+    assert_not_nil verdant_delta, "Verdant should have Iron price delta"
     
-    profit_per_unit = ore_sell_price - ore_buy_price
+    mira_adjustment = mira_delta.delta_cents / 100.0
+    verdant_adjustment = verdant_delta.delta_cents / 100.0
+    
+    iron_buy_price = 10 + mira_adjustment
+    iron_sell_price = 10 + verdant_adjustment
+    
+    profit_per_unit = iron_sell_price - iron_buy_price
     assert_operator profit_per_unit, :>, 0, 
-      "Should profit from buying ore at Mira (#{ore_buy_price}) and selling at Verdant (#{ore_sell_price})"
+      "Should profit from buying Iron at Mira (#{iron_buy_price}) and selling at Verdant (#{iron_sell_price})"
   end
 end

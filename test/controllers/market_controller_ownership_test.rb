@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "test_helper"
 
 class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
@@ -6,18 +8,6 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
     @trader = User.create!(name: "Trader", email: "trader@test.com", credits: 5000, profile_completed_at: Time.current)
     @system = System.cradle
     @system.update!(owner: @owner)
-
-    # Create a marketplace (civic building) to enable trading
-    # Using tier 5 (1% fee) to minimize fee impact on these ownership-focused tests
-    Building.find_or_create_by!(
-      user: @owner,
-      system: @system,
-      function: "civic"
-    ) do |b|
-      b.name = "Cradle Central Market"
-      b.race = "vex"
-      b.tier = 5  # 1% fee
-    end
 
     # Create ships for both users
     @owner_ship = Ship.create!(
@@ -56,9 +46,16 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
       )
     end
 
-    # Create market inventory
-    @system.base_prices.each do |commodity, _price|
-      MarketInventory.find_or_create_by!(system: @system, commodity: commodity) do |inv|
+    # Create market inventory for available minerals
+    available_minerals = MineralAvailability.for_system(
+      star_type: @system.properties&.dig("star_type") || "yellow_dwarf",
+      x: @system.x,
+      y: @system.y,
+      z: @system.z
+    )
+    
+    available_minerals.each do |mineral|
+      MarketInventory.find_or_create_by!(system: @system, commodity: mineral[:name]) do |inv|
         inv.quantity = 500
         inv.max_quantity = 1000
         inv.restock_rate = 10
@@ -100,13 +97,10 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
     initial_credits = @owner.credits
     quantity = 10
     # Iron base price is 10, owner buys at base (10), not 11
-    # Plus 1% marketplace fee: 100 + 1 = 101
-    base_cost = quantity * 10
-    marketplace_fee = (base_cost * 0.01).round
-    expected_cost = base_cost + marketplace_fee
+    expected_cost = quantity * 10
 
     post buy_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: quantity
     }
 
@@ -116,17 +110,14 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
 
   test "owner sells at base price - no spread" do
     sign_in_as @owner
-    @owner_ship.update!(cargo: { "iron" => 50 })
+    @owner_ship.update!(cargo: { "Iron" => 50 })
     initial_credits = @owner.credits
     quantity = 10
     # Iron base price is 10, owner sells at base (10), not 9
-    # Minus 1% marketplace fee: 100 - 1 = 99
-    gross_income = quantity * 10
-    marketplace_fee = (gross_income * 0.01).round
-    expected_income = gross_income - marketplace_fee
+    expected_income = quantity * 10
 
     post sell_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: quantity
     }
 
@@ -143,13 +134,10 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
     initial_credits = @trader.credits
     quantity = 10
     # Iron base price is 10, trader buys at 11 (10% spread)
-    # Plus 1% marketplace fee: 110 + 1 = 111
-    base_cost = quantity * 11
-    marketplace_fee = (base_cost * 0.01).round
-    expected_cost = base_cost + marketplace_fee
+    expected_cost = quantity * 11
 
     post buy_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: quantity
     }
 
@@ -159,17 +147,14 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
 
   test "non-owner sells at spread price - 10% markdown" do
     sign_in_as @trader
-    @trader_ship.update!(cargo: { "iron" => 50 })
+    @trader_ship.update!(cargo: { "Iron" => 50 })
     initial_credits = @trader.credits
     quantity = 10
     # Iron base price is 10, trader sells at 9 (10% below base)
-    # Minus 1% marketplace fee: 90 - 1 = 89
-    gross_income = quantity * 9
-    marketplace_fee = (gross_income * 0.01).round
-    expected_income = gross_income - marketplace_fee
+    expected_income = quantity * 9
 
     post sell_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: quantity
     }
 
@@ -189,33 +174,33 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
     # For 100 units: tax = 100 * 0.10 = 10 cr (rounded per unit)
     # Actually: spread_per_unit = (10 * 0.10).round = 1
     # tax_per_unit = (1 * 0.10).round = 0
-    # Hmm, with small prices the tax rounds to 0. Let's use luxury_goods instead.
+    # Hmm, with small prices the tax rounds to 0. Let's use Tungsten instead.
     
     post buy_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: quantity
     }
 
     assert_redirected_to system_market_index_path(@system)
     # Tax should be credited to owner
-    # For iron (base 10): spread = 1, tax = 0.1 per unit, rounds to 0
-    # So no tax for iron at small quantities. Let's check the behavior is correct.
+    # For Iron (base 10): spread = 1, tax = 0.1 per unit, rounds to 0
+    # So no tax for Iron at small quantities. Let's check the behavior is correct.
     @owner.reload
     # With rounding, tax might be 0 for small base prices
     # This test verifies the mechanism works
   end
 
-  test "owner receives tax when non-owner buys luxury goods" do
+  test "owner receives tax when non-owner buys Tungsten" do
     sign_in_as @trader
     initial_owner_credits = @owner.credits
     quantity = 10
-    # Luxury goods base price is 100
-    # spread_per_unit = (100 * 0.10).round = 10
-    # tax_per_unit = (10 * 0.10).round = 1
+    # Tungsten base price is 55
+    # spread_per_unit = (55 * 0.10).round = 6 (5.5 rounds to 6)
+    # tax_per_unit = (6 * 0.10).round = 1
     # total_tax = 1 * 10 = 10 cr
 
     post buy_system_market_index_path(@system), params: {
-      commodity: "luxury_goods",
+      commodity: "Tungsten",
       quantity: quantity
     }
 
@@ -226,13 +211,13 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
 
   test "owner receives tax when non-owner sells" do
     sign_in_as @trader
-    @trader_ship.update!(cargo: { "luxury_goods" => 50 })
+    @trader_ship.update!(cargo: { "Tungsten" => 50 })
     initial_owner_credits = @owner.credits
     quantity = 10
     # Same tax calculation as buy
 
     post sell_system_market_index_path(@system), params: {
-      commodity: "luxury_goods",
+      commodity: "Tungsten",
       quantity: quantity
     }
 
@@ -245,19 +230,16 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
     sign_in_as @owner
     initial_credits = @owner.credits
     quantity = 10
-    # Luxury goods base price is 100, owner buys at 100 (no spread)
-    # Plus 1% marketplace fee: 1000 + 10 = 1010
-    base_cost = quantity * 100
-    marketplace_fee = (base_cost * 0.01).round
-    expected_cost = base_cost + marketplace_fee
+    # Tungsten base price is 55, owner buys at 55 (no spread)
+    expected_cost = quantity * 55
 
     post buy_system_market_index_path(@system), params: {
-      commodity: "luxury_goods",
+      commodity: "Tungsten",
       quantity: quantity
     }
 
     assert_redirected_to system_market_index_path(@system)
-    # Owner should only lose the purchase amount plus fee, no extra tax credits
+    # Owner should only lose the purchase amount, no extra tax credits
     assert_equal initial_credits - expected_cost, @owner.reload.credits
   end
 
@@ -271,13 +253,10 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
     initial_credits = @trader.credits
     quantity = 10
     # Iron base price is 10, buy at 11 (spread applies but no owner to receive tax)
-    # Plus 1% marketplace fee: 110 + 1 = 111
-    base_cost = quantity * 11
-    marketplace_fee = (base_cost * 0.01).round
-    expected_cost = base_cost + marketplace_fee
+    expected_cost = quantity * 11
 
     post buy_system_market_index_path(@system), params: {
-      commodity: "iron",
+      commodity: "Iron",
       quantity: quantity
     }
 
