@@ -38,7 +38,7 @@ class BuildingWarehouseCapacityTest < ActiveSupport::TestCase
   end
 
   test "warehouse_capacity_bonus returns 0 for non-logistics buildings" do
-    extraction = create_building(function: "extraction", tier: 3)
+    extraction = create_building(function: "defense", tier: 3)
     assert_equal 0, extraction.warehouse_capacity_bonus
   end
 
@@ -72,7 +72,7 @@ class BuildingWarehouseCapacityTest < ActiveSupport::TestCase
   end
 
   test "warehouse_max_trade_size returns nil for non-logistics buildings" do
-    extraction = create_building(function: "extraction", tier: 3)
+    extraction = create_building(function: "defense", tier: 3)
     assert_nil extraction.warehouse_max_trade_size
   end
 
@@ -106,7 +106,7 @@ class BuildingWarehouseCapacityTest < ActiveSupport::TestCase
   end
 
   test "warehouse_restock_multiplier returns 1.0 for non-logistics buildings" do
-    extraction = create_building(function: "extraction", tier: 3)
+    extraction = create_building(function: "defense", tier: 3)
     assert_equal 1.0, extraction.warehouse_restock_multiplier
   end
 
@@ -120,7 +120,7 @@ class BuildingWarehouseCapacityTest < ActiveSupport::TestCase
   end
 
   test "warehouse? returns false for non-logistics buildings" do
-    extraction = create_building(function: "extraction", tier: 3)
+    extraction = create_building(function: "defense", tier: 3)
     refute extraction.warehouse?
   end
 

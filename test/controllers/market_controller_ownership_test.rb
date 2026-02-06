@@ -7,6 +7,18 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
     @system = System.cradle
     @system.update!(owner: @owner)
 
+    # Create a marketplace (civic building) to enable trading
+    # Using tier 5 (1% fee) to minimize fee impact on these ownership-focused tests
+    Building.find_or_create_by!(
+      user: @owner,
+      system: @system,
+      function: "civic"
+    ) do |b|
+      b.name = "Cradle Central Market"
+      b.race = "vex"
+      b.tier = 5  # 1% fee
+    end
+
     # Create ships for both users
     @owner_ship = Ship.create!(
       name: "Owner's Vessel",
@@ -88,7 +100,10 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
     initial_credits = @owner.credits
     quantity = 10
     # Iron base price is 10, owner buys at base (10), not 11
-    expected_cost = quantity * 10
+    # Plus 1% marketplace fee: 100 + 1 = 101
+    base_cost = quantity * 10
+    marketplace_fee = (base_cost * 0.01).round
+    expected_cost = base_cost + marketplace_fee
 
     post buy_system_market_index_path(@system), params: {
       commodity: "iron",
@@ -105,7 +120,10 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
     initial_credits = @owner.credits
     quantity = 10
     # Iron base price is 10, owner sells at base (10), not 9
-    expected_income = quantity * 10
+    # Minus 1% marketplace fee: 100 - 1 = 99
+    gross_income = quantity * 10
+    marketplace_fee = (gross_income * 0.01).round
+    expected_income = gross_income - marketplace_fee
 
     post sell_system_market_index_path(@system), params: {
       commodity: "iron",
@@ -125,7 +143,10 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
     initial_credits = @trader.credits
     quantity = 10
     # Iron base price is 10, trader buys at 11 (10% spread)
-    expected_cost = quantity * 11
+    # Plus 1% marketplace fee: 110 + 1 = 111
+    base_cost = quantity * 11
+    marketplace_fee = (base_cost * 0.01).round
+    expected_cost = base_cost + marketplace_fee
 
     post buy_system_market_index_path(@system), params: {
       commodity: "iron",
@@ -142,7 +163,10 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
     initial_credits = @trader.credits
     quantity = 10
     # Iron base price is 10, trader sells at 9 (10% below base)
-    expected_income = quantity * 9
+    # Minus 1% marketplace fee: 90 - 1 = 89
+    gross_income = quantity * 9
+    marketplace_fee = (gross_income * 0.01).round
+    expected_income = gross_income - marketplace_fee
 
     post sell_system_market_index_path(@system), params: {
       commodity: "iron",
@@ -222,7 +246,10 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
     initial_credits = @owner.credits
     quantity = 10
     # Luxury goods base price is 100, owner buys at 100 (no spread)
-    expected_cost = quantity * 100
+    # Plus 1% marketplace fee: 1000 + 10 = 1010
+    base_cost = quantity * 100
+    marketplace_fee = (base_cost * 0.01).round
+    expected_cost = base_cost + marketplace_fee
 
     post buy_system_market_index_path(@system), params: {
       commodity: "luxury_goods",
@@ -230,7 +257,7 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
     }
 
     assert_redirected_to system_market_index_path(@system)
-    # Owner should only lose the purchase amount, no extra tax credits
+    # Owner should only lose the purchase amount plus fee, no extra tax credits
     assert_equal initial_credits - expected_cost, @owner.reload.credits
   end
 
@@ -244,7 +271,10 @@ class MarketControllerOwnershipTest < ActionDispatch::IntegrationTest
     initial_credits = @trader.credits
     quantity = 10
     # Iron base price is 10, buy at 11 (spread applies but no owner to receive tax)
-    expected_cost = quantity * 11
+    # Plus 1% marketplace fee: 110 + 1 = 111
+    base_cost = quantity * 11
+    marketplace_fee = (base_cost * 0.01).round
+    expected_cost = base_cost + marketplace_fee
 
     post buy_system_market_index_path(@system), params: {
       commodity: "iron",

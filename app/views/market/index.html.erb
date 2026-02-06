@@ -5,6 +5,34 @@
   <h1 class="text-2xl font-bold mb-1 text-orange-500">Market</h1>
   <div class="text-sm text-gray-400 mb-2"><%= @system.name %> Trading Post</div>
   
+  <!-- Trading Disabled Warning -->
+  <% unless @trading_enabled %>
+    <div class="trading-disabled mb-6 p-4 bg-red-900 border border-red-700 rounded">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🚫</span>
+        <div>
+          <div class="text-red-400 font-bold">TRADING DISABLED</div>
+          <div class="text-gray-400 text-sm">
+            No operational marketplace in this system. Build a Civic Center to enable trading.
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Marketplace Info -->
+  <% if @marketplace&.operational? %>
+    <div class="mb-4 p-3 bg-cyan-900 border border-cyan-700 rounded">
+      <div class="flex items-center gap-2">
+        <span class="text-cyan-400">🏪</span>
+        <span class="text-cyan-300">
+          <strong class="text-white"><%= @marketplace.name %></strong> (Tier <%= @marketplace.tier %>)
+          <span class="text-gray-400">— Trading fee: <span class="text-orange-400"><%= (@marketplace.marketplace_fee_rate * 100).round %>%</span></span>
+        </span>
+      </div>
+    </div>
+  <% end %>
+
   <!-- Price Staleness Indicator -->
   <% if @price_source == :live %>
     <div class="flex items-center gap-2 mb-6 text-sm">

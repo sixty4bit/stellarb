@@ -68,8 +68,37 @@ class MarketControllerProceduralTest < ActionDispatch::IntegrationTest
         last_visited_at: Time.current
       )
     end
-    
+
+    # Create marketplaces (civic buildings) in both systems
+    # Using tier 5 (1% fee) to minimize fee impact on these pricing-focused tests
+    [@system1, @system2].each do |system|
+      Building.create!(
+        user: @user,
+        system: system,
+        name: "#{system.name} Market",
+        function: "civic",
+        race: "vex",
+        tier: 5  # 1% fee
+      )
+
+      # Create market inventory
+      system.base_prices.each do |commodity, _price|
+        MarketInventory.create!(
+          system: system,
+          commodity: commodity,
+          quantity: 500,
+          max_quantity: 1000,
+          restock_rate: 10
+        )
+      end
+    end
+
     sign_in_as @user
+  end
+  
+  # Fee rate for tier 5 marketplace
+  def marketplace_fee_rate
+    0.01  # 1%
   end
 
   # === BUY/SELL WITH REAL PRICES ===
@@ -86,7 +115,10 @@ class MarketControllerProceduralTest < ActionDispatch::IntegrationTest
     assert_equal 55, expected_buy_price
     
     quantity = 10
-    expected_cost = expected_buy_price * quantity
+    base_cost = expected_buy_price * quantity
+    # Plus 1% marketplace fee
+    marketplace_fee = (base_cost * marketplace_fee_rate).round
+    expected_cost = base_cost + marketplace_fee
     
     post buy_system_market_index_path(@system1), params: {
       commodity: "iron",
@@ -110,7 +142,10 @@ class MarketControllerProceduralTest < ActionDispatch::IntegrationTest
     assert_equal 45, expected_sell_price
 
     quantity = 10
-    expected_income = expected_sell_price * quantity
+    gross_income = expected_sell_price * quantity
+    # Minus 1% marketplace fee
+    marketplace_fee = (gross_income * marketplace_fee_rate).round
+    expected_income = gross_income - marketplace_fee
 
     post sell_system_market_index_path(@system1), params: {
       commodity: "iron",
@@ -125,10 +160,11 @@ class MarketControllerProceduralTest < ActionDispatch::IntegrationTest
   test "buying same commodity costs differently in different systems" do
     quantity = 10
 
-    # System1: iron base=50, buy=55, cost=550
+    # System1: iron base=50, buy=55, cost=550 + 1% fee = 556
     system1_base = @system1.current_price("iron")
     system1_buy = (system1_base * 1.10).round
-    expected_cost1 = system1_buy * quantity
+    base_cost1 = system1_buy * quantity
+    expected_cost1 = base_cost1 + (base_cost1 * marketplace_fee_rate).round
 
     post buy_system_market_index_path(@system1), params: {
       commodity: "iron",
@@ -139,10 +175,11 @@ class MarketControllerProceduralTest < ActionDispatch::IntegrationTest
     assert_equal expected_cost1, actual_cost1,
       "System1 iron cost should be #{expected_cost1}"
 
-    # System2: iron base=80, buy=88, cost=880
+    # System2: iron base=80, buy=88, cost=880 + 1% fee = 889
     system2_base = @system2.current_price("iron")
     system2_buy = (system2_base * 1.10).round
-    expected_cost2 = system2_buy * quantity
+    base_cost2 = system2_buy * quantity
+    expected_cost2 = base_cost2 + (base_cost2 * marketplace_fee_rate).round
 
     credits_before = @user.credits
     post buy_system_market_index_path(@system2), params: {
@@ -177,7 +214,9 @@ class MarketControllerProceduralTest < ActionDispatch::IntegrationTest
 
     # Buy = 70 * 1.10 = 77
     expected_buy = (current_price * 1.10).round
-    expected_cost = expected_buy * quantity
+    base_cost = expected_buy * quantity
+    # Plus 1% marketplace fee
+    expected_cost = base_cost + (base_cost * marketplace_fee_rate).round
 
     post buy_system_market_index_path(@system1), params: {
       commodity: "iron",
@@ -202,7 +241,9 @@ class MarketControllerProceduralTest < ActionDispatch::IntegrationTest
 
     # Sell = 70 * 0.90 = 63
     expected_sell = (current_price * 0.90).round
-    expected_income = expected_sell * quantity
+    gross_income = expected_sell * quantity
+    # Minus 1% marketplace fee
+    expected_income = gross_income - (gross_income * marketplace_fee_rate).round
 
     post sell_system_market_index_path(@system1), params: {
       commodity: "iron",
@@ -220,10 +261,10 @@ class MarketControllerProceduralTest < ActionDispatch::IntegrationTest
     # System2 iron: base=80, buy=88, sell=72
     # System1 iron: base=50, buy=55, sell=45
     # So buy cheap at... wait, system1 is cheaper!
-    # System1: buy=55, sell=45
-    # System2: buy=88, sell=72
+    # System1: buy=55+fee, sell=45-fee
+    # System2: buy=88+fee, sell=72-fee
 
-    # Buy at system1 (cheaper) for 55 credits
+    # Buy at system1 (cheaper) for 55 + fee credits
     post buy_system_market_index_path(@system1), params: {
       commodity: "iron",
       quantity: 1
@@ -234,24 +275,23 @@ class MarketControllerProceduralTest < ActionDispatch::IntegrationTest
     # Move iron to ship2 cargo manually for test (simulating trade route)
     @ship2.update!(cargo: { "iron" => 1 })
 
-    # Sell at system2 (higher base) for 72 credits
+    # Sell at system2 (higher base) for 72 - fee credits
     post sell_system_market_index_path(@system2), params: {
       commodity: "iron",
       quantity: 1
     }
     sell_income = @user.reload.credits - credits_after_buy
 
-    # Profit should be sell - buy = 72 - 55 = 17
+    # Profit should be sell - buy (accounting for fees)
+    # With 1% fees: buy ~56, sell ~71, profit ~15
     profit = sell_income - buy_cost
     assert profit > 0, "Should profit from buying low and selling high"
   end
 
   test "same-system arbitrage is not profitable due to spread" do
-    # Buy and sell in same system should lose money (10% spread each way)
-    # Buy = base * 1.10, Sell = base * 0.90
-    # Net: 0.90 / 1.10 = 0.818 (lose ~18%)
-    # Note: Price dynamics (buying raises price, selling lowers it) slightly
-    # reduces the loss, but arbitrage is still not profitable.
+    # Buy and sell in same system should lose money (10% spread each way + fees)
+    # Buy = base * 1.10 + fee, Sell = base * 0.90 - fee
+    # Net: roughly 0.90 / 1.10 = 0.818 (lose ~18%) plus fees
 
     initial_credits = @user.credits
 
@@ -269,11 +309,11 @@ class MarketControllerProceduralTest < ActionDispatch::IntegrationTest
     
     final_credits = @user.reload.credits
     
-    # Should have lost money - the spread guarantees this
+    # Should have lost money - the spread plus fees guarantees this
     assert final_credits < initial_credits,
       "Same-system buy/sell should result in loss due to spread"
     
-    # Verify we lost at least 5% - spread is ~18% but price dynamics reduce it
+    # Verify we lost at least 5% - spread is ~18% + fees but price dynamics reduce it
     loss = initial_credits - final_credits
     base_price = @system1.base_prices["iron"]
     transaction_value = (base_price * 1.10).round * 10

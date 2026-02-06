@@ -188,6 +188,39 @@ class System < ApplicationRecord
   end
 
   # ===========================================
+  # Marketplace & Trading
+  # ===========================================
+
+  # Get the marketplace (civic building) for this system
+  # @return [Building, nil] The marketplace building, or nil if none exists
+  def marketplace
+    buildings.find_by(function: "civic")
+  end
+
+  # Check if trading is enabled in this system
+  # Trading requires an operational marketplace (civic building)
+  # @return [Boolean] True if trading is enabled
+  def trading_enabled?
+    mp = marketplace
+    return false unless mp
+
+    mp.operational?
+  end
+
+  # Get the marketplace fee rate for this system
+  # @return [Float, nil] Fee rate, or nil if no marketplace
+  def marketplace_fee_rate
+    marketplace&.marketplace_fee_rate
+  end
+
+  # Get the NPC volume multiplier for this system
+  # Affects market inventory and restock rates
+  # @return [Integer] Multiplier (0 if no marketplace)
+  def npc_volume_multiplier
+    marketplace&.npc_volume_multiplier || 0
+  end
+
+  # ===========================================
   # Pricing (Static + Dynamic Model)
   # ===========================================
 
