@@ -61,7 +61,7 @@
       <%= button_to inbox_path(@message),
           method: :delete,
           class: "px-4 py-2 bg-blue-800 border border-red-800 text-sm text-red-400 hover:border-red-500 transition-colors",
-          data: { turbo_frame: "content_panel", turbo_confirm: "Delete this message?" } do %>
+          data: { turbo_frame: "content_panel" } do %>
         🗑️ Delete
       <% end %>
     </div>
