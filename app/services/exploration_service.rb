@@ -3,8 +3,8 @@
 # ExplorationService helps players find unexplored systems
 # Finds the closest coordinates that haven't been visited yet
 class ExplorationService
-  # Valid coordinate values (0-9, divisible by 3)
-  VALID_COORDS = [0, 3, 6, 9].freeze
+  # Valid coordinate values (-9 to 9, divisible by 3)
+  VALID_COORDS = [-9, -6, -3, 0, 3, 6, 9].freeze
 
   # Direction mappings for filtering candidates
   # Each direction is defined by which axis changes and in which direction
@@ -84,7 +84,7 @@ class ExplorationService
   # Total possible coordinates
   # @return [Integer]
   def total_coordinates
-    VALID_COORDS.size ** 3  # 4^3 = 64
+    VALID_COORDS.size ** 3  # 7^3 = 343
   end
 
   # Exploration progress as percentage

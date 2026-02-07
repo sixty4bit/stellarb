@@ -107,6 +107,37 @@ class ExplorationServiceTest < ActiveSupport::TestCase
     assert result[:z] > @cradle.z, "Up should have higher Z"
   end
 
+  test "closest_unexplored filters by direction antispinward into negative space" do
+    result = @service.closest_unexplored(direction: :antispinward)
+
+    assert_not_nil result
+    assert result[:x] < @cradle.x, "Antispinward should have lower X (negative)"
+    assert result[:x] < 0, "From origin, antispinward should find negative X"
+  end
+
+  test "closest_unexplored filters by direction south into negative space" do
+    result = @service.closest_unexplored(direction: :south)
+
+    assert_not_nil result
+    assert result[:y] < @cradle.y, "South should have lower Y (negative)"
+    assert result[:y] < 0, "From origin, south should find negative Y"
+  end
+
+  test "closest_unexplored filters by direction down into negative space" do
+    result = @service.closest_unexplored(direction: :down)
+
+    assert_not_nil result
+    assert result[:z] < @cradle.z, "Down should have lower Z (negative)"
+    assert result[:z] < 0, "From origin, down should find negative Z"
+  end
+
+  test "all six directions find candidates from origin" do
+    %i[spinward antispinward north south up down].each do |dir|
+      result = @service.closest_unexplored(direction: dir)
+      assert_not_nil result, "Direction #{dir} should find candidates"
+    end
+  end
+
   test "closest_unexplored returns nil when no coordinates in direction" do
     # Move ship to corner (9,9,9) and look spinward (positive X)
     corner_system = System.discover_at(x: 9, y: 9, z: 9, user: @user)
@@ -127,8 +158,8 @@ class ExplorationServiceTest < ActiveSupport::TestCase
   test "all_unexplored returns all unexplored sorted by distance" do
     results = @service.all_unexplored
 
-    # Should be 63 unexplored (64 total - 1 visited)
-    assert_equal 63, results.size
+    # Should be 342 unexplored (343 total - 1 visited)
+    assert_equal 342, results.size
 
     # Should be sorted by distance
     distances = results.map { |r| r[:distance] }
@@ -154,8 +185,8 @@ class ExplorationServiceTest < ActiveSupport::TestCase
   # Progress tracking tests
   # ===========================================
 
-  test "total_coordinates returns 64" do
-    assert_equal 64, @service.total_coordinates
+  test "total_coordinates returns 343" do
+    assert_equal 343, @service.total_coordinates
   end
 
   test "explored_count tracks visited valid coordinates" do
@@ -193,8 +224,8 @@ class ExplorationServiceTest < ActiveSupport::TestCase
   end
 
   test "progress_percentage calculates correctly" do
-    # 1 out of 64 explored
-    assert_in_delta 1.56, @service.progress_percentage, 0.01
+    # 1 out of 343 explored
+    assert_in_delta 0.29, @service.progress_percentage, 0.01
 
     # Visit a few more
     sys1 = System.discover_at(x: 3, y: 0, z: 0, user: @user)
@@ -203,8 +234,8 @@ class ExplorationServiceTest < ActiveSupport::TestCase
     SystemVisit.record_visit(@user, sys2)
 
     service = ExplorationService.new(@user, @ship)
-    # 3 out of 64 = 4.69%
-    assert_in_delta 4.69, service.progress_percentage, 0.01
+    # 3 out of 343 = 0.87%
+    assert_in_delta 0.87, service.progress_percentage, 0.01
   end
 
   # ===========================================
