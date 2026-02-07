@@ -111,15 +111,24 @@
           { name: "Factory", function: "refining", icon: "🏭", desc: "Refine materials" }
         ]
       %>
+      <%
+        existing_functions = Building.where(system: @system).pluck(:function).uniq
+        limited_types = %w[logistics civic] # one per system
+      %>
       <% buildable_types.each do |building_type| %>
-        <div class="bg-blue-950 border border-blue-800 p-4 text-center">
+        <% already_exists = limited_types.include?(building_type[:function]) && existing_functions.include?(building_type[:function]) %>
+        <div class="bg-blue-950 border border-blue-800 p-4 text-center <%= 'opacity-50' if already_exists %>">
           <div class="text-2xl mb-2"><%= building_type[:icon] %></div>
           <div class="text-white font-semibold mb-1"><%= building_type[:name] %></div>
           <div class="text-xs text-gray-400 mb-3"><%= building_type[:desc] %></div>
-          <%= link_to new_building_path(system_id: @system.id, function: building_type[:function]),
-              class: "inline-block px-3 py-1 bg-orange-800 hover:bg-orange-700 border border-orange-600 text-sm transition-colors",
-              data: { turbo_frame: "content_panel" } do %>
-            Build
+          <% if already_exists %>
+            <span class="inline-block px-3 py-1 bg-gray-700 text-gray-400 text-sm">Built</span>
+          <% else %>
+            <%= link_to new_building_path(system_id: @system.id, function: building_type[:function]),
+                class: "inline-block px-3 py-1 bg-orange-800 hover:bg-orange-700 border border-orange-600 text-sm transition-colors",
+                data: { turbo_frame: "content_panel" } do %>
+              Build
+            <% end %>
           <% end %>
         </div>
       <% end %>
