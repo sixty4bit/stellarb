@@ -99,6 +99,16 @@
     <li data-keyboard-navigation-target="menuItem"
         data-menu-highlight-target="item"
         data-action="mouseenter->keyboard-navigation#selectItem">
+      <%= link_to leaderboards_path,
+          class: "block px-3 py-3 sm:py-2 hover:bg-blue-800 transition-colors rounded min-h-[44px] flex items-center",
+          data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>
+        <span>Leaderboard</span>
+      <% end %>
+    </li>
+
+    <li data-keyboard-navigation-target="menuItem"
+        data-menu-highlight-target="item"
+        data-action="mouseenter->keyboard-navigation#selectItem">
       <%= link_to about_path,
           class: "block px-3 py-3 sm:py-2 hover:bg-blue-800 transition-colors rounded min-h-[44px] flex items-center",
           data: { turbo_frame: "content_panel", turbo_action: "advance" } do %>

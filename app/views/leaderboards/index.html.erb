@@ -1,0 +1,32 @@
+<%= turbo_frame_tag "content_panel" do %>
+  <div class="p-4 space-y-6">
+    <h1 class="text-xl font-bold text-orange-500 tracking-wide">📡 Exploration Leaderboard</h1>
+
+    <% period_labels = { today: "Today", this_week: "This Week", this_month: "This Month", this_year: "This Year", all_time: "All Time" } %>
+
+    <% @periods.each do |period, entries| %>
+      <div class="bg-blue-900/50 border border-blue-700 rounded p-4">
+        <h2 class="text-lg font-semibold text-orange-500 mb-3 border-b border-blue-700 pb-2">
+          <%= period_labels[period] %>
+        </h2>
+
+        <% if entries.any? %>
+          <div class="space-y-1">
+            <% entries.each_with_index do |entry, i| %>
+              <% is_current = entry[:user]&.id == current_user.id %>
+              <div class="flex justify-between px-2 py-1 rounded <%= 'bg-blue-800 text-orange-500' if is_current %>">
+                <span>
+                  <span class="text-blue-400 font-mono">#<%= i + 1 %></span>
+                  <span class="<%= 'text-orange-500' if is_current %>"><%= entry[:user]&.name || "Unknown" %></span>
+                </span>
+                <span class="text-lime-400 font-mono"><%= entry[:count] %> coords</span>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-blue-400 italic">No explorers yet. Be the first!</p>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

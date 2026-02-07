@@ -124,6 +124,8 @@ Rails.application.routes.draw do
     post :reset, as: :reset_onboarding
   end
 
+  resources :leaderboards, only: [:index]
+
   get :about, to: 'about#index'
 
   # Authentication (passwordless)
