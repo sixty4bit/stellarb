@@ -49,6 +49,12 @@ shared: &shared
     queue: default
     schedule: every hour at minute 30
 
+  # Leaderboard Cache Warming - refresh exploration leaderboard caches
+  leaderboard_cache:
+    class: LeaderboardCacheJob
+    queue: default
+    schedule: every 5 minutes
+
   # Market Restock - replenish market inventory
   # Run hourly to restore stock based on restock_rate
   market_restock:
