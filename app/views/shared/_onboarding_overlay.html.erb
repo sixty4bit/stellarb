@@ -6,11 +6,12 @@
 <% config = onboarding_step_config(user.onboarding_step) %>
 <% progress = onboarding_progress(user) %>
 
+<%# Hide mobile-only steps on desktop via sm:hidden %>
 <div id="onboarding-sidebar"
      data-controller="onboarding"
      data-onboarding-step-value="<%= user.onboarding_step %>"
      data-onboarding-highlight-value="<%= config[:highlight] %>"
-     class="fixed bottom-0 left-0 right-0 sm:top-0 sm:right-0 sm:left-auto sm:bottom-auto sm:h-full w-full sm:w-80 z-40 flex flex-col pointer-events-none">
+     class="fixed bottom-0 left-0 right-0 sm:top-0 sm:right-0 sm:left-auto sm:bottom-auto sm:h-full w-full sm:w-80 z-40 flex flex-col pointer-events-none <%= 'sm:hidden' if config[:mobile_only] %>">
   
   <!-- Sidebar Panel: bottom card on mobile, right sidebar on desktop -->
   <div class="m-2 sm:m-4 bg-blue-900/95 border-2 border-orange-500 rounded-lg shadow-2xl pointer-events-auto flex flex-col max-h-[50vh] sm:max-h-[calc(100vh-2rem)]"

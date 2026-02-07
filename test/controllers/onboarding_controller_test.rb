@@ -8,7 +8,8 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     @user = User.create!(
       email: "onboarding@test.com",
       name: "OnboardUser",
-      profile_completed_at: 1.day.ago
+      profile_completed_at: 1.day.ago,
+      onboarding_step: "profile_setup"
     )
     sign_in_as(@user)
   end
@@ -92,7 +93,7 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
 
     @user.reload
     assert_not @user.onboarding_complete?
-    assert_equal "profile_setup", @user.onboarding_step
+    assert_equal "hamburger_intro", @user.onboarding_step
     assert_redirected_to inbox_index_path
   end
 
@@ -115,6 +116,48 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "#onboarding-sidebar", count: 0
+  end
+
+  # ===========================================
+  # stellarb-77l.3: Pre-tutorial hamburger intro step
+  # ===========================================
+
+  test "new user starts on hamburger_intro step" do
+    user = User.create!(
+      email: "fresh@test.com",
+      name: "FreshUser",
+      profile_completed_at: 1.day.ago
+    )
+    assert_equal "hamburger_intro", user.onboarding_step
+  end
+
+  test "hamburger intro overlay has mobile-only class" do
+    user = User.create!(
+      email: "mobile@test.com",
+      name: "MobileUser",
+      profile_completed_at: 1.day.ago
+    )
+    sign_in_as(user)
+
+    get inbox_index_path
+    assert_response :success
+    assert_select "#onboarding-sidebar" do |el|
+      assert_includes el.first["class"], "sm:hidden"
+    end
+  end
+
+  test "advance from hamburger_intro goes to profile_setup" do
+    user = User.create!(
+      email: "burger@test.com",
+      name: "BurgerUser",
+      profile_completed_at: 1.day.ago
+    )
+    sign_in_as(user)
+    assert_equal "hamburger_intro", user.onboarding_step
+
+    post advance_onboarding_path
+    user.reload
+    assert_equal "profile_setup", user.onboarding_step
   end
 
   # ===========================================
@@ -147,6 +190,11 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
 
     assert user.needs_onboarding?
     assert_not user.profile_completed?
+
+    # Advance past hamburger_intro to profile_setup
+    post advance_onboarding_path
+    user.reload
+    assert_equal "profile_setup", user.onboarding_step
 
     # Advance past profile_setup to ships_tour
     post advance_onboarding_path

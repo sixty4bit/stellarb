@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_07_200041) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_07_204207) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -531,7 +531,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_07_200041) do
     t.integer "level_tier", default: 1
     t.string "name"
     t.datetime "onboarding_completed_at"
-    t.string "onboarding_step", default: "profile_setup", null: false
+    t.string "onboarding_step", default: "hamburger_intro", null: false
     t.integer "phase", default: 1, null: false
     t.datetime "profile_completed_at"
     t.string "short_id"

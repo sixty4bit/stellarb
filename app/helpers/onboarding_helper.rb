@@ -3,6 +3,14 @@
 # Helper methods for onboarding overlay component
 module OnboardingHelper
   STEP_CONFIGS = {
+    "hamburger_intro" => {
+      title: "The Menu Is Here! ☝️",
+      description: "Tap the menu button to access navigation, ships, trade routes, and more. Everything you need is in here!",
+      highlight: "[aria-label='Open menu']",
+      icon: "☰",
+      action_text: "Got It!",
+      mobile_only: true
+    },
     "profile_setup" => {
       title: "Welcome to StellArb!",
       description: "Let's get you set up. First, we'll customize your profile and get you familiar with the interface.",

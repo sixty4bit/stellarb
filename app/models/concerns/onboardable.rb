@@ -6,6 +6,7 @@ module Onboardable
   extend ActiveSupport::Concern
 
   ONBOARDING_STEPS = %w[
+    hamburger_intro
     profile_setup
     ships_tour
     navigation_tutorial
@@ -17,13 +18,14 @@ module Onboardable
   included do
     # Enum for onboarding step - provides step-specific query methods
     enum :onboarding_step, {
+      hamburger_intro: "hamburger_intro",
       profile_setup: "profile_setup",
       ships_tour: "ships_tour",
       navigation_tutorial: "navigation_tutorial",
       trade_routes: "trade_routes",
       workers_overview: "workers_overview",
       inbox_introduction: "inbox_introduction"
-    }, default: :profile_setup
+    }, default: :hamburger_intro
 
     # Scope for users still in onboarding
     scope :onboarding, -> { where(onboarding_completed_at: nil) }

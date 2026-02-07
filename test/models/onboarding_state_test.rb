@@ -15,8 +15,8 @@ class OnboardingStateTest < ActiveSupport::TestCase
   # Initial State
   # ===========================================
 
-  test "new user starts with onboarding_step profile_setup" do
-    assert_equal "profile_setup", @user.onboarding_step
+  test "new user starts with onboarding_step hamburger_intro" do
+    assert_equal "hamburger_intro", @user.onboarding_step
   end
 
   test "new user has onboarding_complete? false" do
@@ -32,11 +32,14 @@ class OnboardingStateTest < ActiveSupport::TestCase
   # ===========================================
 
   test "ONBOARDING_STEPS constant defines correct order ending at inbox" do
-    expected = %w[profile_setup ships_tour navigation_tutorial trade_routes workers_overview inbox_introduction]
+    expected = %w[hamburger_intro profile_setup ships_tour navigation_tutorial trade_routes workers_overview inbox_introduction]
     assert_equal expected, User::ONBOARDING_STEPS
   end
 
   test "advance_onboarding_step! moves to next step through all steps ending at inbox" do
+    assert_equal "hamburger_intro", @user.onboarding_step
+
+    @user.advance_onboarding_step!
     assert_equal "profile_setup", @user.onboarding_step
 
     @user.advance_onboarding_step!
@@ -105,11 +108,11 @@ class OnboardingStateTest < ActiveSupport::TestCase
   end
 
   test "current_onboarding_step returns step symbol when in progress" do
-    assert_equal :profile_setup, @user.current_onboarding_step
+    assert_equal :hamburger_intro, @user.current_onboarding_step
   end
 
   test "on_onboarding_step? returns true for current step" do
-    assert @user.on_onboarding_step?(:profile_setup)
+    assert @user.on_onboarding_step?(:hamburger_intro)
     assert_not @user.on_onboarding_step?(:ships_tour)
   end
 
@@ -118,7 +121,7 @@ class OnboardingStateTest < ActiveSupport::TestCase
   # ===========================================
 
   test "enum helpers work for onboarding_step" do
-    assert @user.profile_setup?
+    assert @user.hamburger_intro?
 
     @user.update!(onboarding_step: "ships_tour")
     assert @user.ships_tour?
@@ -138,7 +141,7 @@ class OnboardingStateTest < ActiveSupport::TestCase
     @user.reset_onboarding!
 
     assert_not @user.onboarding_complete?
-    assert_equal "profile_setup", @user.onboarding_step
+    assert_equal "hamburger_intro", @user.onboarding_step
     assert_nil @user.onboarding_completed_at
   end
 

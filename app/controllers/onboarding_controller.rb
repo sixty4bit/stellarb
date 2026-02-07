@@ -34,6 +34,8 @@ class OnboardingController < ApplicationController
 
     # Redirect based on current step to guide user to the right place
     case current_user.onboarding_step
+    when "hamburger_intro"
+      redirect_to inbox_index_path # Will show hamburger intro overlay
     when "profile_setup"
       redirect_to inbox_index_path # Will show profile setup overlay
     when "ships_tour"
