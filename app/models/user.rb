@@ -18,6 +18,10 @@ class User < ApplicationRecord
   has_many :owned_systems, class_name: 'System', foreign_key: 'owner_id'
   has_many :hirings, dependent: :destroy
   has_many :hired_recruits, through: :hirings
+
+  def assistant
+    hired_recruits.find_by(role: "assistant")
+  end
   has_many :system_visits, dependent: :destroy
   has_many :visited_systems, through: :system_visits, source: :system
   has_many :routes, dependent: :destroy

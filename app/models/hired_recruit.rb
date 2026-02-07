@@ -1,8 +1,13 @@
 class HiredRecruit < ApplicationRecord
+  ASSISTANT_COOLDOWN = 4.hours
+
   # Associations
   belongs_to :original_recruit, class_name: 'Recruit', optional: true
   has_many :hirings, dependent: :destroy
   has_many :users, through: :hirings
+
+  # Scopes
+  scope :assistants, -> { where(role: "assistant") }
 
   # Constants (same as Recruit)
   RACES = Recruit::RACES
@@ -149,6 +154,7 @@ class HiredRecruit < ApplicationRecord
   validates :chaos_factor, presence: true, numericality: { in: 0..100 }
   validates :age_days, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validates :lifespan_days, numericality: { greater_than: 0 }, allow_nil: true
+  validate :only_one_assistant_per_user
 
   # Callbacks
   before_create :generate_lifespan
@@ -342,6 +348,27 @@ class HiredRecruit < ApplicationRecord
     raw_modifier.clamp(MINIMUM_EFFECTIVENESS, 1.0).round(3)
   end
 
+  # ==========================================
+  # Assistant Role System
+  # ==========================================
+
+  def promote_to_assistant!(user)
+    update!(role: "assistant", assistant_cooldown_until: ASSISTANT_COOLDOWN.from_now)
+  end
+
+  def demote_to_crew!
+    update!(role: "crew")
+  end
+
+  def on_cooldown?
+    assistant_cooldown_until.present? && assistant_cooldown_until > Time.current
+  end
+
+  def cooldown_remaining
+    return 0 unless on_cooldown?
+    assistant_cooldown_until - Time.current
+  end
+
   # Calculate total effectiveness combining age decay and quirks
   # This is the final modifier to apply to NPC performance
   #
@@ -351,6 +378,19 @@ class HiredRecruit < ApplicationRecord
   end
 
   private
+
+  # Validate only one assistant per user
+  def only_one_assistant_per_user
+    return unless role == "assistant"
+
+    users.each do |user|
+      existing = user.hired_recruits.where(role: "assistant").where.not(id: id)
+      if existing.exists?
+        errors.add(:role, "user can only have one assistant")
+        return
+      end
+    end
+  end
 
   # Generate quirks based on chaos factor using ROADMAP rules
   def generate_quirks_for_chaos(chaos)
