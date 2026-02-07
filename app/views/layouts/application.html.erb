@@ -131,7 +131,9 @@
     <% if flash.any? %>
       <div class="fixed top-4 right-4 space-y-2 z-50">
         <% flash.each do |type, msg| %>
-          <div class="bg-<%= type == 'notice' ? 'green' : 'red' %>-800 border border-<%= type == 'notice' ? 'green' : 'red' %>-600 text-white px-4 py-2 rounded shadow-lg">
+          <div class="bg-<%= type == 'notice' ? 'green' : 'red' %>-800 border border-<%= type == 'notice' ? 'green' : 'red' %>-600 text-white px-4 py-2 rounded shadow-lg cursor-pointer"
+               data-controller="flash"
+               data-action="click->flash#dismiss">
             <%= msg %>
           </div>
         <% end %>
