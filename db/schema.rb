@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_07_192458) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_07_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -28,7 +28,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_07_192458) do
     t.bigint "system_id", null: false
     t.integer "tier"
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
+    t.bigint "user_id"
     t.string "uuid", limit: 36
     t.index ["disabled_at"], name: "index_buildings_on_disabled_at", where: "(disabled_at IS NOT NULL)"
     t.index ["short_id"], name: "index_buildings_on_short_id", unique: true
