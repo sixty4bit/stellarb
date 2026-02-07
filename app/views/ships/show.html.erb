@@ -1,8 +1,8 @@
 <turbo-frame id="content_panel">
 <%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
 
-<div class="max-w-6xl">
-  <div class="flex items-center justify-between mb-6">
+<div class="max-w-6xl px-4">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
     <div>
       <h1 class="text-2xl font-bold text-orange-500"><%= @ship.name %> <span class="text-gray-500">(<%= @ship.short_id %>)</span></h1>
       <div class="text-sm text-gray-400">
@@ -18,7 +18,7 @@
   </div>
 
   <!-- Location -->
-  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-4">
     <h2 class="text-lime-400 font-bold mb-2">Location</h2>
     <% if @ship.current_system %>
       <p class="text-white">Docked at <span class="text-orange-400"><%= @ship.current_system.name %></span></p>
@@ -39,7 +39,7 @@
   </turbo-frame>
 
   <!-- Health -->
-  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-4">
     <h2 class="text-lime-400 font-bold mb-2">🛡️ Health</h2>
     <div class="flex justify-between text-sm mb-1">
       <span class="text-gray-400">Hull Integrity</span>
@@ -59,9 +59,9 @@
   </div>
 
   <!-- Ship Stats -->
-  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-4">
     <h2 class="text-lime-400 font-bold mb-2">Ship Statistics</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
       <div>
         <div class="text-gray-400 text-sm">Cargo Capacity</div>
         <div class="text-white text-lg"><%= @ship.ship_attributes["cargo_capacity"] || 0 %> tons</div>
@@ -101,7 +101,7 @@
   <%= render 'ships/upgrades', ship: @ship %>
 
   <!-- Crew -->
-  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-4">
     <h2 class="text-lime-400 font-bold mb-2">Crew</h2>
     <% if @ship.crew.any? %>
       <div class="space-y-2">
@@ -122,7 +122,7 @@
   </div>
 
   <!-- Actions -->
-  <div class="flex gap-4 mt-6">
+  <div class="flex flex-wrap gap-3 sm:gap-4 mt-6">
     <%= link_to "Set Navigation", "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
     <%= link_to "Manage Cargo", "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
     <%= link_to "Assign to Route", "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>

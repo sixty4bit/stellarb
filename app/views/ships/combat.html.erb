@@ -1,28 +1,28 @@
 <turbo-frame id="content_panel">
 <%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
 
-<div class="max-w-6xl">
+<div class="max-w-6xl px-4">
   <h1 class="text-2xl font-bold mb-1 text-orange-500">Combat</h1>
   <div class="text-sm text-gray-400 mb-6">Combat-ready vessels and battle logs</div>
 
   <!-- Combat Stats -->
-  <div class="grid grid-cols-3 gap-4 mb-6">
-    <div class="bg-blue-900 border border-blue-700 p-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4">
       <div class="text-gray-400 text-sm">Combat Ships</div>
       <div class="text-white text-2xl font-bold"><%= @ships.select { |s| (s.ship_attributes["hardpoints"] || 0) > 0 }.count %></div>
     </div>
-    <div class="bg-blue-900 border border-blue-700 p-4">
+    <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4">
       <div class="text-gray-400 text-sm">Total Hardpoints</div>
       <div class="text-white text-2xl font-bold"><%= @ships.sum { |s| s.ship_attributes["hardpoints"] || 0 } %></div>
     </div>
-    <div class="bg-blue-900 border border-blue-700 p-4">
+    <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4">
       <div class="text-gray-400 text-sm">Recent Engagements</div>
       <div class="text-white text-2xl font-bold"><%= @recent_battles.count %></div>
     </div>
   </div>
 
   <!-- Combat-Ready Ships -->
-  <div class="bg-blue-900 border border-blue-700 p-4 mb-6">
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-6">
     <h2 class="text-lime-400 font-bold mb-4">Combat-Ready Fleet</h2>
     <% combat_ships = @ships.select { |s| (s.ship_attributes["hardpoints"] || 0) > 0 } %>
     <% if combat_ships.any? %>
@@ -56,7 +56,7 @@
   </div>
 
   <!-- Recent Battles -->
-  <div class="bg-blue-900 border border-blue-700 p-4">
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4">
     <h2 class="text-lime-400 font-bold mb-4">Recent Engagements</h2>
     <% if @recent_battles.any? %>
       <div class="space-y-2">

@@ -1,21 +1,21 @@
 <turbo-frame id="content_panel">
 <%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
 
-<div class="max-w-6xl">
+<div class="max-w-6xl px-4">
   <h1 class="text-2xl font-bold mb-1 text-orange-500">Trading</h1>
   <div class="text-sm text-gray-400 mb-6">Manage your automated trade routes</div>
 
   <!-- Quick Stats -->
-  <div class="grid grid-cols-3 gap-4 mb-6">
-    <div class="bg-blue-900 border border-blue-700 p-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4">
       <div class="text-gray-400 text-sm">Active Ships</div>
       <div class="text-white text-2xl font-bold"><%= @ships.count %></div>
     </div>
-    <div class="bg-blue-900 border border-blue-700 p-4">
+    <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4">
       <div class="text-gray-400 text-sm">Active Routes</div>
       <div class="text-white text-2xl font-bold"><%= @routes.count %></div>
     </div>
-    <div class="bg-blue-900 border border-blue-700 p-4">
+    <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4">
       <div class="text-gray-400 text-sm">Est. Profit/hr</div>
       <div class="text-lime-400 text-2xl font-bold">0 cr</div>
     </div>
@@ -49,7 +49,7 @@
   </div>
 
   <!-- Routes Link -->
-  <div class="flex gap-4">
+  <div class="flex flex-col sm:flex-row gap-4">
     <%= link_to routes_path,
         class: "px-4 py-2 bg-orange-800 text-white hover:bg-orange-700 rounded transition-colors",
         data: { turbo_frame: "content_panel" } do %>
