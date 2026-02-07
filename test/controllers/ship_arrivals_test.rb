@@ -98,7 +98,28 @@ class ShipArrivalsTest < ActionDispatch::IntegrationTest
   end
 
   # Arrival notification tests (4s1.5)
-  test "arrival creates inbox notification message" do
+  test "arrival creates inbox notification message on first visit" do
+    destination = systems(:alpha_centauri)
+    # Ensure no prior visits so this IS a first visit
+    SystemVisit.where(user: @user, system: destination).destroy_all
+
+    @ship.update!(
+      status: "in_transit",
+      destination_system: destination,
+      arrival_at: 1.minute.ago,
+      pending_intent: "trade"
+    )
+
+    @ship.check_arrival!
+
+    message = Message.where(user: @user, from: "Navigation System").last
+    assert message, "Expected arrival notification on first visit"
+    assert_equal "Arrival at #{destination.name}", message.title
+    assert_includes message.body, @ship.name
+    assert_equal "travel", message.category
+  end
+
+  test "repeat visit creates no arrival notification" do
     destination = systems(:alpha_centauri)
     # Create a prior visit so this isn't a first visit
     SystemVisit.record_visit(@user, destination)
@@ -110,16 +131,10 @@ class ShipArrivalsTest < ActionDispatch::IntegrationTest
       pending_intent: "trade"
     )
 
-    assert_difference "Message.count", 1 do
-      @ship.check_arrival!
-    end
-
-    message = Message.last
-    assert_equal @user, message.user
-    assert_equal "Arrival at #{destination.name}", message.title
-    assert_includes message.body, @ship.name
-    assert_equal "Navigation System", message.from
-    assert_equal "travel", message.category
+    travel_messages_before = Message.where(user: @user, category: "travel").count
+    @ship.check_arrival!
+    assert_equal travel_messages_before, Message.where(user: @user, category: "travel").count,
+      "Repeat visit should not create arrival notification"
   end
 
   # First visit notification tests (4s1.8)
@@ -146,7 +161,7 @@ class ShipArrivalsTest < ActionDispatch::IntegrationTest
     assert_equal "Exploration Bureau", discovery_message.from
   end
 
-  test "subsequent visits do not create discovery notification" do
+  test "subsequent visits do not create any notifications" do
     destination = systems(:alpha_centauri)
     # Create a prior visit
     SystemVisit.record_visit(@user, destination)
@@ -158,14 +173,9 @@ class ShipArrivalsTest < ActionDispatch::IntegrationTest
       pending_intent: "trade"
     )
 
-    # Should create only 1 message: arrival (no discovery)
-    assert_difference "Message.count", 1 do
+    # Should create no travel or discovery messages for repeat visits
+    assert_no_difference -> { Message.where(user: @user, category: %w[travel discovery]).count } do
       @ship.check_arrival!
     end
-
-    # The message should be arrival, not discovery
-    message = Message.last
-    assert_equal "travel", message.category
-    assert_not_equal "discovery", message.category
   end
 end

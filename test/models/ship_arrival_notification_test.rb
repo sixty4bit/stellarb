@@ -7,17 +7,10 @@ class ShipArrivalNotificationTest < ActiveSupport::TestCase
     @user = users(:one)
     @origin = systems(:cradle)
     @destination = systems(:alpha_centauri)
+  end
 
-    # Mark destination as previously visited so no discovery message is created
-    SystemVisit.create!(
-      user: @user,
-      system: @destination,
-      visit_count: 1,
-      first_visited_at: 1.day.ago,
-      last_visited_at: 1.hour.ago
-    )
-
-    @ship = Ship.create!(
+  def create_ship_in_transit
+    Ship.create!(
       name: "Notification Test Ship",
       user: @user,
       race: "vex",
@@ -30,66 +23,70 @@ class ShipArrivalNotificationTest < ActiveSupport::TestCase
       location_y: @origin.y,
       location_z: @origin.z,
       destination_system: @destination,
-      arrival_at: 1.minute.ago  # Already arrived
+      arrival_at: 1.minute.ago
     )
   end
 
-  test "check_arrival! creates inbox message on arrival" do
-    assert_difference -> { @user.messages.count }, 1 do
-      @ship.check_arrival!
+  test "no arrival message for repeat visit" do
+    # Mark destination as previously visited
+    SystemVisit.create!(
+      user: @user,
+      system: @destination,
+      visit_count: 1,
+      first_visited_at: 1.day.ago,
+      last_visited_at: 1.hour.ago
+    )
+
+    ship = create_ship_in_transit
+
+    assert_no_difference -> { @user.messages.where(category: "travel").count } do
+      ship.check_arrival!
     end
   end
 
-  test "arrival message has correct title" do
-    @ship.check_arrival!
+  test "first visit creates arrival notification" do
+    ship = create_ship_in_transit
 
-    message = @user.messages.last
-    assert_includes message.title, @destination.name
-    assert_match /arrival/i, message.title
+    ship.check_arrival!
+
+    arrival_msg = @user.messages.find_by(from: "Navigation System", category: "travel")
+    assert arrival_msg, "Expected an arrival notification for first visit"
+    assert_includes arrival_msg.title, @destination.name
   end
 
-  test "arrival message has correct body" do
-    @ship.check_arrival!
+  test "first visit creates discovery notification" do
+    ship = create_ship_in_transit
 
-    message = @user.messages.last
-    assert_includes message.body, @ship.name
-    assert_includes message.body, @destination.name
+    ship.check_arrival!
+
+    discovery_msg = @user.messages.find_by(from: "Exploration Bureau")
+    assert discovery_msg, "Expected a discovery notification for first visit"
+    assert_includes discovery_msg.title, @destination.name
   end
 
-  test "arrival message has correct sender" do
-    @ship.check_arrival!
+  test "first visit creates exactly two messages" do
+    ship = create_ship_in_transit
 
-    message = @user.messages.last
-    assert_equal "Navigation System", message.from
-  end
-
-  test "arrival message has travel category" do
-    @ship.check_arrival!
-
-    message = @user.messages.last
-    assert_equal "travel", message.category
-  end
-
-  test "arrival message belongs to ship owner" do
-    @ship.check_arrival!
-
-    message = @user.messages.last
-    assert_equal @user.id, message.user_id
+    assert_difference -> { @user.messages.count }, 2 do
+      ship.check_arrival!
+    end
   end
 
   test "no message if ship not in transit" do
-    @ship.update!(status: "docked", destination_system: nil, arrival_at: nil, current_system: @origin)
+    ship = create_ship_in_transit
+    ship.update!(status: "docked", destination_system: nil, arrival_at: nil, current_system: @origin)
 
     assert_no_difference -> { @user.messages.count } do
-      @ship.check_arrival!
+      ship.check_arrival!
     end
   end
 
   test "no message if arrival time not reached" do
-    @ship.update!(arrival_at: 1.hour.from_now)
+    ship = create_ship_in_transit
+    ship.update!(arrival_at: 1.hour.from_now)
 
     assert_no_difference -> { @user.messages.count } do
-      @ship.check_arrival!
+      ship.check_arrival!
     end
   end
 end

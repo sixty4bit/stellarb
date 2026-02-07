@@ -520,7 +520,7 @@ class Ship < ApplicationRecord
     PirateEncounterJob.perform_now(self, arrived_via_warp: false)
 
     # Send arrival notification to inbox
-    send_arrival_notification(arrived_at_system)
+    send_arrival_notification(arrived_at_system) if is_first_visit
 
     # Send discovery notification for first visits
     send_discovery_notification(arrived_at_system) if is_first_visit
