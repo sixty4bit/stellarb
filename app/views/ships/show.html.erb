@@ -42,6 +42,9 @@
     <%= render 'ships/fuel', ship: @ship %>
   </turbo-frame>
 
+  <!-- Incidents -->
+  <%= render 'shared/incidents', asset: @ship %>
+
   <!-- Health -->
   <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-4">
     <h2 class="text-lime-400 font-bold mb-2">🛡️ Health</h2>

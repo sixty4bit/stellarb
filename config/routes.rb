@@ -79,6 +79,9 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :promotions, only: [:create, :destroy]
+  resources :resolutions, only: [:create]
+
   resources :workers, only: [:index, :show] do
     collection do
       get :recruiter

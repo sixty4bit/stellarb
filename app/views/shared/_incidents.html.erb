@@ -1,0 +1,50 @@
+<% incidents = asset.incidents.unresolved %>
+<% if incidents.any? %>
+  <div class="bg-red-900/30 border border-red-800 p-3 sm:p-4 mb-4">
+    <h2 class="text-red-400 font-bold mb-3">⚠️ Active Incidents (<%= incidents.size %>)</h2>
+
+    <% assistant = current_user.hired_recruits.assistants.first %>
+    <% nearby_npcs = current_user.hired_recruits.joins(:hirings).where(hirings: { assignable: asset, status: :active }).where.not(role: "assistant") %>
+
+    <div class="space-y-4">
+      <% incidents.each do |incident| %>
+        <div class="bg-red-900/50 border border-red-700 p-3 rounded">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-white font-bold">Severity <%= incident.severity %> — <%= incident.severity_tier_name.humanize %></span>
+            <span class="text-red-300 text-sm">-<%= incident.functionality_loss_percent %>% functionality</span>
+          </div>
+          <p class="text-gray-300 text-sm mb-3"><%= incident.description %></p>
+
+          <div class="flex flex-wrap gap-2">
+            <%# Send Assistant button %>
+            <% if assistant && !assistant.on_cooldown? %>
+              <%= button_to resolutions_path(incident_id: incident.id, resolver_id: assistant.id, resolver_type: "assistant"),
+                  method: :post,
+                  class: "px-3 py-1.5 bg-green-700 text-white hover:bg-green-600 rounded text-sm transition-colors" do %>
+                Send Assistant (<%= assistant.name %>)
+              <% end %>
+            <% elsif assistant&.on_cooldown? %>
+              <span class="px-3 py-1.5 bg-green-900/50 text-green-400/50 rounded text-sm cursor-not-allowed">
+                Assistant on cooldown (<%= distance_of_time_in_words(Time.current, assistant.assistant_cooldown_until) %>)
+              </span>
+            <% end %>
+
+            <%# Nearby crew buttons %>
+            <% nearby_npcs.each do |npc| %>
+              <%= button_to resolutions_path(incident_id: incident.id, resolver_id: npc.id, resolver_type: "nearby"),
+                  method: :post,
+                  form: { data: { turbo_confirm: "Send #{npc.name}? ⚠ 40% chance of failure — situation may escalate!" } },
+                  class: "px-3 py-1.5 bg-orange-700 text-white hover:bg-orange-600 rounded text-sm transition-colors" do %>
+                Send Nearby: <%= npc.name %> ⚠️
+              <% end %>
+            <% end %>
+
+            <% if assistant.nil? && nearby_npcs.empty? %>
+              <span class="text-gray-500 text-sm">No available crew to resolve this incident.</span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

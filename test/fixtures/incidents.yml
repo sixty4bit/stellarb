@@ -1,0 +1,19 @@
+# Test incident fixtures
+ship_incident:
+  asset: hauler (Ship)
+  severity: 2
+  description: "Component failure in cargo bay"
+  uuid: 01900000-0000-7000-8000-000000inc001
+
+building_incident:
+  asset: mining_facility (Building)
+  severity: 3
+  description: "System failure in mining drill"
+  uuid: 01900000-0000-7000-8000-000000inc002
+
+resolved_incident:
+  asset: hauler (Ship)
+  severity: 1
+  description: "Minor glitch resolved"
+  resolved_at: <%= 1.day.ago %>
+  uuid: 01900000-0000-7000-8000-000000inc003
