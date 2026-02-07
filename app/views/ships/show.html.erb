@@ -10,7 +10,11 @@
         <span class="text-<%= @ship.status == 'docked' ? 'lime' : @ship.status == 'in_transit' ? 'sky' : 'orange' %>-400">
           <%= @ship.status.upcase %>
         </span>
+        <% if @ship.race == "grelmak" %>
+          <span data-testid="chaos-indicator" class="text-orange-400 ml-2">⚡ Chaos</span>
+        <% end %>
       </div>
+      <div data-testid="race-flavor" class="text-xs text-gray-500 mt-1"><%= race_description(@ship.race) %></div>
     </div>
     <%= link_to ships_path, class: "text-sky-400 hover:text-sky-300" do %>
       ← Back to Ships
