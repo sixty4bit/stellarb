@@ -25,7 +25,7 @@ module Seeds
     SYSTEMS = [
       {
         name: "Mira Station",
-        coords: [3, 2, 0],
+        coords: [3, 1, 0],
         description: "A mining outpost rich in raw ore. Miners here need processed metals.",
         properties: {
           star_type: "red_dwarf",
@@ -43,7 +43,7 @@ module Seeds
       },
       {
         name: "Verdant Gardens",
-        coords: [2, 3, 1],
+        coords: [1, 3, 1],
         description: "An agricultural hub with hydroponics bays. They need metals for expansion.",
         properties: {
           star_type: "yellow_dwarf",
@@ -61,7 +61,7 @@ module Seeds
       },
       {
         name: "Nexus Hub",
-        coords: [1, 3, 2],
+        coords: [2, 1, 3],
         description: "A trade hub and transit point. High-value metals are in demand here.",
         properties: {
           star_type: "blue_giant",
@@ -79,7 +79,7 @@ module Seeds
       },
       {
         name: "Beacon Refinery",
-        coords: [1, 2, 1],
+        coords: [3, 0, 2],
         description: "A refinery station. They produce refined metals but need raw materials.",
         properties: {
           star_type: "orange_dwarf",

@@ -6,7 +6,7 @@ class Building < ApplicationRecord
   class UpgradeError < StandardError; end
 
   # Associations
-  belongs_to :user
+  belongs_to :user, optional: true
   belongs_to :system
   has_many :hirings, as: :assignable, dependent: :destroy
   has_many :staff, through: :hirings, source: :hired_recruit
