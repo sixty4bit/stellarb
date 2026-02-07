@@ -20,7 +20,7 @@
   <!-- Add Stop Form -->
   <div class="bg-blue-900 border border-blue-700 p-4">
     <h3 class="text-lime-400 font-bold mb-2">Add Stop</h3>
-    <%= form_with url: route_stops_path(@route), method: :post, class: "flex gap-4" do |f| %>
+    <%= form_with url: route_stops_path(@route), method: :post, scope: :stop, class: "flex gap-4" do |f| %>
       <div class="flex-1">
         <%= f.select :system_id, 
             @available_systems.map { |s| [s.name, s.id] },
