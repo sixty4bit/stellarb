@@ -6,6 +6,7 @@ class FlavorTextTest < ActiveSupport::TestCase
     exploration_empty exploration_discovery npc_hired npc_fired
     trade_profit trade_loss error_404 maintenance
     empty_inbox no_ships no_cargo level_up chaos_event
+    oregon_trail
   ].freeze
 
   test "all expected contexts are defined" do

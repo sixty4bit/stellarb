@@ -136,6 +136,20 @@ module FlavorText
       "Level up! Your power is increasing. Your wisdom? Debatable.",
       "Achievement unlocked: Being Slightly Better Than Before."
     ],
+    oregon_trail: [
+      "You have died of space dysentery.",
+      "Your oxen equivalent has broken an axle equivalent.",
+      "You have contracted galactic cholera. Your frontier spirit is undimmed.",
+      "Here lies your reputation. It died as it lived: poorly.",
+      "You chose to ford the asteroid field. It did not go well.",
+      "Your party has lost a wheel. You don't have wheels. Somehow, still a problem.",
+      "A thief stole 3 units of antimatter in the night. Classic.",
+      "You shot 2000 lbs of space bison but can only carry 100. Waste not, want not. Too late.",
+      "Grandma has typhoid. She's also an AI. She's fine. She's not fine.",
+      "The trail ahead is impassable. The trail behind is also impassable. Good luck.",
+      "You traded 6 bullets for a tongue. Whose tongue? Don't ask.",
+      "Tombstone reads: 'Pepperoni and space cheese. Here lies what's left of your dignity.'"
+    ],
     chaos_event: [
       "Something chaotic happened. We'd explain, but honestly? We're confused too.",
       "CHAOS EVENT! The universe rolled a natural 1.",
