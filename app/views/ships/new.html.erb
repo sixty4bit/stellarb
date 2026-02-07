@@ -34,22 +34,50 @@
           placeholder: "Name your ship" %>
     </div>
 
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <%= f.label :race, class: "block text-sm text-gray-400 mb-1" %>
-        <%= f.select :race,
-            Ship::RACES.map { |r| [r.humanize, r] },
-            { prompt: "Select race" },
-            class: "w-full bg-blue-950 border border-blue-700 px-4 py-3 sm:py-2 text-base focus:border-orange-500 focus:outline-none min-h-[44px]" %>
-      </div>
+    <div>
+      <%= f.label :race, class: "block text-sm text-gray-400 mb-1" %>
+      <%= f.select :race,
+          Ship::RACES.map { |r| [r.humanize, r] },
+          { prompt: "Select race" },
+          class: "w-full bg-blue-950 border border-blue-700 px-4 py-3 sm:py-2 text-base focus:border-orange-500 focus:outline-none min-h-[44px]" %>
+    </div>
 
-      <div>
-        <%= f.label :hull_size, "Hull Size", class: "block text-sm text-gray-400 mb-1" %>
-        <%= f.select :hull_size,
-            Ship::HULL_SIZES.map { |h| ["#{Ship::SHIP_TYPE_NAMES[h]} (#{number_with_delimiter(Ship::SHIP_COSTS[h][:base_credits])} cr)", h] },
-            { prompt: "Select hull size" },
-            class: "w-full bg-blue-950 border border-blue-700 px-4 py-3 sm:py-2 text-base focus:border-orange-500 focus:outline-none min-h-[44px]" %>
+    <!-- Race Descriptions -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div data-testid="race-vex" class="bg-blue-950 border border-blue-800 p-3">
+        <h4 class="text-white font-bold text-sm">Vex</h4>
+        <p class="text-gray-400 text-xs mt-1">Versatile and balanced. The everyman's choice.</p>
       </div>
+      <div data-testid="race-solari" class="bg-blue-950 border border-blue-800 p-3">
+        <h4 class="text-white font-bold text-sm">Solari</h4>
+        <p class="text-gray-400 text-xs mt-1">Advanced sensor arrays. See everything, miss nothing.</p>
+      </div>
+      <div data-testid="race-krog" class="bg-blue-950 border border-blue-800 p-3">
+        <h4 class="text-white font-bold text-sm">Krog</h4>
+        <p class="text-gray-400 text-xs mt-1">Built like a tank. Reinforced hulls for the reckless.</p>
+      </div>
+      <div data-testid="race-myrmidon" class="bg-blue-950 border border-blue-800 p-3">
+        <h4 class="text-white font-bold text-sm">Myrmidon</h4>
+        <p class="text-gray-400 text-xs mt-1">Efficient manufacturing. More ship for less credits.</p>
+      </div>
+      <div data-testid="race-grelmak" class="bg-blue-950 border border-orange-700 p-3">
+        <h4 class="text-white font-bold text-sm">Grelmak</h4>
+        <p class="text-gray-400 text-xs mt-1">Scrapyard genius. Better at everything... when it works.</p>
+        <p class="text-orange-400 text-xs mt-1 font-bold">⚡ Chaos Factor: 15% chance of random mishaps</p>
+      </div>
+      <div data-testid="race-mechari" class="bg-blue-950 border border-blue-800 p-3">
+        <h4 class="text-white font-bold text-sm">Mechari <span class="text-sky-400 text-xs font-normal ml-1">Ultra-efficient 🤖</span></h4>
+        <p class="text-gray-400 text-xs mt-1">Precision robotics. Ultra-efficient but limited crew capacity.</p>
+        <p class="text-yellow-400 text-xs mt-1">⚠️ Reduced crew slots compared to other races</p>
+      </div>
+    </div>
+
+    <div>
+      <%= f.label :hull_size, "Hull Size", class: "block text-sm text-gray-400 mb-1" %>
+      <%= f.select :hull_size,
+          Ship::HULL_SIZES.map { |h| ["#{Ship::SHIP_TYPE_NAMES[h]} (#{number_with_delimiter(Ship::SHIP_COSTS[h][:base_credits])} cr)", h] },
+          { prompt: "Select hull size" },
+          class: "w-full bg-blue-950 border border-blue-700 px-4 py-3 sm:py-2 text-base focus:border-orange-500 focus:outline-none min-h-[44px]" %>
     </div>
 
     <!-- Tutorial Recommendation: Show for new players with no ships -->
