@@ -111,12 +111,9 @@
           { name: "Factory", function: "refining", icon: "🏭", desc: "Refine materials" }
         ]
       %>
-      <%
-        existing_functions = Building.where(system: @system).pluck(:function).uniq
-        limited_types = %w[logistics civic] # one per system
-      %>
+      <% existing_functions = Building.where(system: @system).pluck(:function).uniq %>
       <% buildable_types.each do |building_type| %>
-        <% already_exists = limited_types.include?(building_type[:function]) && existing_functions.include?(building_type[:function]) %>
+        <% already_exists = existing_functions.include?(building_type[:function]) %>
         <div class="bg-blue-950 border border-blue-800 p-4 text-center <%= 'opacity-50' if already_exists %>">
           <div class="text-2xl mb-2"><%= building_type[:icon] %></div>
           <div class="text-white font-semibold mb-1"><%= building_type[:name] %></div>
