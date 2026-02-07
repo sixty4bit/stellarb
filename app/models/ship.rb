@@ -530,7 +530,86 @@ class Ship < ApplicationRecord
 
     # Broadcast arrival to user's ships stream
     broadcast_arrival
+
+    # Grelmak chaos factor
+    chaos_check!
   end
+
+  CHAOS_EVENTS = [
+    :chaos_hull_damage,
+    :chaos_fuel_leak,
+    :chaos_cargo_spill,
+    :chaos_navigation_glitch
+  ].freeze
+
+  def chaos_check!(rng: Random.new)
+    return unless race == "grelmak"
+    return unless rng.rand < GRELMAK_CHAOS_FACTOR
+
+    event = CHAOS_EVENTS[rng.rand(4)]
+    send(event, rng)
+  end
+
+  private
+
+  def chaos_hull_damage(rng)
+    damage = rng.rand(5..10)
+    new_hp = [ hull_points - damage, 0 ].max
+    ship_attributes["hull_points"] = new_hp
+    save!
+    create_chaos_message(
+      "Hull Breach!",
+      "Something fell off your ship. It was probably important. You lost #{damage} hull points."
+    )
+  end
+
+  def chaos_fuel_leak(_rng)
+    lost = (fuel * 0.10).ceil
+    self.fuel = [ fuel - lost, 0 ].max
+    save!
+    create_chaos_message(
+      "Fuel Leak!",
+      "Your Grelmak engineering springs a fuel leak. The duct tape didn't hold. Lost #{lost} fuel."
+    )
+  end
+
+  def chaos_cargo_spill(rng)
+    if cargo.present? && cargo.values.any? { |v| v.to_i > 0 }
+      items = cargo.select { |_, v| v.to_i > 0 }.keys
+      item = items[rng.rand(items.size)]
+      cargo[item] = cargo[item].to_i - 1
+      cargo.delete(item) if cargo[item] <= 0
+      save!
+      create_chaos_message(
+        "Cargo Spill!",
+        "A crate of #{item} tumbled out the airlock. Your crew swears it wasn't them."
+      )
+    else
+      create_chaos_message(
+        "Near Miss!",
+        "Something rattled in the cargo hold. Luckily, it was empty. This time."
+      )
+    end
+  end
+
+  def chaos_navigation_glitch(_rng)
+    create_chaos_message(
+      "Navigation Glitch!",
+      "Your navigation computer briefly showed you were inside a star. Probably fine."
+    )
+  end
+
+  def create_chaos_message(title, body)
+    Message.create!(
+      user: user,
+      title: title,
+      body: body,
+      from: "Chaos Report",
+      category: "chaos"
+    )
+  end
+
+  public
 
   def send_arrival_notification(system)
     Message.create!(
