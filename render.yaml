@@ -1,6 +1,6 @@
 databases:
   - name: stellarb-db
-    plan: starter
+    plan: basic-256mb
     databaseName: stellarb_production
     user: stellarb
 
