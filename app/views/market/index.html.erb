@@ -80,7 +80,7 @@
   <% end %>
 
   <!-- Market Stats -->
-  <div class="grid grid-cols-3 gap-4 mb-6">
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     <div class="bg-blue-900 border border-blue-700 p-4">
       <div class="text-gray-400 text-sm">Your Credits</div>
       <div class="text-lime-400 text-2xl font-bold"><%= number_with_delimiter(current_user.credits.to_i) %> cr</div>
@@ -95,8 +95,8 @@
     </div>
   </div>
 
-  <!-- Commodity Table with Buy/Sell Interface -->
-  <div class="bg-blue-900 border border-blue-700 mb-6">
+  <!-- ===== DESKTOP: Commodity Table (md+) ===== -->
+  <div class="market-desktop-grid hidden md:block bg-blue-900 border border-blue-700 mb-6">
     <div class="grid grid-cols-9 gap-2 p-3 border-b border-blue-700 text-sm text-gray-400 font-bold">
       <div>Mineral</div>
       <div>Tier</div>
@@ -174,13 +174,11 @@
           <div class="grid grid-cols-2 gap-4 text-sm">
             <!-- Left column: Price calculation steps -->
             <div class="space-y-2">
-              <!-- Base Price -->
               <div class="flex justify-between items-center">
                 <span class="text-gray-400">Base Price:</span>
                 <span class="base-price text-white font-mono"><%= breakdown[:base_price] %> cr</span>
               </div>
               
-              <!-- Abundance Modifier -->
               <% if breakdown[:abundance_modifier] != 1.0 %>
                 <div class="flex justify-between items-center">
                   <span class="text-gray-400">Abundance:</span>
@@ -196,7 +194,6 @@
                 </div>
               <% end %>
               
-              <!-- Building Effects -->
               <% if breakdown[:building_effects].any? %>
                 <% breakdown[:building_effects].each do |effect| %>
                   <div class="flex justify-between items-center">
@@ -214,7 +211,6 @@
                 </div>
               <% end %>
               
-              <!-- Price Delta (from trading activity) -->
               <% if breakdown[:delta] != 0 %>
                 <div class="flex justify-between items-center">
                   <span class="text-gray-400">Market Activity:</span>
@@ -224,7 +220,6 @@
                 </div>
               <% end %>
               
-              <!-- Divider -->
               <div class="border-t border-blue-700 pt-2 mt-2">
                 <div class="flex justify-between items-center font-bold">
                   <span class="text-white">Final Price:</span>
@@ -273,10 +268,149 @@
     <% end %>
   </div>
 
+  <!-- ===== MOBILE: Card Layout (<md) ===== -->
+  <div class="market-mobile-cards md:hidden space-y-3 mb-6">
+    <% @market_data.each do |item| %>
+      <% breakdown = item[:breakdown] %>
+      <details class="bg-blue-900 border border-blue-700 rounded">
+        <summary class="p-4 cursor-pointer list-none hover:bg-blue-800 transition-colors">
+          <!-- Card header: name + tier + trend -->
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-white font-bold text-lg"><%= item[:commodity] %></span>
+              <% tier_colors = { common: 'bg-gray-600', uncommon: 'bg-green-700', rare: 'bg-blue-600', exotic: 'bg-purple-600', futuristic: 'bg-orange-600' } %>
+              <span class="tier-badge px-2 py-0.5 text-xs rounded <%= tier_colors[item[:tier]] || 'bg-gray-600' %>">
+                <%= item[:tier]&.to_s&.capitalize || 'Unknown' %>
+              </span>
+            </div>
+            <div>
+              <% case item[:trend] %>
+              <% when :up %>
+                <span class="text-lime-400 text-lg" title="Price trending up">↑</span>
+              <% when :down %>
+                <span class="text-red-400 text-lg" title="Price trending down">↓</span>
+              <% else %>
+                <span class="text-gray-400 text-lg" title="Price stable">→</span>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- Prices row -->
+          <div class="grid grid-cols-3 gap-2 text-sm mb-3">
+            <div>
+              <div class="text-gray-400 text-xs">Buy</div>
+              <div class="text-orange-400 font-bold"><%= item[:buy_price] %> cr</div>
+            </div>
+            <div>
+              <div class="text-gray-400 text-xs">Sell</div>
+              <div class="text-lime-400 font-bold"><%= item[:sell_price] %> cr</div>
+            </div>
+            <div>
+              <div class="text-gray-400 text-xs">Stock</div>
+              <div class="text-white font-bold"><%= number_with_delimiter(item[:inventory]) %></div>
+            </div>
+          </div>
+
+          <!-- Qty + Actions -->
+          <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+            <input type="number"
+                   id="mobile_qty_<%= item[:commodity] %>"
+                   value="1" min="1" max="<%= item[:inventory] %>"
+                   class="w-16 bg-blue-950 border border-blue-600 text-white text-center rounded px-2 py-1 text-sm">
+            <%= form_with url: buy_system_market_index_path(@system), method: :post, local: true, class: "inline" do |f| %>
+              <%= f.hidden_field :commodity, value: item[:commodity] %>
+              <%= f.hidden_field :price, value: item[:buy_price] %>
+              <input type="hidden" name="quantity" value="1" data-commodity="<%= item[:commodity] %>" class="mobile-qty-input">
+              <%= f.submit "Buy",
+                  class: "px-4 py-1.5 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded cursor-pointer transition-colors font-bold" %>
+            <% end %>
+            <%= form_with url: sell_system_market_index_path(@system), method: :post, local: true, class: "inline" do |f| %>
+              <%= f.hidden_field :commodity, value: item[:commodity] %>
+              <%= f.hidden_field :price, value: item[:sell_price] %>
+              <input type="hidden" name="quantity" value="1" data-commodity="<%= item[:commodity] %>" class="mobile-qty-input">
+              <%= f.submit "Sell",
+                  class: "px-4 py-1.5 bg-lime-700 hover:bg-lime-600 text-white text-sm rounded cursor-pointer transition-colors font-bold" %>
+            <% end %>
+          </div>
+        </summary>
+
+        <!-- Expanded: Price Breakdown -->
+        <% if breakdown %>
+        <div class="price-breakdown p-4 bg-blue-950 border-t border-blue-700 text-sm space-y-2">
+          <h4 class="text-sm font-semibold text-gray-400 mb-2">💰 Price Breakdown</h4>
+
+          <div class="flex justify-between">
+            <span class="text-gray-400">Base Price:</span>
+            <span class="base-price text-white font-mono"><%= breakdown[:base_price] %> cr</span>
+          </div>
+
+          <% if breakdown[:abundance_modifier] != 1.0 %>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Abundance:</span>
+              <span class="abundance-modifier <%= breakdown[:abundance_modifier] < 1.0 ? 'text-lime-400' : 'text-red-400' %>">
+                <%= breakdown[:abundance_modifier] < 1.0 ? '-' : '+' %><%= ((1.0 - breakdown[:abundance_modifier]).abs * 100).round %>%
+                <span class="text-gray-500">(→ <%= breakdown[:after_abundance] %> cr)</span>
+              </span>
+            </div>
+          <% end %>
+
+          <% if breakdown[:building_effects].any? %>
+            <% breakdown[:building_effects].each do |effect| %>
+              <div class="flex justify-between">
+                <span class="text-gray-400 building-effect"><%= effect[:building_name] %>:</span>
+                <span class="building-effect <%= effect[:modifier] < 1.0 ? 'text-lime-400' : 'text-red-400' %>">
+                  <%= effect[:modifier] < 1.0 ? '-' : '+' %><%= ((1.0 - effect[:modifier]).abs * 100).round %>%
+                </span>
+              </div>
+            <% end %>
+          <% end %>
+
+          <% if breakdown[:delta] != 0 %>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Market Activity:</span>
+              <span class="<%= breakdown[:delta] > 0 ? 'text-red-400' : 'text-lime-400' %>">
+                <%= breakdown[:delta] > 0 ? '+' : '' %><%= breakdown[:delta] %> cr
+              </span>
+            </div>
+          <% end %>
+
+          <div class="border-t border-blue-700 pt-2 mt-2 flex justify-between font-bold">
+            <span class="text-white">Final Price:</span>
+            <span class="final-price text-orange-400 font-mono"><%= breakdown[:final_price] %> cr</span>
+          </div>
+
+          <div class="border-t border-blue-700 pt-2 mt-2 space-y-1">
+            <div class="flex justify-between">
+              <span class="text-gray-400">You Buy At:</span>
+              <span class="text-orange-400 font-mono">
+                <% if @system.owned_by?(current_user) %>
+                  <%= breakdown[:final_price] %> cr <span class="text-xs text-lime-400">(owner)</span>
+                <% else %>
+                  <%= item[:buy_price] %> cr <span class="text-xs text-gray-500">(+10%)</span>
+                <% end %>
+              </span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">You Sell At:</span>
+              <span class="text-lime-400 font-mono">
+                <% if @system.owned_by?(current_user) %>
+                  <%= breakdown[:final_price] %> cr <span class="text-xs text-lime-400">(owner)</span>
+                <% else %>
+                  <%= item[:sell_price] %> cr <span class="text-xs text-gray-500">(-10%)</span>
+                <% end %>
+              </span>
+            </div>
+          </div>
+        </div>
+        <% end %>
+      </details>
+    <% end %>
+  </div>
+
   <!-- Price Legend -->
   <div class="bg-blue-900 border border-blue-700 p-4 mb-6">
     <h3 class="text-sm font-semibold text-gray-400 mb-2">Market Guide</h3>
-    <div class="grid grid-cols-3 gap-4 text-sm">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
       <div>
         <span class="text-lime-400">↑</span> <span class="text-gray-400">Price rising - good time to sell</span>
       </div>
@@ -302,11 +436,20 @@
 </div>
 
 <script>
-  // Sync quantity inputs with hidden form fields
+  // Sync quantity inputs with hidden form fields (desktop)
   document.querySelectorAll('input[id^="qty_"]').forEach(input => {
     input.addEventListener('change', function() {
       const commodity = this.id.replace('qty_', '');
       document.querySelectorAll(`input.qty-input[data-commodity="${commodity}"]`).forEach(hidden => {
+        hidden.value = this.value;
+      });
+    });
+  });
+  // Sync quantity inputs with hidden form fields (mobile)
+  document.querySelectorAll('input[id^="mobile_qty_"]').forEach(input => {
+    input.addEventListener('change', function() {
+      const commodity = this.id.replace('mobile_qty_', '');
+      document.querySelectorAll(`input.mobile-qty-input[data-commodity="${commodity}"]`).forEach(hidden => {
         hidden.value = this.value;
       });
     });
