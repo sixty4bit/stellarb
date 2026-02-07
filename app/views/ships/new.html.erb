@@ -30,7 +30,7 @@
     <div>
       <%= f.label :name, class: "block text-sm text-gray-400 mb-1" %>
       <%= f.text_field :name,
-          class: "w-full bg-blue-950 border border-blue-700 px-4 py-2 focus:border-orange-500 focus:outline-none",
+          class: "w-full bg-blue-950 border border-blue-700 px-4 py-3 sm:py-2 text-base focus:border-orange-500 focus:outline-none min-h-[44px]",
           placeholder: "Name your ship" %>
     </div>
 
@@ -40,7 +40,7 @@
         <%= f.select :race,
             Ship::RACES.map { |r| [r.humanize, r] },
             { prompt: "Select race" },
-            class: "w-full bg-blue-950 border border-blue-700 px-4 py-2 focus:border-orange-500 focus:outline-none" %>
+            class: "w-full bg-blue-950 border border-blue-700 px-4 py-3 sm:py-2 text-base focus:border-orange-500 focus:outline-none min-h-[44px]" %>
       </div>
 
       <div>
@@ -48,7 +48,7 @@
         <%= f.select :hull_size,
             Ship::HULL_SIZES.map { |h| ["#{Ship::SHIP_TYPE_NAMES[h]} (#{number_with_delimiter(Ship::SHIP_COSTS[h][:base_credits])} cr)", h] },
             { prompt: "Select hull size" },
-            class: "w-full bg-blue-950 border border-blue-700 px-4 py-2 focus:border-orange-500 focus:outline-none" %>
+            class: "w-full bg-blue-950 border border-blue-700 px-4 py-3 sm:py-2 text-base focus:border-orange-500 focus:outline-none min-h-[44px]" %>
       </div>
     </div>
 
@@ -85,12 +85,12 @@
       <p class="text-xs text-gray-500 mt-3">* Prices may vary by race (Myrmidon -10%, Solari +10%, Krog +15%)</p>
     </div>
 
-    <div class="flex gap-4">
+    <div class="flex flex-col sm:flex-row gap-3">
       <%= f.submit "Purchase Ship",
-          class: "px-6 py-2 bg-orange-800 hover:bg-orange-700 border border-orange-600 transition-colors cursor-pointer" %>
+          class: "min-h-[44px] px-6 py-3 sm:py-2 bg-orange-800 hover:bg-orange-700 border border-orange-600 transition-colors cursor-pointer text-center" %>
       
       <%= link_to ships_path,
-          class: "px-6 py-2 bg-blue-800 hover:bg-blue-700 border border-blue-600 transition-colors",
+          class: "min-h-[44px] px-6 py-3 sm:py-2 bg-blue-800 hover:bg-blue-700 border border-blue-600 transition-colors text-center flex items-center justify-center",
           data: { turbo_frame: "content_panel" } do %>
         Cancel
       <% end %>
