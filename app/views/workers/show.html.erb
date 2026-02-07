@@ -7,7 +7,12 @@
   <%# Header %>
   <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
     <div>
-      <h1 class="text-2xl font-bold text-orange-500"><%= @worker.npc_class.humanize %> #<%= @worker.id %></h1>
+      <h1 class="text-2xl font-bold text-orange-500">
+        <%= @worker.npc_class.humanize %> #<%= @worker.id %>
+        <% if @worker.role == 'assistant' %>
+          <span class="text-yellow-400 text-lg">⭐ Assistant</span>
+        <% end %>
+      </h1>
       <div class="flex items-center gap-3 mt-2">
         <span class="text-xs bg-<%= rarity_color(@worker.rarity_tier) %>-800 text-white px-2 py-0.5 rounded">
           <%= @worker.rarity_tier&.upcase || 'COMMON' %>
@@ -151,6 +156,35 @@
       </p>
     </div>
   <% end %>
+
+  <%# Promotion / Assistant Status %>
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-4">
+    <h2 class="text-lime-400 font-bold mb-3">Role Management</h2>
+    <% if @worker.role == 'assistant' %>
+      <p class="text-yellow-400 mb-3">⭐ This worker is your Assistant.</p>
+      <% if @worker.on_cooldown? %>
+        <p class="text-orange-400 text-sm mb-3">
+          🕐 On cooldown — available in <%= distance_of_time_in_words(Time.current, @worker.assistant_cooldown_until) %>
+        </p>
+      <% else %>
+        <p class="text-lime-400 text-sm mb-3">✅ Ready for assignments</p>
+      <% end %>
+      <%= button_to "Demote to Crew", promotion_path(@worker),
+          method: :delete,
+          form: { data: { turbo_confirm: "Demote #{@worker.name} back to crew?" } },
+          class: "px-4 py-2 bg-orange-800 text-white hover:bg-orange-700 rounded transition-colors" %>
+    <% else %>
+      <% has_assistant = current_user.hired_recruits.assistants.exists? %>
+      <% if has_assistant %>
+        <p class="text-gray-400 text-sm">You already have an assistant. Demote them first to promote this worker.</p>
+      <% else %>
+        <%= button_to "Promote to Assistant ⭐", promotions_path(worker_id: @worker.id),
+            method: :post,
+            form: { data: { turbo_confirm: "Promote #{@worker.name} to Assistant?" } },
+            class: "px-4 py-2 bg-yellow-700 text-white hover:bg-yellow-600 rounded transition-colors" %>
+      <% end %>
+    <% end %>
+  </div>
 
   <%# Actions %>
   <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-blue-700 pt-6 gap-4">

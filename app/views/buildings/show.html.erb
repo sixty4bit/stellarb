@@ -36,6 +36,9 @@
     </div>
   <% end %>
 
+  <!-- Incidents -->
+  <%= render 'shared/incidents', asset: @building %>
+
   <% if @building.status == 'under_construction' && @building.construction_ends_at %>
     <div class="bg-yellow-900 border border-yellow-700 p-3 sm:p-6 mb-6">
       <h3 class="text-xl font-semibold text-yellow-400 mb-4">🏗️ Construction in Progress</h3>
