@@ -319,4 +319,121 @@ class IncidentTest < ActiveSupport::TestCase
     assert_includes Incident.unresolved, unresolved
     refute_includes Incident.unresolved, resolved
   end
+
+  # === Resolution with Assistant ===
+
+  test "resolve_with_assistant! resolves incident and sets cooldown" do
+    hiring = Hiring.create!(
+      user: @user, hired_recruit: @hired_recruit, assignable: @ship,
+      status: "active", wage: 100, hired_at: Time.current
+    )
+    @hired_recruit.update!(role: "assistant", assistant_cooldown_until: nil)
+
+    incident = Incident.create!(asset: @ship, severity: 2, description: "Broken sensor")
+    incident.resolve_with_assistant!(@hired_recruit)
+
+    assert incident.resolved?
+    assert @hired_recruit.reload.on_cooldown?
+    assert_in_delta HiredRecruit::ASSISTANT_COOLDOWN.from_now, @hired_recruit.assistant_cooldown_until, 2.seconds
+
+    # Inbox message created for asset owner
+    msg = @user.messages.last
+    assert_equal "incident", msg.category
+    assert_match(/resolved/i, msg.body)
+  end
+
+  test "resolve_with_assistant! raises if assistant on cooldown" do
+    @hired_recruit.update!(role: "assistant", assistant_cooldown_until: 2.hours.from_now)
+
+    incident = Incident.create!(asset: @ship, severity: 2, description: "Broken sensor")
+
+    assert_raises(StandardError) do
+      incident.resolve_with_assistant!(@hired_recruit)
+    end
+    refute incident.resolved?
+  end
+
+  # === Resolution with Nearby NPC ===
+
+  test "resolve_with_nearby_npc! succeeds with seeded random below threshold" do
+    hiring = Hiring.create!(
+      user: @user, hired_recruit: @hired_recruit, assignable: @ship,
+      status: "active", wage: 100, hired_at: Time.current
+    )
+
+    incident = Incident.create!(asset: @ship, severity: 2, description: "Engine failure")
+
+    # Seed random to produce success (value >= 0.40)
+    rng = Random.new(42) # Random.new(42).rand => 0.374... need to find a success seed
+    # We'll pass rng explicitly; find seed that gives >= 0.40
+    # Let's just test both paths by mocking
+    incident.resolve_with_nearby_npc!(@hired_recruit, random: Random.new(1))
+    # Random.new(1).rand => 0.417... >= 0.40 = success
+
+    assert incident.resolved?
+    msg = @user.messages.last
+    assert_equal "incident", msg.category
+  end
+
+  test "resolve_with_nearby_npc! fails with seeded random below threshold creates new incident" do
+    hiring = Hiring.create!(
+      user: @user, hired_recruit: @hired_recruit, assignable: @ship,
+      status: "active", wage: 100, hired_at: Time.current
+    )
+
+    incident = Incident.create!(asset: @ship, severity: 2, description: "Engine failure")
+    initial_count = Incident.count
+
+    # Random.new(0).rand => 0.548... >= 0.40 = success, need failure (<0.40)
+    # Random.new(42).rand => 0.374... < 0.40 = failure!
+    incident.resolve_with_nearby_npc!(@hired_recruit, random: Random.new(42))
+
+    refute incident.resolved?, "Original incident should stay unresolved on failure"
+    assert_equal initial_count + 1, Incident.count, "New incident should be created"
+
+    new_incident = Incident.last
+    assert_equal @ship, new_incident.asset
+    assert_equal [incident.severity + 1, 5].min, new_incident.severity
+  end
+
+  test "resolve_with_nearby_npc! caps new incident severity at 5" do
+    hiring = Hiring.create!(
+      user: @user, hired_recruit: @hired_recruit, assignable: @ship,
+      status: "active", wage: 100, hired_at: Time.current
+    )
+
+    incident = Incident.create!(asset: @ship, severity: 5, description: "Catastrophe")
+    incident.resolve_with_nearby_npc!(@hired_recruit, random: Random.new(42))
+
+    new_incident = Incident.last
+    assert_equal 5, new_incident.severity
+  end
+
+  # === can_use_nearby_npc? ===
+
+  test "can_use_nearby_npc? true when NPC is on same asset" do
+    hiring = Hiring.create!(
+      user: @user, hired_recruit: @hired_recruit, assignable: @ship,
+      status: "active", wage: 100, hired_at: Time.current
+    )
+
+    incident = Incident.create!(asset: @ship, severity: 2, description: "Test")
+    assert incident.can_use_nearby_npc?(@hired_recruit)
+  end
+
+  test "can_use_nearby_npc? false when NPC is on different asset" do
+    hiring = Hiring.create!(
+      user: @user, hired_recruit: @hired_recruit, assignable: @building,
+      status: "active", wage: 100, hired_at: Time.current
+    )
+
+    incident = Incident.create!(asset: @ship, severity: 2, description: "Test")
+    refute incident.can_use_nearby_npc?(@hired_recruit)
+  end
+
+  test "can_use_nearby_npc? false when NPC has no hiring on that asset" do
+    # NPC has no hirings at all
+    incident = Incident.create!(asset: @ship, severity: 2, description: "Test")
+    refute incident.can_use_nearby_npc?(@hired_recruit)
+  end
 end

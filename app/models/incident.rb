@@ -10,6 +10,15 @@ class Incident < ApplicationRecord
     5 => { name: "catastrophe", loss: 80, auto_resolve: false, remote_fixable: false }
   }.freeze
 
+  NEARBY_NPC_FAILURE_CHANCE = 0.40
+
+  NEARBY_NPC_FAILURE_MESSAGES = [
+    "They tried to fix it. They made it worse.",
+    "Turns out they caused the first problem too.",
+    "Good intentions, bad execution. The damage has escalated.",
+    "They stared at the problem, poked it, and now it's angrier."
+  ].freeze
+
   # Associations
   belongs_to :asset, polymorphic: true
   belongs_to :hired_recruit, optional: true
@@ -71,6 +80,45 @@ class Incident < ApplicationRecord
     update!(resolved_at: Time.current)
   end
 
+  def resolve_with_assistant!(assistant)
+    raise "Assistant is on cooldown" if assistant.on_cooldown?
+
+    transaction do
+      resolve!
+      assistant.update!(assistant_cooldown_until: Time.current + HiredRecruit::ASSISTANT_COOLDOWN)
+      send_resolution_message!("Your assistant resolved the incident: #{description}")
+    end
+  end
+
+  def resolve_with_nearby_npc!(npc, random: Random.new)
+    roll = random.rand
+
+    if roll >= NEARBY_NPC_FAILURE_CHANCE
+      # Success
+      transaction do
+        resolve!
+        send_resolution_message!("A nearby crew member resolved the incident: #{description}")
+      end
+    else
+      # Failure — create escalated incident
+      failure_message = NEARBY_NPC_FAILURE_MESSAGES.sample(random: random)
+      new_severity = [severity + 1, 5].min
+
+      transaction do
+        Incident.create!(
+          asset: asset,
+          severity: new_severity,
+          description: failure_message
+        )
+        send_resolution_message!(failure_message, title: "Resolution Failed", urgent: true)
+      end
+    end
+  end
+
+  def can_use_nearby_npc?(npc)
+    npc.hirings.where(assignable: asset).exists?
+  end
+
   def purge!
     return unless is_pip_infestation?
 
@@ -81,6 +129,16 @@ class Incident < ApplicationRecord
   end
 
   private
+
+  def send_resolution_message!(body, title: "Incident Update", urgent: false)
+    asset.user.messages.create!(
+      title: title,
+      body: body,
+      from: "Incident Management",
+      category: "incident",
+      urgent: urgent
+    )
+  end
 
   def generate_uuid
     self.uuid ||= SecureRandom.uuid
