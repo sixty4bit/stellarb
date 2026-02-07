@@ -3,9 +3,9 @@
 
 <% hiring = @worker.hirings.find { |h| h.user_id == current_user.id } %>
 
-<div class="max-w-4xl">
+<div class="max-w-4xl px-4">
   <%# Header %>
-  <div class="flex items-center justify-between mb-6">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
     <div>
       <h1 class="text-2xl font-bold text-orange-500"><%= @worker.npc_class.humanize %> #<%= @worker.id %></h1>
       <div class="flex items-center gap-3 mt-2">
@@ -25,9 +25,9 @@
   </div>
 
   <%# Stats Panel %>
-  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-4">
     <h2 class="text-lime-400 font-bold mb-3">Statistics</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
       <div>
         <div class="text-gray-400 text-sm">Skill Level</div>
         <div class="text-<%= skill_color(@worker.skill) %>-400 text-2xl font-bold"><%= @worker.skill %></div>
@@ -52,9 +52,9 @@
   </div>
 
   <%# Aging Status %>
-  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-4">
     <h2 class="text-lime-400 font-bold mb-3">Aging & Lifespan</h2>
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
       <div>
         <div class="text-gray-400 text-sm">Age</div>
         <div class="text-white text-xl font-bold"><%= @worker.age_days || 0 %> days</div>
@@ -81,7 +81,7 @@
   </div>
 
   <%# Quirks %>
-  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-4">
     <h2 class="text-lime-400 font-bold mb-3">Quirks</h2>
     <% quirks = @worker.quirks %>
     <% if quirks.any? %>
@@ -104,7 +104,7 @@
   </div>
 
   <%# Employment History %>
-  <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-4">
     <h2 class="text-lime-400 font-bold mb-3">Employment History</h2>
     <% if @worker.employment_history.is_a?(Array) && @worker.employment_history.any? %>
       <div class="space-y-3">
@@ -127,7 +127,7 @@
 
   <%# Current Assignment %>
   <% if hiring&.assignable.present? %>
-    <div class="bg-blue-900 border border-blue-700 p-4 mb-4">
+    <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-4">
       <h2 class="text-lime-400 font-bold mb-3">Current Assignment</h2>
       <p class="text-white">
         <span class="text-gray-400">Assigned to:</span>
@@ -153,7 +153,7 @@
   <% end %>
 
   <%# Actions %>
-  <div class="flex items-center justify-between border-t border-blue-700 pt-6">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-blue-700 pt-6 gap-4">
     <div class="text-sm text-gray-400">
       Employed since: <%= hiring&.hired_at&.strftime('%b %d, %Y') || 'Unknown' %>
     </div>

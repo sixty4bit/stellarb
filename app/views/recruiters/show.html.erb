@@ -1,7 +1,7 @@
 <turbo-frame id="content_panel">
 <%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
 
-<div class="max-w-4xl">
+<div class="max-w-4xl px-4">
   <%# Header %>
   <div class="mb-6">
     <h1 class="text-2xl font-bold text-orange-500"><%= @recruit.display_name %></h1>
@@ -16,9 +16,9 @@
   </div>
 
   <%# Stats Panel %>
-  <div class="bg-blue-900 border border-blue-700 p-4 mb-6">
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-6">
     <h2 class="text-lg font-bold text-white mb-3">Stats</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
       <div>
         <span class="text-gray-400 text-sm">Skill</span>
         <div class="text-<%= skill_color(@recruit.skill) %>-400 font-bold text-xl">
@@ -49,7 +49,7 @@
   <%# Quirks (if any) %>
   <% quirks = @recruit.base_stats&.dig("quirks") || [] %>
   <% if quirks.any? %>
-    <div class="bg-blue-900 border border-blue-700 p-4 mb-6">
+    <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-6">
       <h2 class="text-lg font-bold text-white mb-3">Quirks</h2>
       <div class="flex flex-wrap gap-2">
         <% quirks.each do |quirk| %>
@@ -63,7 +63,7 @@
   <% end %>
 
   <%# Employment History (The Resume) %>
-  <div class="bg-blue-900 border border-blue-700 p-4 mb-6">
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-4 mb-6">
     <h2 class="text-lg font-bold text-white mb-3">Employment History</h2>
 
     <% if @recruit.employment_history.is_a?(Array) && @recruit.employment_history.any? %>
@@ -104,7 +104,7 @@
   <% end %>
 
   <%# Actions %>
-  <div class="flex items-center justify-between border-t border-blue-700 pt-6">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-blue-700 pt-6 gap-4">
     <div class="text-sm text-gray-400">
       Available for:
       <span data-controller="countdown"
@@ -113,7 +113,7 @@
         <%= distance_of_time_in_words_to_now(@recruit.expires_at) %>
       </span>
     </div>
-    <div class="flex gap-4">
+    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
       <%= link_to recruiters_path, class: "px-4 py-2 bg-blue-800 text-gray-300 hover:text-white rounded", data: { turbo_frame: "content_panel" } do %>
         <span class="text-lime-400">q</span> Back to Recruiter
       <% end %>

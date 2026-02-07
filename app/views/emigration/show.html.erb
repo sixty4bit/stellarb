@@ -7,7 +7,7 @@
   </div>
 
   <%# Introduction Text %>
-  <div class="bg-blue-900 border-2 border-orange-500 p-6 mb-8">
+  <div class="bg-blue-900 border-2 border-orange-500 p-3 sm:p-6 mb-8">
     <h3 class="text-xl font-bold mb-3 text-white">Colonial Ticket Activated</h3>
     <p class="text-gray-300 mb-3">
       Congratulations, Colonist. You have proven yourself worthy of leaving the Cradle.
@@ -25,9 +25,9 @@
   <% if @dossiers.any? %>
     <div class="space-y-4">
       <% @dossiers.each_with_index do |dossier, index| %>
-        <div class="hub-dossier bg-blue-900 border border-blue-700 p-5 hover:border-orange-500 transition-colors">
+        <div class="hub-dossier bg-blue-900 border border-blue-700 p-3 sm:p-5 hover:border-orange-500 transition-colors">
           <%# Header Row %>
-          <div class="flex items-center justify-between mb-4">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
             <div>
               <span class="text-xs text-gray-500">OPTION <%= index + 1 %></span>
               <h4 class="system-name text-xl font-bold text-white"><%= dossier[:system_name] %></h4>
@@ -49,7 +49,7 @@
           </div>
 
           <%# Stats Grid %>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <%# Security Rating %>
             <div>
               <span class="text-gray-500 text-xs block">Security</span>

@@ -1,7 +1,7 @@
 <turbo-frame id="content_panel">
 <%= render 'shared/breadcrumbs', breadcrumbs: @breadcrumbs %>
 
-<div class="max-w-6xl">
+<div class="max-w-6xl px-4">
   <div class="mb-6">
     <div class="flex items-center gap-3 mb-2">
       <span class="text-xs font-mono text-gray-500"><%= @building.short_id %></span>
@@ -37,7 +37,7 @@
   <% end %>
 
   <% if @building.status == 'under_construction' && @building.construction_ends_at %>
-    <div class="bg-yellow-900 border border-yellow-700 p-6 mb-6">
+    <div class="bg-yellow-900 border border-yellow-700 p-3 sm:p-6 mb-6">
       <h3 class="text-xl font-semibold text-yellow-400 mb-4">🏗️ Construction in Progress</h3>
       <div class="bg-yellow-800 rounded p-4">
         <div class="flex items-center justify-between">
@@ -62,9 +62,9 @@
   <% end %>
 
   <!-- Tier Effects -->
-  <div class="tier-effects bg-blue-900 border border-blue-700 p-6 mb-6">
+  <div class="tier-effects bg-blue-900 border border-blue-700 p-3 sm:p-6 mb-6">
     <h2 class="text-lg font-semibold text-lime-400 mb-4">Tier <%= @building.tier %> Effects</h2>
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
       <% effects = Building.effects_for(@building.function, @building.tier) %>
       <% effects.each do |key, value| %>
         <div>
@@ -84,8 +84,8 @@
     <% next_effects = Building.effects_for(@building.function, next_tier) %>
     <% can_afford = current_user.credits >= upgrade_cost %>
     
-    <div class="upgrade-preview bg-orange-900/50 border border-orange-700 p-6 mb-6">
-      <div class="flex items-center justify-between mb-4">
+    <div class="upgrade-preview bg-orange-900/50 border border-orange-700 p-3 sm:p-6 mb-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
         <h2 class="text-lg font-semibold text-orange-400">After Upgrade to Tier <%= next_tier %></h2>
         <span class="text-sm <%= can_afford ? 'text-lime-400' : 'text-red-400' %>">
           Cost: <%= number_with_delimiter(upgrade_cost) %> cr
@@ -94,7 +94,7 @@
           <% end %>
         </span>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
         <% current_effects = Building.effects_for(@building.function, @building.tier) %>
         <% next_effects.each do |key, value| %>
           <% current_value = current_effects[key] %>
@@ -117,9 +117,9 @@
   <% end %>
 
   <!-- Building Stats -->
-  <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-6 mb-6">
     <h2 class="text-lg font-semibold text-lime-400 mb-4">Building Stats</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
       <div>
         <span class="text-gray-400 block">Output Rate</span>
         <span class="text-white <%= @building.disabled? ? 'line-through text-gray-500' : '' %>">
@@ -162,8 +162,8 @@
   </div>
 
   <!-- Staff Roster -->
-  <div class="bg-blue-900 border border-blue-700 p-6 mb-6">
-    <div class="flex items-center justify-between mb-4">
+  <div class="bg-blue-900 border border-blue-700 p-3 sm:p-6 mb-6">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
       <h2 class="text-lg font-semibold text-lime-400">Staff Roster</h2>
       <% max_staff = @building.building_attributes&.dig('staff_slots', 'max') || 0 %>
       <span class="text-sm text-gray-400">
@@ -196,7 +196,7 @@
   </div>
 
   <!-- Actions -->
-  <div class="flex gap-4 flex-wrap">
+  <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 flex-wrap">
     <%= link_to buildings_path,
         class: "px-4 py-2 bg-blue-800 hover:bg-blue-700 border border-blue-600 transition-colors",
         data: { turbo_frame: "content_panel" } do %>

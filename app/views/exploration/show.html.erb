@@ -1,11 +1,11 @@
 <turbo-frame id="content_panel">
 <%= render 'shared/breadcrumbs' %>
 
-<div class="max-w-6xl">
+<div class="max-w-6xl px-4">
   <h2 class="text-2xl font-bold mb-4 text-orange-500">🔭 Exploration</h2>
 
-  <section class="bg-blue-900 border border-blue-700 rounded p-6 mb-6">
-    <div class="flex justify-between items-center">
+  <section class="bg-blue-900 border border-blue-700 rounded p-3 sm:p-6 mb-6">
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
       <div class="text-center">
         <span class="text-4xl font-bold text-orange-400"><%= @explored_count %></span>
         <p class="text-gray-300 mt-1">Systems Explored</p>
@@ -37,7 +37,7 @@
   <% end %>
 
   <% unless @ship %>
-    <div class="bg-red-900 border border-red-700 rounded p-6 mb-6">
+    <div class="bg-red-900 border border-red-700 rounded p-3 sm:p-6 mb-6">
       <p class="text-red-300">No operational ship available for exploration.</p>
       <p class="text-gray-400 text-sm mt-2">
         You need a ship to explore the galaxy.
