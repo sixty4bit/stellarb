@@ -1,6 +1,7 @@
 cradle:
   name: The Cradle
   short_id: sy-cra
+  uuid: 01900000-0000-7000-8000-000000000001
   x: 900
   y: 900
   z: 900
@@ -9,9 +10,58 @@ cradle:
     planet_count: 5
     hazard_level: 0
 
+mira_station:
+  name: Mira Station
+  short_id: sy-mir
+  uuid: 01900000-0000-7000-8000-000000000002
+  x: 3
+  y: 1
+  z: 0
+  properties:
+    star_type: red_dwarf
+    planet_count: 3
+    hazard_level: 10
+
+verdant_gardens:
+  name: Verdant Gardens
+  short_id: sy-ver
+  uuid: 01900000-0000-7000-8000-000000000003
+  x: -2
+  y: 3
+  z: 0
+  properties:
+    star_type: yellow_dwarf
+    planet_count: 5
+    hazard_level: 5
+
+nexus_hub:
+  name: Nexus Hub
+  short_id: sy-nex
+  uuid: 01900000-0000-7000-8000-000000000004
+  x: -1
+  y: -2
+  z: 3
+  properties:
+    star_type: blue_giant
+    planet_count: 4
+    hazard_level: 15
+
+beacon_refinery:
+  name: Beacon Refinery
+  short_id: sy-bea
+  uuid: 01900000-0000-7000-8000-000000000005
+  x: 2
+  y: -3
+  z: 1
+  properties:
+    star_type: orange_dwarf
+    planet_count: 2
+    hazard_level: 20
+
 alpha_centauri:
   name: Alpha Centauri
   short_id: sy-alp
+  uuid: 01900000-0000-7000-8000-000000000006
   x: 903
   y: 900
   z: 900
