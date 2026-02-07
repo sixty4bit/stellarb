@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_06_154514) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_07_192458) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -72,6 +72,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_154514) do
 
   create_table "hired_recruits", force: :cascade do |t|
     t.integer "age_days", default: 0, null: false
+    t.datetime "assistant_cooldown_until"
     t.integer "chaos_factor"
     t.datetime "created_at", null: false
     t.jsonb "employment_history", default: []
@@ -79,6 +80,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_154514) do
     t.string "npc_class"
     t.bigint "original_recruit_id"
     t.string "race"
+    t.string "role", default: "crew", null: false
     t.integer "skill"
     t.jsonb "stats", default: {}
     t.datetime "updated_at", null: false
