@@ -31,7 +31,7 @@ class SystemsController < ApplicationController
   end
 
   def set_system
-    @system = System.find(params[:id])
+    @system = System.find_by!(short_id: params[:id]) rescue System.find(params[:id])
     # TODO: Check if user has visited this system
   end
 end

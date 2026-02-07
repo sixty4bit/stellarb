@@ -1,6 +1,10 @@
 class System < ApplicationRecord
   include TripleId
 
+  def to_param
+    short_id
+  end
+
   # Associations
   belongs_to :discovered_by, class_name: 'User', optional: true
   belongs_to :owner, class_name: 'User', optional: true
