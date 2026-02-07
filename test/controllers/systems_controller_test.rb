@@ -25,7 +25,7 @@ class SystemsControllerTest < ActionDispatch::IntegrationTest
   test "index displays system coordinates" do
     get systems_path
     assert_response :success
-    assert_select ".text-gray-500", text: /900.*900.*900/
+    assert_select ".text-gray-500", text: /500.*500.*500/
   end
 
   test "show renders system detail" do

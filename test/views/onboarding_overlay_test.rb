@@ -6,7 +6,7 @@ class OnboardingOverlayTest < ActionView::TestCase
   include OnboardingHelper
 
   def setup
-    @system = System.create!(x: 0, y: 0, z: 0, name: "Test System")
+    @system = System.find_or_create_by!(x: 0, y: 0, z: 0) { |s| s.name = "Origin" }
     @user = User.create!(
       email: "overlay@test.com",
       name: "OverlayUser"

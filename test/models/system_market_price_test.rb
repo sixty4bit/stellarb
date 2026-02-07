@@ -220,9 +220,9 @@ class SystemMarketPriceTest < ActiveSupport::TestCase
     system = System.create!(
       name: "Busy System",
       short_id: "sy-busy-#{SecureRandom.hex(4)}",
-      x: 500,
-      y: 500,
-      z: 500,
+      x: 800,
+      y: 800,
+      z: 800,
       properties: {
         "base_prices" => { "iron" => 100, "copper" => 150, "gold" => 500 },
         "mineral_distribution" => {

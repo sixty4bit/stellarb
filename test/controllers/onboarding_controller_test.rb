@@ -4,7 +4,7 @@ require "test_helper"
 
 class OnboardingControllerTest < ActionDispatch::IntegrationTest
   def setup
-    @system = System.create!(x: 0, y: 0, z: 0, name: "Test System")
+    @system = systems(:cradle)
     @user = User.create!(
       email: "onboarding@test.com",
       name: "OnboardUser",

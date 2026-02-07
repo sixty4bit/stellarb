@@ -3,7 +3,7 @@ require "test_helper"
 class WarpGateTest < ActiveSupport::TestCase
   setup do
     @user = User.create!(name: "Test User", email: "user@test.com")
-    @system_a = System.create!(x: 0, y: 0, z: 0, name: "Hub Alpha")
+    @system_a = System.find_or_create_by!(x: 0, y: 0, z: 0) { |s| s.name = "Origin" }
     @system_b = System.create!(x: 3, y: 3, z: 3, name: "Hub Beta")
     @system_c = System.create!(x: 6, y: 0, z: 0, name: "Hub Gamma")
     @remote = System.create!(x: 9, y: 9, z: 9, name: "Remote Outpost")

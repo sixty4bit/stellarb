@@ -4,7 +4,7 @@ require "test_helper"
 
 class OnboardingStepsTest < ActionDispatch::IntegrationTest
   def setup
-    @system = System.create!(x: 0, y: 0, z: 0, name: "Test System")
+    @system = System.find_or_create_by!(x: 0, y: 0, z: 0) { |s| s.name = "Origin" }
     @user = User.create!(
       email: "steps@test.com",
       name: "StepsUser",

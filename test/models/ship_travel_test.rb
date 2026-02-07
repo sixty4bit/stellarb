@@ -3,7 +3,7 @@ require "test_helper"
 class ShipTravelTest < ActiveSupport::TestCase
   setup do
     @user = User.create!(name: "Test Captain", email: "captain@test.com")
-    @origin = System.create!(x: 0, y: 0, z: 0, name: "Origin")
+    @origin = System.find_or_create_by!(x: 0, y: 0, z: 0) { |s| s.name = "Origin" }
     @destination = System.create!(x: 3, y: 0, z: 0, name: "Destination")  # Distance = 3
 
     @ship = Ship.create!(

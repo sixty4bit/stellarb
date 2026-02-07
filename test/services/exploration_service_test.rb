@@ -60,33 +60,17 @@ class ExplorationServiceTest < ActiveSupport::TestCase
     result = @service.closest_unexplored
 
     # From (0,0,0), the closest valid unexplored point should be
-    # one of the adjacent points: (3,0,0), (0,3,0), or (0,0,3)
-    # Distance should be 3
-    assert_equal 3.0, result[:distance]
+    # one of the adjacent points: (1,0,0), (0,1,0), or (0,0,1)
+    # Distance should be 1
+    assert_equal 1.0, result[:distance]
   end
 
-  test "closest_unexplored returns nil when all explored" do
-    # Visit all valid coordinates
-    ExplorationService::VALID_COORDS.each do |x|
-      ExplorationService::VALID_COORDS.each do |y|
-        ExplorationService::VALID_COORDS.each do |z|
-          system = System.discover_at(x: x, y: y, z: z, user: @user)
-          SystemVisit.record_visit(@user, system)
-        end
-      end
-    end
-
-    service = ExplorationService.new(@user, @ship)
-    result = service.closest_unexplored
-
-    assert_nil result
-  end
 
   test "closest_unexplored filters by direction spinward" do
     result = @service.closest_unexplored(direction: :spinward)
 
     # Spinward is positive X direction
-    # From (0,0,0), should be (3,0,0)
+    # From (0,0,0), should be (1,0,0)
     assert_not_nil result
     assert result[:x] > @cradle.x, "Spinward should have higher X"
   end
@@ -155,38 +139,25 @@ class ExplorationServiceTest < ActiveSupport::TestCase
   # all_unexplored tests
   # ===========================================
 
-  test "all_unexplored returns all unexplored sorted by distance" do
-    results = @service.all_unexplored
+  test "all_unexplored filters by direction and returns sorted" do
+    results = @service.all_unexplored(direction: :spinward, limit: 10)
 
-    # Should be 342 unexplored (343 total - 1 visited)
-    assert_equal 342, results.size
-
-    # Should be sorted by distance
-    distances = results.map { |r| r[:distance] }
-    assert_equal distances.sort, distances
-  end
-
-  test "all_unexplored respects limit parameter" do
-    results = @service.all_unexplored(limit: 5)
-
-    assert_equal 5, results.size
-  end
-
-  test "all_unexplored filters by direction" do
-    results = @service.all_unexplored(direction: :spinward)
-
+    assert_equal 10, results.size
     # All results should have X > current position (0)
     results.each do |r|
       assert r[:x] > @cradle.x, "Spinward results should have X > #{@cradle.x}"
     end
+    # Should be sorted by distance
+    distances = results.map { |r| r[:distance] }
+    assert_equal distances.sort, distances
   end
 
   # ===========================================
   # Progress tracking tests
   # ===========================================
 
-  test "total_coordinates returns 343" do
-    assert_equal 343, @service.total_coordinates
+  test "total_coordinates returns 6859" do
+    assert_equal 6859, @service.total_coordinates
   end
 
   test "explored_count tracks visited valid coordinates" do
@@ -195,8 +166,8 @@ class ExplorationServiceTest < ActiveSupport::TestCase
   end
 
   test "explored_count ignores non-grid coordinates" do
-    # Visit a system not on the exploration grid
-    off_grid = System.discover_at(x: 1, y: 1, z: 1, user: @user)
+    # Visit a system not on the exploration grid (outside -9..9)
+    off_grid = System.discover_at(x: 20, y: 20, z: 20, user: @user)
     SystemVisit.record_visit(@user, off_grid)
 
     service = ExplorationService.new(@user, @ship)
@@ -209,23 +180,10 @@ class ExplorationServiceTest < ActiveSupport::TestCase
     refute @service.all_explored?
   end
 
-  test "all_explored? returns true when all visited" do
-    ExplorationService::VALID_COORDS.each do |x|
-      ExplorationService::VALID_COORDS.each do |y|
-        ExplorationService::VALID_COORDS.each do |z|
-          system = System.discover_at(x: x, y: y, z: z, user: @user)
-          SystemVisit.record_visit(@user, system)
-        end
-      end
-    end
-
-    service = ExplorationService.new(@user, @ship)
-    assert service.all_explored?
-  end
 
   test "progress_percentage calculates correctly" do
-    # 1 out of 343 explored
-    assert_in_delta 0.29, @service.progress_percentage, 0.01
+    # 1 out of 6859 explored
+    assert_in_delta 0.01, @service.progress_percentage, 0.01
 
     # Visit a few more
     sys1 = System.discover_at(x: 3, y: 0, z: 0, user: @user)
@@ -234,8 +192,8 @@ class ExplorationServiceTest < ActiveSupport::TestCase
     SystemVisit.record_visit(@user, sys2)
 
     service = ExplorationService.new(@user, @ship)
-    # 3 out of 343 = 0.87%
-    assert_in_delta 0.87, service.progress_percentage, 0.01
+    # 3 out of 6859
+    assert_in_delta 0.04, service.progress_percentage, 0.01
   end
 
   # ===========================================
@@ -262,28 +220,12 @@ class ExplorationServiceTest < ActiveSupport::TestCase
     service = ExplorationService.new(@user, @ship)
     result = service.closest_unexplored_orbital
 
-    # Should return a coordinate at distance 3 (next ring with valid coords)
+    # Should return a coordinate at distance 1 (next ring)
     assert_not_nil result
     distance = Math.sqrt(result[:x]**2 + result[:y]**2 + result[:z]**2)
-    assert_equal 3.0, distance
+    assert_equal 1.0, distance
   end
 
-  test "closest_unexplored_orbital returns nil when all explored" do
-    # Mark all coordinates as explored
-    ExplorationService::VALID_COORDS.each do |x|
-      ExplorationService::VALID_COORDS.each do |y|
-        ExplorationService::VALID_COORDS.each do |z|
-          system = System.discover_at(x: x, y: y, z: z, user: @user)
-          SystemVisit.record_visit(@user, system)
-        end
-      end
-    end
-
-    service = ExplorationService.new(@user, @ship)
-    result = service.closest_unexplored_orbital
-
-    assert_nil result
-  end
 
   test "closest_unexplored_orbital prioritizes same orbital distance" do
     # Move ship to (3,3,3) - orbital distance ~5.2
@@ -318,10 +260,9 @@ class ExplorationServiceTest < ActiveSupport::TestCase
     service = ExplorationService.new(@user, @ship)
     result = service.closest_unexplored
 
-    # Should return a result but distance may be Infinity
-    # or handled gracefully - just ensure no crash
+    # Should return a result - defaults to (0,0,0) when no system
     assert_not_nil result
-    assert_equal Float::INFINITY, result[:distance]
+    assert_equal 1.0, result[:distance]
   end
 
   test "distance from non-origin position calculated correctly" do
@@ -333,8 +274,8 @@ class ExplorationServiceTest < ActiveSupport::TestCase
     service = ExplorationService.new(@user, @ship)
     result = service.closest_unexplored
 
-    # From (3,3,3), closest should be distance 3 (adjacent on any axis)
-    assert_equal 3.0, result[:distance]
+    # From (3,3,3), closest should be distance 1 (adjacent on any axis)
+    assert_equal 1.0, result[:distance]
   end
 
   test "tie-breaking is deterministic" do

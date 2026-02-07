@@ -5,7 +5,7 @@ require "test_helper"
 class SystemVisitTest < ActiveSupport::TestCase
   setup do
     @user = User.create!(name: "Explorer", email: "explorer@test.com")
-    @system = System.create!(x: 0, y: 0, z: 0, name: "The Cradle")
+    @system = System.find_or_create_by!(x: 0, y: 0, z: 0) { |s| s.name = "Origin" }
   end
 
   # ===========================================

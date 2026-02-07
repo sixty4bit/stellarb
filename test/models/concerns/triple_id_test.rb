@@ -56,7 +56,7 @@ class TripleIdTest < ActiveSupport::TestCase
   # Test other models have consistent triple-id
   test "ship has triple_id" do
     user = User.create!(name: "Owner", email: "owner@example.com")
-    system = System.create!(x: 0, y: 0, z: 0, name: "Test", discovered_by: user)
+    system = System.find_or_create_by!(x: 0, y: 0, z: 0) { |s| s.name = "Test"; s.discovered_by = user }
     ship = Ship.create!(
       name: "Test Ship",
       user: user,
@@ -80,7 +80,7 @@ class TripleIdTest < ActiveSupport::TestCase
 
   test "building has triple_id" do
     user = User.create!(name: "Owner", email: "owner-bld@example.com")
-    system = System.create!(x: 0, y: 0, z: 0, name: "Test", discovered_by: user)
+    system = System.find_or_create_by!(x: 0, y: 0, z: 0) { |s| s.name = "Test"; s.discovered_by = user }
     building = Building.create!(
       name: "Test Building",
       user: user,
@@ -101,7 +101,7 @@ class TripleIdTest < ActiveSupport::TestCase
 
   test "system has triple_id" do
     user = User.create!(name: "Explorer", email: "explorer-sys@example.com")
-    system = System.create!(x: 0, y: 0, z: 0, name: "Alpha Centauri", discovered_by: user)
+    system = System.find_or_create_by!(x: 0, y: 0, z: 0) { |s| s.name = "Test"; s.discovered_by = user }
 
     assert system.uuid.present?
     assert system.short_id.present?

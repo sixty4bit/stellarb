@@ -4,7 +4,9 @@ class ExplorationControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = users(:pilot)
     @ship = ships(:hauler)
-    @ship.update!(disabled_at: nil, status: "docked")
+    # Put ship in exploration grid range
+    @explore_system = System.find_or_create_by!(x: 0, y: 0, z: 0) { |s| s.name = "Explore Origin" }
+    @ship.update!(disabled_at: nil, status: "docked", current_system: @explore_system)
     sign_in_as(@user)
   end
 
