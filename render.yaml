@@ -1,0 +1,35 @@
+databases:
+  - name: stellarb-db
+    plan: starter
+    databaseName: stellarb_production
+    user: stellarb
+
+services:
+  - type: web
+    name: stellarb
+    runtime: docker
+    plan: starter
+    dockerCommand: bin/rails server -p $PORT
+    healthCheckPath: /up
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: stellarb-db
+          property: connectionString
+      - key: RAILS_MASTER_KEY
+        sync: false
+      - key: RAILS_LOG_LEVEL
+        value: info
+
+  - type: worker
+    name: stellarb-jobs
+    runtime: docker
+    plan: starter
+    dockerCommand: bundle exec ruby bin/jobs
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: stellarb-db
+          property: connectionString
+      - key: RAILS_MASTER_KEY
+        sync: false
