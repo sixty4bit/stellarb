@@ -122,11 +122,11 @@
   </div>
 
   <!-- Actions -->
-  <div class="flex gap-4 mt-6">
-    <%= link_to "Set Navigation", "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
-    <%= link_to "Manage Cargo", "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
-    <%= link_to "Assign to Route", "#", class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
-    <%= button_to "Repair", repair_ship_path(@ship), method: :post, class: "px-4 py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
+  <div class="flex flex-col sm:flex-row flex-wrap gap-3 mt-6">
+    <%= link_to "Set Navigation", "#", class: "min-h-[44px] min-w-[44px] px-4 py-3 sm:py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors text-center flex items-center justify-center" %>
+    <%= link_to "Manage Cargo", "#", class: "min-h-[44px] min-w-[44px] px-4 py-3 sm:py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors text-center flex items-center justify-center" %>
+    <%= link_to "Assign to Route", "#", class: "min-h-[44px] min-w-[44px] px-4 py-3 sm:py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors text-center flex items-center justify-center" %>
+    <%= button_to "Repair", repair_ship_path(@ship), method: :post, class: "min-h-[44px] min-w-[44px] px-4 py-3 sm:py-2 bg-blue-800 text-white hover:bg-orange-800 rounded transition-colors" %>
   </div>
 
   <div class="mt-8 text-sm text-gray-500">

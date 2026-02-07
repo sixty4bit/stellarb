@@ -34,7 +34,7 @@
         <div class="flex items-center">
           <span class="text-orange-500 mr-2">│</span>
           <%= f.email_field :email,
-              class: "flex-1 px-3 py-2 bg-blue-950 border border-blue-700 rounded font-mono text-lime-400 focus:border-orange-500 focus:outline-none placeholder-gray-600",
+              class: "flex-1 px-3 py-3 sm:py-2 bg-blue-950 border border-blue-700 rounded font-mono text-base text-lime-400 focus:border-orange-500 focus:outline-none placeholder-gray-600 min-h-[44px]",
               placeholder: "pilot@stellarb.net",
               required: true,
               autofocus: true,
@@ -44,7 +44,7 @@
 
       <div class="pt-2">
         <%= f.submit "[ TRANSMIT ACCESS REQUEST ]",
-            class: "w-full bg-orange-500 text-blue-950 font-bold py-2 px-4 border-2 border-orange-400 hover:bg-orange-400 hover:border-orange-300 transition-colors cursor-pointer tracking-wider" %>
+            class: "w-full bg-orange-500 text-blue-950 font-bold py-3 sm:py-2 px-4 border-2 border-orange-400 hover:bg-orange-400 hover:border-orange-300 transition-colors cursor-pointer tracking-wider min-h-[44px] text-base" %>
       </div>
     <% end %>
 
