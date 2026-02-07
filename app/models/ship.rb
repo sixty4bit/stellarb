@@ -522,10 +522,7 @@ class Ship < ApplicationRecord
     # Check for pirate encounters (conventional travel only)
     PirateEncounterJob.perform_now(self, arrived_via_warp: false)
 
-    # Send arrival notification to inbox
-    send_arrival_notification(arrived_at_system) if is_first_visit
-
-    # Send discovery notification for first visits
+    # Send discovery notification for first visits only
     send_discovery_notification(arrived_at_system) if is_first_visit
 
     # Broadcast arrival to user's ships stream
