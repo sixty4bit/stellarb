@@ -118,6 +118,21 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ===========================================
+  # stellarb-77l.2: Tutorial overlay positioned at bottom on mobile
+  # ===========================================
+
+  test "onboarding overlay uses bottom positioning for mobile" do
+    get inbox_index_path
+
+    assert_response :success
+    assert_select "#onboarding-sidebar" do |el|
+      classes = el.first["class"]
+      assert_includes classes, "bottom-0", "Should position at bottom for mobile"
+      assert_includes classes, "sm:top-0", "Should position at top for desktop"
+    end
+  end
+
+  # ===========================================
   # stellarb-77l.1: Welcome notification should not repeat
   # ===========================================
 
