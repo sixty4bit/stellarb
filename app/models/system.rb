@@ -15,9 +15,9 @@ class System < ApplicationRecord
   has_many :system_auctions, dependent: :destroy
 
   # Validations
-  validates :x, presence: true, numericality: { in: 0..999_999 }
-  validates :y, presence: true, numericality: { in: 0..999_999 }
-  validates :z, presence: true, numericality: { in: 0..999_999 }
+  validates :x, presence: true, numericality: { in: -999_999..999_999 }
+  validates :y, presence: true, numericality: { in: -999_999..999_999 }
+  validates :z, presence: true, numericality: { in: -999_999..999_999 }
   validates :short_id, presence: true, uniqueness: true
   validates :name, presence: true
 

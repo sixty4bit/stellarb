@@ -202,4 +202,26 @@ class SystemTest < ActiveSupport::TestCase
 
     assert_equal({}, system.base_prices)
   end
+
+  # ===========================================
+  # Negative Coordinate Tests
+  # ===========================================
+
+  test "system with negative coordinates is valid" do
+    system = System.new(x: -100, y: -200, z: -300, name: "Negative System", short_id: "sy-neg1")
+    system.properties = { star_type: "red_dwarf", planet_count: 2, hazard_level: 1, base_prices: {} }
+    assert system.valid?, "System with negative coordinates should be valid: #{system.errors.full_messages}"
+  end
+
+  test "system at negative boundary is valid" do
+    system = System.new(x: -999_999, y: -999_999, z: -999_999, name: "Edge System", short_id: "sy-edge1")
+    system.properties = { star_type: "red_dwarf", planet_count: 1, hazard_level: 0, base_prices: {} }
+    assert system.valid?, "System at negative boundary should be valid: #{system.errors.full_messages}"
+  end
+
+  test "system beyond negative boundary is invalid" do
+    system = System.new(x: -1_000_000, y: 0, z: 0, name: "Too Far", short_id: "sy-toofar")
+    system.properties = { star_type: "red_dwarf", planet_count: 1, hazard_level: 0, base_prices: {} }
+    assert_not system.valid?, "System beyond -999_999 should be invalid"
+  end
 end

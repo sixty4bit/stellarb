@@ -157,9 +157,9 @@ class ScanningService
   end
 
   def valid_coordinates?(x, y, z)
-    x >= 0 && x <= 999_999 &&
-      y >= 0 && y <= 999_999 &&
-      z >= 0 && z <= 999_999
+    x >= -999_999 && x <= 999_999 &&
+      y >= -999_999 && y <= 999_999 &&
+      z >= -999_999 && z <= 999_999
   end
 
   def calculate_distance(from, to)
