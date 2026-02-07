@@ -9,7 +9,7 @@ services:
     name: stellarb
     runtime: docker
     plan: starter
-    dockerCommand: bin/rails server -p $PORT
+    dockerCommand: bin/rails db:migrate && bin/rails server -p $PORT
     healthCheckPath: /up
     envVars:
       - key: DATABASE_URL
