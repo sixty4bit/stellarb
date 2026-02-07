@@ -16,8 +16,8 @@ services:
         fromDatabase:
           name: stellarb-db
           property: connectionString
-      - key: RAILS_MASTER_KEY
-        sync: false
+      - key: SECRET_KEY_BASE
+        generateValue: true
       - key: RAILS_LOG_LEVEL
         value: info
 
@@ -31,5 +31,5 @@ services:
         fromDatabase:
           name: stellarb-db
           property: connectionString
-      - key: RAILS_MASTER_KEY
-        sync: false
+      - key: SECRET_KEY_BASE
+        generateValue: true
