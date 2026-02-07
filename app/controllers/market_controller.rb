@@ -183,7 +183,7 @@ class MarketController < ApplicationController
   end
 
   def set_system
-    @system = System.find(params[:system_id])
+    @system = System.find_by!(short_id: params[:system_id]) rescue System.find(params[:system_id])
   end
 
   def set_system_visit

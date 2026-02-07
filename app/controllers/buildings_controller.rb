@@ -16,7 +16,7 @@ class BuildingsController < ApplicationController
     end
 
     @breadcrumbs = if params[:system_id]
-      system = System.find(params[:system_id])
+      system = System.find_by!(short_id: params[:system_id]) rescue System.find(params[:system_id])
       [
         { name: current_user.name, path: root_path },
         { name: "Systems", path: systems_path },
