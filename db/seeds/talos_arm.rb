@@ -98,18 +98,48 @@ module Seeds
     ].freeze
 
     class << self
+      NPC_BUILDINGS = {
+        "The Cradle" => [
+          { name: "Civic Center",    function: "civic",     tier: 2 },
+          { name: "Logistics Hub",   function: "logistics", tier: 1 },
+          { name: "Defense Station", function: "defense",   tier: 1 }
+        ],
+        "Mira Station" => [
+          { name: "Ore Extraction",  function: "extraction", tier: 2, specialization: "Iron" },
+          { name: "Mira Depot",      function: "logistics",  tier: 1 },
+          { name: "Mira Defense",    function: "defense",     tier: 1 }
+        ],
+        "Verdant Gardens" => [
+          { name: "Garden Civic",    function: "civic",      tier: 1 },
+          { name: "Garden Depot",    function: "logistics",  tier: 1 },
+          { name: "Garden Defense",  function: "defense",    tier: 1 }
+        ],
+        "Nexus Hub" => [
+          { name: "Trade Center",    function: "civic",      tier: 2 },
+          { name: "Nexus Logistics", function: "logistics",  tier: 2 },
+          { name: "Nexus Defense",   function: "defense",    tier: 1 }
+        ],
+        "Beacon Refinery" => [
+          { name: "Beacon Extractor", function: "extraction", tier: 1, specialization: "Tungsten" },
+          { name: "Beacon Depot",    function: "logistics",  tier: 1 },
+          { name: "Beacon Defense",  function: "defense",     tier: 1 }
+        ]
+      }.freeze
+
       def seed!
         puts "Seeding Talos Arm tutorial systems..."
 
         # Ensure The Cradle exists
         cradle = System.cradle
         initialize_market_inventory(cradle)
+        seed_npc_buildings(cradle)
         puts "  ✓ The Cradle at (0,0,0)"
 
         SYSTEMS.each do |config|
           system = create_or_update_system(config)
           apply_price_deltas(system, config[:price_adjustments])
           initialize_market_inventory(system)
+          seed_npc_buildings(system)
           puts "  ✓ #{system.name} at (#{config[:coords].join(',')})"
         end
 
@@ -161,6 +191,28 @@ module Seeds
             delta.delta_cents = adjustment * 100
             delta.save!
           end
+        end
+      end
+
+      def seed_npc_buildings(system)
+        buildings = NPC_BUILDINGS[system.name]
+        return unless buildings
+
+        buildings.each do |config|
+          existing = Building.find_by(system: system, name: config[:name])
+          next if existing
+
+          b = Building.new(
+            system: system,
+            name: config[:name],
+            user: nil,
+            function: config[:function],
+            race: "vex",
+            tier: config[:tier],
+            status: "active"
+          )
+          b.specialization = config[:specialization] if config[:specialization]
+          b.save!(validate: false) # NPC buildings bypass player validations
         end
       end
 
