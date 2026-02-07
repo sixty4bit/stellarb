@@ -161,9 +161,9 @@ class ProceduralGenerationTest < ActiveSupport::TestCase
 
   # Ship diversity test
 
-  test "generates exactly 100 unique ship types (4 races x 5 hull sizes x 5 tiers)" do
+  test "generates exactly 150 unique ship types (6 races x 5 hull sizes x 5 tiers)" do
     ships = ProceduralGeneration::ShipGenerator.generate_all_types
-    assert_equal 100, ships.length
+    assert_equal 150, ships.length
 
     # Verify uniqueness
     ship_signatures = ships.map { |s| "#{s[:race]}-#{s[:hull_size]}-#{s[:tier]}" }
