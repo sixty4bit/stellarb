@@ -533,7 +533,7 @@ class Ship < ApplicationRecord
     Message.create!(
       user: user,
       title: "Arrival at #{system.name}",
-      body: "Your ship #{name} has arrived at #{system.name}.",
+      body: "Your ship #{name} has arrived at #{system.name}.\n\n#{FlavorText.for(:docking)}",
       from: "Navigation System",
       category: "travel"
     )
@@ -550,7 +550,7 @@ class Ship < ApplicationRecord
             "Star Type: #{star_type}\n" \
             "Hazard Level: #{hazard}%\n" \
             "Coordinates: (#{system.x}, #{system.y}, #{system.z})\n\n" \
-            "This discovery has been recorded in your flight log.",
+            "This discovery has been recorded in your flight log.\n\n#{FlavorText.for(:exploration_discovery)}",
       from: "Exploration Bureau",
       category: "discovery"
     )

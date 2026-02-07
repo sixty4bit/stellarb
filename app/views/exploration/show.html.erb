@@ -39,6 +39,7 @@
   <% unless @ship %>
     <div class="bg-red-900 border border-red-700 rounded p-3 sm:p-6 mb-6">
       <p class="text-red-300">No operational ship available for exploration.</p>
+      <p class="text-gray-500 text-sm italic mt-2"><%= FlavorText.for(:exploration_empty) %></p>
       <p class="text-gray-400 text-sm mt-2">
         You need a ship to explore the galaxy.
         <%= link_to "View your ships", ships_path, class: "text-blue-400 hover:underline" %>
