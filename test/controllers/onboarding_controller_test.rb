@@ -117,4 +117,31 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert_select "#onboarding-sidebar", count: 0
   end
 
+  # ===========================================
+  # stellarb-77l.1: Welcome notification should not repeat
+  # ===========================================
+
+  test "user in onboarding without profile completed is not redirected to profile" do
+    # User still in onboarding, profile NOT completed
+    user = User.create!(
+      email: "newbie@test.com",
+      name: "Newbie",
+      profile_completed_at: nil
+    )
+    sign_in_as(user)
+
+    assert user.needs_onboarding?
+    assert_not user.profile_completed?
+
+    # Advance past profile_setup to ships_tour
+    post advance_onboarding_path
+    user.reload
+    assert_equal "ships_tour", user.onboarding_step
+
+    # Visiting ships page should NOT redirect to profile with welcome notice
+    get ships_path
+    assert_response :success
+    assert_nil flash[:notice]
+  end
+
 end

@@ -20,6 +20,7 @@ class ApplicationController < ActionController::Base
     return if controller_name == 'profile'    # Allow profile pages
     return if controller_name == 'sessions'   # Allow logout
     return if controller_name == 'onboarding' # Allow onboarding flow
+    return if current_user.needs_onboarding?  # Don't interrupt tutorial with profile nag
 
     redirect_to edit_profile_path,
       notice: 'Welcome! Please set up your profile to continue.'
