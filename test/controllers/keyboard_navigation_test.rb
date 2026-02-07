@@ -12,7 +12,7 @@ class KeyboardNavigationTest < ActionDispatch::IntegrationTest
   test "layout includes keyboard navigation controller" do
     get root_path
     assert_response :success
-    assert_select "[data-controller='keyboard-navigation']"
+    assert_select "[data-controller~='keyboard-navigation']"
   end
 
   test "layout includes keyboard help modal" do
