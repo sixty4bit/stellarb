@@ -40,14 +40,14 @@ class ShipsNewViewTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='tutorial-recommendation']", count: 0
   end
 
-  test "Myrmidon Scout is cheapest ship option" do
-    myrmidon_scout_cost = Ship.cost_for(hull_size: "scout", race: "myrmidon")
+  test "Grelmak Scout is cheapest ship option" do
+    grelmak_scout_cost = Ship.cost_for(hull_size: "scout", race: "grelmak")
     
     Ship::RACES.each do |race|
       Ship::HULL_SIZES.each do |hull_size|
         cost = Ship.cost_for(hull_size: hull_size, race: race)
-        assert cost >= myrmidon_scout_cost, 
-          "#{race} #{hull_size} (#{cost}) should not be cheaper than Myrmidon Scout (#{myrmidon_scout_cost})"
+        assert cost >= grelmak_scout_cost, 
+          "#{race} #{hull_size} (#{cost}) should not be cheaper than Grelmak Scout (#{grelmak_scout_cost})"
       end
     end
   end

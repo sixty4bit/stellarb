@@ -35,7 +35,9 @@ class Ship < ApplicationRecord
     "vex" => 1.0,        # Standard pricing
     "solari" => 1.1,     # Premium for advanced sensors
     "krog" => 1.15,      # Premium for reinforced hulls
-    "myrmidon" => 0.9    # Discount due to efficient manufacturing
+    "myrmidon" => 0.9,   # Discount due to efficient manufacturing
+    "grelmak" => 0.75,   # Cheap but risky
+    "mechari" => 1.25    # Premium precision engineering
   }.freeze
 
   # Ship type display names
@@ -375,7 +377,8 @@ class Ship < ApplicationRecord
   has_many :incidents, as: :asset, dependent: :destroy
 
   # Constants
-  RACES = %w[vex solari krog myrmidon].freeze
+  RACES = %w[vex solari krog myrmidon grelmak mechari].freeze
+  GRELMAK_CHAOS_FACTOR = 0.15
   HULL_SIZES = %w[scout frigate transport cruiser titan].freeze
   STATUSES = %w[docked in_transit combat destroyed].freeze
   INTENTS = %w[trade battle].freeze
@@ -721,6 +724,15 @@ class Ship < ApplicationRecord
       base_stats[:hull_points] *= 1.2
     when 'myrmidon'
       base_stats[:maintenance_rate] *= 0.8
+    when 'grelmak'
+      base_stats[:cargo_capacity] *= 1.15
+      base_stats[:sensor_range] *= 1.15
+      base_stats[:hull_points] *= 1.15
+      base_stats[:maneuverability] *= 1.15
+    when 'mechari'
+      base_stats[:fuel_efficiency] *= 1.3
+      base_stats[:maintenance_rate] *= 0.6
+      base_stats[:crew_slots][:max] -= 1
     end
 
     self.ship_attributes = base_stats

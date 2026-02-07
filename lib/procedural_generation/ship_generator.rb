@@ -12,7 +12,7 @@ module ProceduralGeneration
       titan:     { cargo: 2000, fuel_eff: 2.0, crew: 10..20, hardpoints: 8 }
     }.freeze
 
-    RACES = %w[vex solari krog myrmidon].freeze
+    RACES = %w[vex solari krog myrmidon grelmak mechari].freeze
     TIERS = (1..5).to_a.freeze
 
     # Racial bonuses as defined in Section 10
@@ -20,7 +20,9 @@ module ProceduralGeneration
       vex:      { cargo: 1.2,  sensors: 1.0,  hull: 1.0,  cost: 1.0 },  # +20% cargo
       solari:   { cargo: 1.0,  sensors: 1.2,  hull: 1.0,  cost: 1.0 },  # +20% sensors
       krog:     { cargo: 1.0,  sensors: 1.0,  hull: 1.2,  cost: 1.0 },  # +20% hull
-      myrmidon: { cargo: 1.0,  sensors: 1.0,  hull: 1.0,  cost: 0.8 }   # -20% cost
+      myrmidon: { cargo: 1.0,  sensors: 1.0,  hull: 1.0,  cost: 0.8 },  # -20% cost
+      grelmak:  { cargo: 1.15, sensors: 1.15, hull: 1.15, cost: 0.75 }, # +15% all, cheap
+      mechari:  { cargo: 1.0,  sensors: 1.0,  hull: 1.0,  cost: 1.25 }  # premium precision
     }.freeze
 
     class << self
@@ -205,7 +207,9 @@ module ProceduralGeneration
           vex: %w[Profit Greed Fortune Credit Margin],
           solari: %w[Logic Reason Theory Axiom Proof],
           krog: %w[Hammer Fist Rage Fury Storm],
-          myrmidon: %w[Swarm Hive Unity Cluster Colony]
+          myrmidon: %w[Swarm Hive Unity Cluster Colony],
+          grelmak: %w[Scrap Jinx Gutter Filch Boom],
+          mechari: %w[Circuit Piston Servo Alloy Flux]
         }
 
         suffixes = {

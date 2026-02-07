@@ -4,17 +4,17 @@ require_relative '../../test_helper'
 require_relative '../../../lib/procedural_generation/ship_generator'
 
 class ProceduralGeneration::ShipGeneratorTest < ActiveSupport::TestCase
-  RACES = %w[vex solari krog myrmidon].freeze
+  RACES = %w[vex solari krog myrmidon grelmak mechari].freeze
   HULL_SIZES = %i[scout frigate transport cruiser titan].freeze
   TIERS = (1..5).to_a.freeze
 
-  test "generates 100 unique ship types (4 races x 5 hull sizes x 5 tiers)" do
+  test "generates 150 unique ship types (6 races x 5 hull sizes x 5 tiers)" do
     ships = ProceduralGeneration::ShipGenerator.generate_all_types
 
-    assert_equal 100, ships.length
+    assert_equal 150, ships.length
   end
 
-  test "all 4 races are represented" do
+  test "all 6 races are represented" do
     ships = ProceduralGeneration::ShipGenerator.generate_all_types
 
     races = ships.map { |s| s[:race] }.uniq
