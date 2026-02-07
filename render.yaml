@@ -9,7 +9,7 @@ services:
     name: stellarb
     runtime: docker
     plan: starter
-    dockerCommand: ./bin/thrust ./bin/rails server
+    dockerCommand: /bin/bash -c "./bin/rails db:prepare && ./bin/thrust ./bin/rails server"
     healthCheckPath: /up
     envVars:
       - key: DATABASE_URL
