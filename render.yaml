@@ -9,7 +9,7 @@ services:
     name: stellarb
     runtime: docker
     plan: starter
-    preDeployCommand: ./bin/rails db:prepare
+    preDeployCommand: ./bin/rails db:prepare && ./bin/rails db:seed
     healthCheckPath: /up
     envVars:
       - key: DATABASE_URL
