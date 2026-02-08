@@ -168,3 +168,20 @@
   </div>
 </div>
 </turbo-frame>
+
+<!-- Bookmark Section -->
+<div class="bg-blue-900 border border-blue-700 p-4 mb-6">
+  <% bookmark = current_user.bookmarks.find_by(system: @system) %>
+  <% if bookmark %>
+    <div class="flex items-center justify-between">
+      <span class="text-orange-400 font-mono">★ Bookmarked<%= " — #{bookmark.label}" if bookmark.label.present? %></span>
+      <%= link_to "Remove Bookmark", bookmark_path(bookmark), data: { turbo_method: :delete, turbo_confirm: "Remove bookmark?" }, class: "text-red-400 text-sm hover:text-red-300" %>
+    </div>
+  <% elsif SystemVisit.exists?(user: current_user, system: @system) %>
+    <%= form_with url: bookmarks_path, method: :post, class: "flex items-center gap-2" do |f| %>
+      <%= f.hidden_field :system_id, value: @system.id %>
+      <%= f.text_field :label, placeholder: "Label (optional)", class: "bg-blue-800 border border-blue-600 text-white px-2 py-1 text-sm font-mono rounded" %>
+      <%= f.submit "★ Bookmark System", class: "bg-orange-600 hover:bg-orange-500 text-white px-3 py-1 text-sm font-mono rounded cursor-pointer" %>
+    <% end %>
+  <% end %>
+</div>

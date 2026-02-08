@@ -35,6 +35,7 @@ class User < ApplicationRecord
   has_many :messages, dependent: :destroy
   has_many :system_auction_bids, dependent: :destroy
   has_many :explored_coordinates, dependent: :destroy
+  has_many :bookmarks, dependent: :destroy
   has_many :mineral_discoveries, dependent: :destroy
 
   # Validations

@@ -10,9 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_07_234953) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_08_013529) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "bookmarks", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "label"
+    t.bigint "system_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["system_id"], name: "index_bookmarks_on_system_id"
+    t.index ["user_id", "system_id"], name: "index_bookmarks_on_user_id_and_system_id", unique: true
+    t.index ["user_id"], name: "index_bookmarks_on_user_id"
+  end
 
   create_table "buildings", force: :cascade do |t|
     t.jsonb "building_attributes", default: {}
@@ -285,6 +296,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_07_234953) do
     t.bigint "current_system_id"
     t.datetime "defense_engaged_at"
     t.bigint "destination_system_id"
+    t.integer "destination_x"
+    t.integer "destination_y"
+    t.integer "destination_z"
     t.datetime "disabled_at"
     t.decimal "fuel", default: "0.0"
     t.decimal "fuel_capacity", default: "100.0", null: false
@@ -298,6 +312,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_07_234953) do
     t.string "short_id"
     t.string "status", default: "docked"
     t.string "system_intent"
+    t.string "travel_intent"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.string "uuid", limit: 36
@@ -563,6 +578,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_07_234953) do
     t.index ["system_b_id"], name: "index_warp_gates_on_system_b_id"
   end
 
+  add_foreign_key "bookmarks", "systems"
+  add_foreign_key "bookmarks", "users"
   add_foreign_key "buildings", "systems"
   add_foreign_key "buildings", "users"
   add_foreign_key "explored_coordinates", "users"
