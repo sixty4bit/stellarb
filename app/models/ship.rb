@@ -772,6 +772,35 @@ class Ship < ApplicationRecord
     fuel >= warp_fuel_required_for(destination)
   end
 
+  # Execute a multi-hop warp route (instant, system-by-system).
+  # @param route [Hash] from WarpRouteService: { path: [System,...], hops: Integer, fuel_cost: Decimal }
+  # @return [TravelResult]
+  def warp_route!(route)
+    if status == "in_transit"
+      return TravelResult.failure("Ship is already in transit")
+    end
+
+    if fuel < route[:fuel_cost]
+      return TravelResult.failure("Insufficient fuel for route (need #{route[:fuel_cost]}, have #{fuel})")
+    end
+
+    path = route[:path]
+    # Skip origin (index 0), warp through each subsequent system
+    path[1..].each do |system|
+      self.fuel -= WarpGate::WARP_FUEL_COST
+      self.current_system = system
+      self.location_x = system.x
+      self.location_y = system.y
+      self.location_z = system.z
+      SystemVisit.record_visit(user, system)
+    end
+
+    self.status = "docked"
+    save!
+
+    TravelResult.success
+  end
+
   def warp_to!(destination, intent: :trade)
     # Validate intent
     intent_str = intent.to_s

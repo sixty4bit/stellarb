@@ -11,24 +11,17 @@
             <% if bookmark.label.present? %>
               <span class="text-gray-400 ml-2">— <%= bookmark.label %></span>
             <% end %>
-            <span class="text-gray-500 text-xs ml-2">
-              (<%= bookmark.system.x %>, <%= bookmark.system.y %>, <%= bookmark.system.z %>)
-            </span>
+            <span class="text-gray-500 text-xs ml-2">(<%= bookmark.system.x %>, <%= bookmark.system.y %>, <%= bookmark.system.z %>)</span>
           </div>
           <div class="flex items-center gap-2">
-            <%= form_with url: bookmark_path(bookmark), method: :patch, class: "flex items-center gap-1" do |f| %>
-              <%= f.text_field :label, value: bookmark.label, placeholder: "Label", class: "bg-blue-800 border border-blue-600 text-white px-2 py-1 text-xs font-mono rounded w-24" %>
-              <%= f.submit "Save", class: "bg-blue-700 hover:bg-blue-600 text-white px-2 py-1 text-xs font-mono rounded cursor-pointer" %>
-            <% end %>
-            <%= link_to "✕", bookmark_path(bookmark), data: { turbo_method: :delete, turbo_confirm: "Remove?" }, class: "text-red-400 hover:text-red-300 text-sm ml-2" %>
+            <%= link_to "⚡ Warp", warp_route_bookmark_path(bookmark), class: "bg-orange-600 hover:bg-orange-500 text-white px-2 py-1 text-xs font-mono rounded", data: { turbo_frame: "content_panel" } %>
+            <%= link_to "✕", bookmark_path(bookmark), data: { turbo_method: :delete, turbo_confirm: "Remove?" }, class: "text-red-400 hover:text-red-300 text-sm" %>
           </div>
         </div>
       <% end %>
     </div>
   <% else %>
-    <div class="bg-blue-900 border border-blue-700 p-6 rounded text-center">
-      <p class="text-gray-400 font-mono">No bookmarks yet. Visit systems and bookmark them!</p>
-    </div>
+    <p class="text-gray-400 font-mono text-center py-6">No bookmarks yet.</p>
   <% end %>
 </div>
 </turbo-frame>

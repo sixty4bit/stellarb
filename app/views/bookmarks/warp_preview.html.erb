@@ -1,0 +1,48 @@
+<turbo-frame id="content_panel">
+<div class="max-w-4xl px-4">
+  <h2 class="text-2xl font-bold mb-4 text-orange-500">Warp Route Preview</h2>
+
+  <div class="bg-blue-900 border border-blue-700 p-6 rounded mb-4">
+    <div class="text-sm text-gray-400 mb-2">Destination</div>
+    <div class="text-lg text-orange-400 font-mono"><%= @bookmark.system.name %></div>
+    <div class="text-xs text-gray-500">(<%= @bookmark.system.x %>, <%= @bookmark.system.y %>, <%= @bookmark.system.z %>)</div>
+  </div>
+
+  <div class="bg-blue-900 border border-blue-700 p-6 rounded mb-4">
+    <div class="text-sm text-gray-400 mb-3">Route (<%= @route[:hops] %> hop<%= @route[:hops] > 1 ? 's' : '' %>)</div>
+    <div class="space-y-1">
+      <% @route[:path].each_with_index do |system, i| %>
+        <div class="flex items-center">
+          <% if i > 0 %>
+            <span class="text-blue-400 mr-2">→</span>
+          <% end %>
+          <span class="text-white font-mono"><%= system.name %></span>
+          <span class="text-gray-500 text-xs ml-2">(<%= system.x %>, <%= system.y %>, <%= system.z %>)</span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="bg-blue-900 border border-blue-700 p-4 rounded mb-6">
+    <div class="grid grid-cols-2 gap-4 text-sm">
+      <div>
+        <span class="text-gray-400">Fuel Cost:</span>
+        <span class="text-<%= @ship.fuel >= @route[:fuel_cost] ? 'lime' : 'red' %>-400 ml-2"><%= @route[:fuel_cost] %></span>
+      </div>
+      <div>
+        <span class="text-gray-400">Current Fuel:</span>
+        <span class="text-white ml-2"><%= @ship.fuel %></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex gap-3">
+    <% if @ship.fuel >= @route[:fuel_cost] %>
+      <%= link_to "⚡ Confirm Warp", warp_route_bookmark_path(@bookmark, confirm: "true"), data: { turbo_method: :post }, class: "bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 font-mono rounded" %>
+    <% else %>
+      <span class="bg-gray-700 text-gray-400 px-4 py-2 font-mono rounded">Insufficient Fuel</span>
+    <% end %>
+    <%= link_to "Cancel", bookmarks_path, class: "bg-blue-700 hover:bg-blue-600 text-white px-4 py-2 font-mono rounded", data: { turbo_frame: "content_panel" } %>
+  </div>
+</div>
+</turbo-frame>

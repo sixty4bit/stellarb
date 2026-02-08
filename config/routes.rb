@@ -127,7 +127,12 @@ Rails.application.routes.draw do
     post :reset, as: :reset_onboarding
   end
 
-  resources :bookmarks, only: [:index, :create, :update, :destroy]
+  resources :bookmarks, only: [:index, :create, :update, :destroy] do
+    member do
+      get :warp_route
+      post :warp_route
+    end
+  end
 
   resources :leaderboards, only: [:index]
 
