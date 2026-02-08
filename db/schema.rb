@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_08_013412) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_08_013529) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -296,6 +296,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_08_013412) do
     t.bigint "current_system_id"
     t.datetime "defense_engaged_at"
     t.bigint "destination_system_id"
+    t.integer "destination_x"
+    t.integer "destination_y"
+    t.integer "destination_z"
     t.datetime "disabled_at"
     t.decimal "fuel", default: "0.0"
     t.decimal "fuel_capacity", default: "100.0", null: false
@@ -309,6 +312,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_08_013412) do
     t.string "short_id"
     t.string "status", default: "docked"
     t.string "system_intent"
+    t.string "travel_intent"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.string "uuid", limit: 36

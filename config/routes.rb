@@ -127,6 +127,8 @@ Rails.application.routes.draw do
     post :reset, as: :reset_onboarding
   end
 
+  resources :bookmarks, only: [:index, :create, :update, :destroy]
+
   resources :leaderboards, only: [:index]
 
   get :about, to: 'about#index'

@@ -1,0 +1,20 @@
+<div class="container mx-auto p-4">
+  <h1 class="text-2xl font-mono text-orange-500 mb-4">Bookmarks</h1>
+
+  <% @bookmarks.each do |bookmark| %>
+    <div class="bg-blue-900 p-3 mb-2 rounded font-mono">
+      <span class="text-orange-500"><%= bookmark.system.name %></span>
+      <% if bookmark.label.present? %>
+        <span class="text-gray-400">— <%= bookmark.label %></span>
+      <% end %>
+      <span class="text-gray-500 text-sm">
+        (<%= bookmark.system.x %>, <%= bookmark.system.y %>, <%= bookmark.system.z %>)
+      </span>
+      <%= link_to "Remove", bookmark_path(bookmark), data: { turbo_method: :delete }, class: "text-red-400 ml-2" %>
+    </div>
+  <% end %>
+
+  <% if @bookmarks.empty? %>
+    <p class="text-gray-400 font-mono">No bookmarks yet. Visit systems and bookmark them!</p>
+  <% end %>
+</div>
