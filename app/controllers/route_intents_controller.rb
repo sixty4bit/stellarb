@@ -69,7 +69,7 @@ class RouteIntentsController < ApplicationController
   private
 
   def set_route
-    @route = current_user.routes.find(params[:route_id])
+    @route = current_user.routes.find_by!(short_id: params[:route_id]) rescue current_user.routes.find(params[:route_id])
   end
 
   def set_stop_index

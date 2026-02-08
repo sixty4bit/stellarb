@@ -3,6 +3,10 @@
 class Quest < ApplicationRecord
   include TripleId
 
+  def to_param
+    short_id
+  end
+
   # Galaxy constants
   GALAXIES = %w[rusty_belt neon_spire void_lab the_hive].freeze
 

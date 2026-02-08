@@ -1,5 +1,9 @@
 class User < ApplicationRecord
   include TripleId
+
+  def to_param
+    short_id
+  end
   include Onboardable
 
   # Expose ONBOARDING_STEPS at the class level for external access

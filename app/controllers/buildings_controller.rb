@@ -144,7 +144,7 @@ class BuildingsController < ApplicationController
   end
 
   def set_building
-    @building = current_user.buildings.find(params[:id])
+    @building = current_user.buildings.find_by!(short_id: params[:id]) rescue current_user.buildings.find(params[:id])
   end
 
   def building_params

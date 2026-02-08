@@ -1,5 +1,9 @@
 class Building < ApplicationRecord
   include TripleId
+
+  def to_param
+    short_id
+  end
   include Turbo::Broadcastable
 
   # Custom Errors

@@ -1,6 +1,10 @@
 class Route < ApplicationRecord
   include TripleId
 
+  def to_param
+    short_id
+  end
+
   belongs_to :user
   belongs_to :ship, optional: true
 

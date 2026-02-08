@@ -71,7 +71,7 @@ class RoutesController < ApplicationController
   end
 
   def set_route
-    @route = current_user.routes.find(params[:id])
+    @route = current_user.routes.find_by!(short_id: params[:id]) rescue current_user.routes.find(params[:id])
   end
 
   def route_params
