@@ -1,15 +1,8 @@
 # frozen_string_literal: true
 
-# WarpGateAutoLinker classifies systems into 6 directional pyramids
-# and finds the nearest gated system in each pyramid for auto-linking.
 class WarpGateAutoLinker
   PYRAMIDS = %i[pos_x neg_x pos_y neg_y pos_z neg_z].freeze
 
-  # Classify target into a pyramid relative to source using dominant axis.
-  # Tiebreaker priority: X > Y > Z
-  # @param source [System] origin system
-  # @param target [System] system to classify
-  # @return [Symbol] :pos_x, :neg_x, :pos_y, :neg_y, :pos_z, :neg_z
   def self.classify_pyramid(source, target)
     dx = target.x - source.x
     dy = target.y - source.y
@@ -19,7 +12,6 @@ class WarpGateAutoLinker
     ady = dy.abs
     adz = dz.abs
 
-    # Tiebreaker: X > Y > Z (>= for X vs Y, >= for X vs Z, >= for Y vs Z)
     if adx >= ady && adx >= adz
       dx >= 0 ? :pos_x : :neg_x
     elsif ady >= adz
@@ -29,13 +21,63 @@ class WarpGateAutoLinker
     end
   end
 
-  # Find the nearest system in a given pyramid from candidates.
-  # @param source [System] origin system
-  # @param pyramid [Symbol] pyramid direction
-  # @param candidates [Array<System>] systems to search
-  # @return [System, nil] nearest system in that pyramid
   def self.find_nearest_in_pyramid(source, pyramid, candidates)
     matching = candidates.select { |c| classify_pyramid(source, c) == pyramid }
     matching.min_by { |c| source.distance_to(c) }
   end
+
+  # Auto-link a newly gated system to nearest systems in each of 6 pyramids.
+  # Creates bidirectional WarpGate records.
+  # @param system [System] the system that just got a warp gate
+  def self.link!(system)
+    # Find all other systems with active warp gates
+    gated_system_ids = WarpGate.active.pluck(:system_a_id, :system_b_id).flatten.uniq - [system.id]
+    candidates = System.where(id: gated_system_ids).to_a
+
+    PYRAMIDS.each do |pyramid|
+      nearest = find_nearest_in_pyramid(system, pyramid, candidates)
+      next unless nearest
+
+      # Create bidirectional gate if not already connected
+      unless WarpGate.between(system, nearest)
+        WarpGate.create!(system_a: system, system_b: nearest)
+      end
+    end
+  end
+
+  # Re-evaluate existing gates when a new gate is added.
+  # For each existing gated system, check if the new system is now closer
+  # in the reverse pyramid direction. If so, replace the old link.
+  # @param new_system [System] the newly gated system
+  def self.relink_neighbors!(new_system)
+    gated_system_ids = WarpGate.active.pluck(:system_a_id, :system_b_id).flatten.uniq - [new_system.id]
+    existing_systems = System.where(id: gated_system_ids).to_a
+
+    existing_systems.each do |existing|
+      pyramid = classify_pyramid(existing, new_system)
+
+      # Find what existing is currently linked to in that pyramid
+      current_links = existing_linked_systems(existing)
+      current_in_pyramid = current_links.select { |s| classify_pyramid(existing, s) == pyramid }
+      current_nearest = current_in_pyramid.min_by { |s| existing.distance_to(s) }
+
+      if current_nearest.nil? || existing.distance_to(new_system) < existing.distance_to(current_nearest)
+        # New system is closer — replace old link if it exists
+        if current_nearest
+          old_gate = WarpGate.between(existing, current_nearest)
+          old_gate&.destroy
+        end
+        unless WarpGate.between(existing, new_system)
+          WarpGate.create!(system_a: existing, system_b: new_system)
+        end
+      end
+    end
+  end
+
+  def self.existing_linked_systems(system)
+    gate_pairs = system.warp_gates.active.pluck(:system_a_id, :system_b_id)
+    linked_ids = gate_pairs.flatten.uniq - [system.id]
+    System.where(id: linked_ids).to_a
+  end
+  private_class_method :existing_linked_systems
 end
