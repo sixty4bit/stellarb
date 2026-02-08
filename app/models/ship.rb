@@ -289,6 +289,52 @@ class Ship < ApplicationRecord
   end
 
   # ===========================================
+  # Repair System
+  # ===========================================
+
+  REPAIR_COST_PER_POINT = 5 # Credits per hull point restored
+
+  # Calculate the cost to fully repair this ship
+  # @return [Integer] Cost in credits
+  def repair_cost
+    damage = max_hull_points - hull_points
+    damage * REPAIR_COST_PER_POINT
+  end
+
+  # Check if the ship needs repair
+  # @return [Boolean]
+  def damaged?
+    hull_points < max_hull_points
+  end
+
+  # Repair the ship to full hull points
+  # @param user [User] User paying for the repair
+  # @return [TravelResult] Success/failure result
+  def repair!(user)
+    unless status == "docked" && current_system.present?
+      return TravelResult.failure("Ship must be docked at a system to repair")
+    end
+
+    unless damaged?
+      return TravelResult.failure("Ship is already at full hull integrity")
+    end
+
+    cost = repair_cost
+
+    if user.credits < cost
+      return TravelResult.failure("Insufficient credits (need #{cost}, have #{user.credits.to_i})")
+    end
+
+    ActiveRecord::Base.transaction do
+      user.update!(credits: user.credits - cost)
+      ship_attributes["hull_points"] = max_hull_points
+      save!
+    end
+
+    TravelResult.success
+  end
+
+  # ===========================================
   # Cargo System
   # ===========================================
   
