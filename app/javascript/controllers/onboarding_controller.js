@@ -7,10 +7,17 @@ export default class extends Controller {
   static targets = ["content", "continueButton"]
   static values = {
     step: String,
-    highlight: String
+    highlight: String,
+    mobileOnly: Boolean
   }
 
   connect() {
+    // Auto-advance mobile-only steps on desktop (sm+ breakpoint = 640px)
+    if (this.mobileOnlyValue && window.matchMedia("(min-width: 640px)").matches) {
+      this.advance()
+      return
+    }
+
     this.bindKeyboardEvents()
     this.highlightMenuItem()
     
