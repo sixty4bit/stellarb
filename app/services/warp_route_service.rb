@@ -7,7 +7,9 @@ class WarpRouteService
   # @param to_system [System] destination
   # @return [Hash, nil] { path: [System, ...], hops: Integer, fuel_cost: Decimal } or nil
   def self.find_route(from_system, to_system)
-    return nil if from_system.id == to_system.id
+    if from_system.id == to_system.id
+      return { path: [from_system], hops: 0, fuel_cost: 0 }
+    end
 
     # Build adjacency list from active warp gates
     adjacency = build_adjacency_list
