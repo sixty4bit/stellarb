@@ -30,7 +30,7 @@ module Seeds
         properties: {
           star_type: "red_dwarf",
           planet_count: 3,
-          hazard_level: 10,
+          hazard_level: 3,
           security_level: "high",
           specialty: "mining"
         },
@@ -48,7 +48,7 @@ module Seeds
         properties: {
           star_type: "yellow_dwarf",
           planet_count: 5,
-          hazard_level: 5,
+          hazard_level: 2,
           security_level: "high",
           specialty: "agriculture"
         },
@@ -66,7 +66,7 @@ module Seeds
         properties: {
           star_type: "blue_giant",
           planet_count: 4,
-          hazard_level: 15,
+          hazard_level: 5,
           security_level: "medium",
           specialty: "trade"
         },
@@ -84,7 +84,7 @@ module Seeds
         properties: {
           star_type: "orange_dwarf",
           planet_count: 2,
-          hazard_level: 20,
+          hazard_level: 8,
           security_level: "medium",
           specialty: "refining"
         },

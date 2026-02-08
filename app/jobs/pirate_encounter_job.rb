@@ -33,6 +33,9 @@ class PirateEncounterJob < ApplicationJob
     devastated: [0.40, 0.60]
   }.freeze
 
+  # Cooldown: minimum minutes between encounters per ship
+  ENCOUNTER_COOLDOWN_MINUTES = 30
+
   # Racial bonuses
   VEX_CARGO_PROTECTION = 0.15  # Hidden compartments protect 15%
   KROG_DAMAGE_REDUCTION = 0.20 # Reinforced hull reduces damage by 20%
@@ -85,6 +88,11 @@ class PirateEncounterJob < ApplicationJob
       return safe_zone_result("Warp gate travel is protected")
     end
 
+    # Cooldown: skip if ship had a recent encounter
+    if recently_encountered?(ship)
+      return { outcome: :cooldown, reason: "Too soon since last encounter" }
+    end
+
     # Get marine skill if one is assigned
     marine_skill = assigned_marine_skill(ship)
     encounter_chance = self.class.encounter_chance_for(system, marine_skill: marine_skill)
@@ -113,6 +121,13 @@ class PirateEncounterJob < ApplicationJob
   end
 
   private
+
+  def recently_encountered?(ship)
+    last_encounter = Message.where(user: ship.user, category: "combat")
+                           .where("created_at > ?", ENCOUNTER_COOLDOWN_MINUTES.minutes.ago)
+                           .exists?
+    last_encounter
+  end
 
   def system_is_safe?(system)
     # The Cradle (hazard 0) is always safe
