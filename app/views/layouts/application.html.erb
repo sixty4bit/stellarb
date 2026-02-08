@@ -45,7 +45,7 @@
           </button>
           <div class="flex items-center gap-3 text-sm">
             <span class="text-orange-500 font-bold"><%= current_user.name %></span>
-            <span class="text-lime-400">Credits: <%= number_with_delimiter(current_user.credits.to_i) %></span>
+            <%= render "shared/credits" %>
             <span id="mobile_inbox_unread_badge"><%= unread_badge(current_user) %></span>
           </div>
         </div>
@@ -128,8 +128,8 @@
     <% end %>
 
     <!-- Flash messages -->
+    <div id="flash_messages" class="fixed top-4 right-4 space-y-2 z-50">
     <% if flash.any? %>
-      <div class="fixed top-4 right-4 space-y-2 z-50">
         <% flash.each do |type, msg| %>
           <div class="bg-<%= type == 'notice' ? 'green' : 'red' %>-800 border border-<%= type == 'notice' ? 'green' : 'red' %>-600 text-white px-4 py-2 rounded shadow-lg cursor-pointer"
                data-controller="flash"
@@ -137,8 +137,8 @@
             <%= msg %>
           </div>
         <% end %>
-      </div>
     <% end %>
+    </div>
 
     <!-- Sound effects container (populated via Turbo Streams) -->
     <div id="sounds" class="hidden"></div>
