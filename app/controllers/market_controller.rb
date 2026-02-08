@@ -105,7 +105,17 @@ class MarketController < ApplicationController
     notice = "Purchased #{quantity} #{commodity} for #{total_cost} credits"
     notice += " (#{marketplace_fee} cr marketplace fee)" if marketplace_fee > 0
     notice += " (#{tax_paid} cr tax to system owner)" if tax_paid
-    redirect_to system_market_index_path(@system), notice: notice
+
+    respond_to do |format|
+      format.turbo_stream do
+        current_user.reload
+        render turbo_stream: [
+          turbo_stream.replace("user_credits", partial: "shared/credits"),
+          turbo_stream.update("flash_messages", partial: "shared/flash_message", locals: { message: notice, type: "notice" })
+        ]
+      end
+      format.html { redirect_to system_market_index_path(@system), notice: notice }
+    end
   end
 
   def sell
@@ -166,7 +176,17 @@ class MarketController < ApplicationController
     notice = "Sold #{quantity} #{commodity} for #{net_income} credits"
     notice += " (#{marketplace_fee} cr marketplace fee)" if marketplace_fee > 0
     notice += " (#{tax_paid} cr tax to system owner)" if tax_paid
-    redirect_to system_market_index_path(@system), notice: notice
+
+    respond_to do |format|
+      format.turbo_stream do
+        current_user.reload
+        render turbo_stream: [
+          turbo_stream.replace("user_credits", partial: "shared/credits"),
+          turbo_stream.update("flash_messages", partial: "shared/flash_message", locals: { message: notice, type: "notice" })
+        ]
+      end
+      format.html { redirect_to system_market_index_path(@system), notice: notice }
+    end
   end
 
   private

@@ -146,7 +146,7 @@
           
           <!-- Buy/Sell Buttons -->
           <div class="flex gap-2 col-span-2 justify-center" onclick="event.stopPropagation()">
-            <%= form_with url: buy_system_market_index_path(@system), method: :post, local: true, class: "inline" do |f| %>
+            <%= form_with url: buy_system_market_index_path(@system), method: :post, class: "inline" do |f| %>
               <%= f.hidden_field :commodity, value: item[:commodity] %>
               <%= f.hidden_field :price, value: item[:buy_price] %>
               <input type="hidden" name="quantity" value="1" data-commodity="<%= item[:commodity] %>" class="qty-input">
@@ -155,7 +155,7 @@
                   title: "Buy at #{item[:buy_price]} cr each" %>
             <% end %>
             
-            <%= form_with url: sell_system_market_index_path(@system), method: :post, local: true, class: "inline" do |f| %>
+            <%= form_with url: sell_system_market_index_path(@system), method: :post, class: "inline" do |f| %>
               <%= f.hidden_field :commodity, value: item[:commodity] %>
               <%= f.hidden_field :price, value: item[:sell_price] %>
               <input type="hidden" name="quantity" value="1" data-commodity="<%= item[:commodity] %>" class="qty-input">
@@ -317,14 +317,14 @@
                    id="mobile_qty_<%= item[:commodity] %>"
                    value="1" min="1" max="<%= item[:inventory] %>"
                    class="w-16 bg-blue-950 border border-blue-600 text-white text-center rounded px-2 py-1 text-sm">
-            <%= form_with url: buy_system_market_index_path(@system), method: :post, local: true, class: "inline" do |f| %>
+            <%= form_with url: buy_system_market_index_path(@system), method: :post, class: "inline" do |f| %>
               <%= f.hidden_field :commodity, value: item[:commodity] %>
               <%= f.hidden_field :price, value: item[:buy_price] %>
               <input type="hidden" name="quantity" value="1" data-commodity="<%= item[:commodity] %>" class="mobile-qty-input">
               <%= f.submit "Buy",
                   class: "px-4 py-1.5 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded cursor-pointer transition-colors font-bold" %>
             <% end %>
-            <%= form_with url: sell_system_market_index_path(@system), method: :post, local: true, class: "inline" do |f| %>
+            <%= form_with url: sell_system_market_index_path(@system), method: :post, class: "inline" do |f| %>
               <%= f.hidden_field :commodity, value: item[:commodity] %>
               <%= f.hidden_field :price, value: item[:sell_price] %>
               <input type="hidden" name="quantity" value="1" data-commodity="<%= item[:commodity] %>" class="mobile-qty-input">

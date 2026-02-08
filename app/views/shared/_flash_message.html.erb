@@ -1,0 +1,5 @@
+<div class="bg-<%= type == 'notice' ? 'green' : 'red' %>-800 border border-<%= type == 'notice' ? 'green' : 'red' %>-600 text-white px-4 py-2 rounded shadow-lg cursor-pointer"
+     data-controller="flash"
+     data-action="click->flash#dismiss">
+  <%= message %>
+</div>
