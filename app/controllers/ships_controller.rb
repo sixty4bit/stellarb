@@ -122,8 +122,19 @@ class ShipsController < ApplicationController
   end
 
   def repair
-    # TODO: Implement repair logic
-    redirect_to @ship, notice: "Ship repaired!"
+    result = @ship.repair!(current_user)
+
+    if result.success?
+      respond_to do |format|
+        format.html { redirect_to @ship, notice: "Ship repaired to full hull integrity!" }
+        format.turbo_stream {
+          flash.now[:notice] = "Ship repaired to full hull integrity!"
+          render turbo_stream: turbo_stream.replace("ship_details", partial: "ships/details", locals: { ship: @ship })
+        }
+      end
+    else
+      redirect_to @ship, alert: result.error
+    end
   end
 
   def refuel
