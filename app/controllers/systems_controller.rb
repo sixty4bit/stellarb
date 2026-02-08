@@ -21,7 +21,7 @@ class SystemsController < ApplicationController
 
     # Get player assets in this system
     @ships_in_system = current_user.ships.where(current_system: @system)
-    @buildings_in_system = Building.where(system: @system).where(user: [current_user, nil])
+    @buildings_in_system = Building.where(system: @system).where(user: [current_user, nil]).where.not(short_id: nil)
   end
 
   private
