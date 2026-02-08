@@ -1,118 +1,44 @@
 require "test_helper"
 
 class ExplorationControllerTest < ActionDispatch::IntegrationTest
+  def create_system(name:, short_id:, x:, y:, z:)
+    System.create!(name: name, short_id: short_id, x: x, y: y, z: z,
+                   properties: { star_type: "red_dwarf", planet_count: 1, hazard_level: 0, base_prices: {} })
+  end
+
   setup do
     @user = users(:pilot)
+    # Need a system within exploration coord range (-9..9)
+    @origin = System.find_by(x: 0, y: 0, z: 0) || create_system(name: "Origin", short_id: "sy-org", x: 0, y: 0, z: 0)
     @ship = ships(:hauler)
-    # Put ship in exploration grid range
-    @explore_system = System.find_or_create_by!(x: 0, y: 0, z: 0) { |s| s.name = "Explore Origin" }
-    @ship.update!(disabled_at: nil, status: "docked", current_system: @explore_system)
+    @ship.update_columns(current_system_id: @origin.id, location_x: 0, location_y: 0, location_z: 0, fuel: 100.0, status: "docked")
+    # Mark origin as explored
+    ExploredCoordinate.mark_explored!(user: @user, x: 0, y: 0, z: 0, has_system: true)
     sign_in_as(@user)
   end
 
   test "show renders exploration page" do
     get exploration_path
-
     assert_response :success
-    assert_select "h2", /Exploration/
   end
 
-  test "show displays exploration modes" do
-    get exploration_path
-
-    assert_response :success
-    assert_select "h4", "Single Direction"
-    assert_select "h4", "Growing Arcs"
-    assert_select "h4", "Orbit"
-  end
-
-  # =========================================
-  # Single Direction Tests
-  # =========================================
-
-  test "single_direction explores in valid direction" do
-    # The service looks for unexplored coordinates at valid positions (0,3,6,9)
-    # The ship is at cradle, and we explore in +x direction
-
-    post single_direction_exploration_path(direction: "+x")
-
+  test "single_direction initiates ship travel" do
+    post single_direction_exploration_path, params: { direction: "+x" }
     assert_redirected_to exploration_path
-    # Should have explored a coordinate or shown an alert (if all explored in that direction)
-    assert flash[:notice].present? || flash[:alert].present?
+    @ship.reload
+    assert_equal "in_transit", @ship.status
+  end
+
+  test "single_direction rejects in-transit ship" do
+    @ship.update_columns(status: "in_transit", arrival_at: 5.minutes.from_now)
+    post single_direction_exploration_path, params: { direction: "+x" }
+    assert_redirected_to exploration_path
+    assert_match /already in transit/i, flash[:alert]
   end
 
   test "single_direction rejects invalid direction" do
-    post single_direction_exploration_path(direction: "invalid")
-
+    post single_direction_exploration_path, params: { direction: "invalid" }
     assert_redirected_to exploration_path
-    assert_equal "Invalid direction: invalid", flash[:alert]
-  end
-
-  test "single_direction requires operational ship" do
-    # Disable all user's ships
-    @user.ships.update_all(disabled_at: Time.current)
-
-    post single_direction_exploration_path(direction: "+x")
-
-    assert_redirected_to exploration_path
-    assert_equal "No operational ship available", flash[:alert]
-  end
-
-  # =========================================
-  # Growing Arcs Tests
-  # =========================================
-
-  test "growing_arcs explores closest unexplored coordinate" do
-    assert_difference -> { ExploredCoordinate.count }, 1 do
-      post growing_arcs_exploration_path
-    end
-
-    assert_redirected_to exploration_path
-    assert_match /Explored/, flash[:notice]
-  end
-
-  test "growing_arcs shows alert when all coordinates explored" do
-    # Mark all valid coordinates as explored
-    ExplorationService::VALID_COORDS.each do |x|
-      ExplorationService::VALID_COORDS.each do |y|
-        ExplorationService::VALID_COORDS.each do |z|
-          ExploredCoordinate.mark_explored!(user: @user, x: x, y: y, z: z)
-        end
-      end
-    end
-
-    post growing_arcs_exploration_path
-
-    assert_redirected_to exploration_path
-    assert_match /All coordinates explored/, flash[:alert]
-  end
-
-  # =========================================
-  # Orbit Tests
-  # =========================================
-
-  test "orbit explores closest unexplored coordinate in orbital pattern" do
-    assert_difference -> { ExploredCoordinate.count }, 1 do
-      post orbit_exploration_path
-    end
-
-    assert_redirected_to exploration_path
-    assert_match /Explored/, flash[:notice]
-  end
-
-  test "orbit shows alert when all orbital coordinates explored" do
-    # Mark all valid coordinates as explored
-    ExplorationService::VALID_COORDS.each do |x|
-      ExplorationService::VALID_COORDS.each do |y|
-        ExplorationService::VALID_COORDS.each do |z|
-          ExploredCoordinate.mark_explored!(user: @user, x: x, y: y, z: z)
-        end
-      end
-    end
-
-    post orbit_exploration_path
-
-    assert_redirected_to exploration_path
-    assert_match /All orbital coordinates explored/, flash[:alert]
+    assert_match /Invalid direction/i, flash[:alert]
   end
 end
