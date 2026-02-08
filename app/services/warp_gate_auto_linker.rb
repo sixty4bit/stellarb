@@ -80,4 +80,29 @@ class WarpGateAutoLinker
     System.where(id: linked_ids).to_a
   end
   private_class_method :existing_linked_systems
+
+  # When a gate is removed, neighbors need to re-evaluate their connections.
+  # @param system [System] the system losing its warp gate
+  def self.unlink!(system)
+    # Find all systems currently linked to this one BEFORE removing gates
+    linked = existing_linked_systems(system)
+
+    # Remove all gates involving this system
+    system.warp_gates.delete_all
+
+    # For each former neighbor, find a new link in that pyramid direction
+    # Candidates include other former neighbors + any remaining gated systems
+    linked.each do |neighbor|
+      pyramid = classify_pyramid(neighbor, system)
+      # Candidates: other gated systems + former neighbors of the removed system
+      gated_ids = WarpGate.active.pluck(:system_a_id, :system_b_id).flatten.uniq
+      other_linked_ids = linked.map(&:id) - [neighbor.id]
+      all_candidate_ids = (gated_ids + other_linked_ids).uniq - [neighbor.id, system.id]
+      candidates = System.where(id: all_candidate_ids).to_a
+      replacement = find_nearest_in_pyramid(neighbor, pyramid, candidates)
+      next unless replacement
+      next if WarpGate.between(neighbor, replacement)
+      WarpGate.create!(system_a: neighbor, system_b: replacement)
+    end
+  end
 end
