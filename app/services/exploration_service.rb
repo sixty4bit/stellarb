@@ -214,10 +214,13 @@ class ExplorationService
 
     case dir_config[:axis]
     when :x
+      return false unless y == @current_system.y && z == @current_system.z
       dir_config[:positive] ? x > @current_system.x : x < @current_system.x
     when :y
+      return false unless x == @current_system.x && z == @current_system.z
       dir_config[:positive] ? y > @current_system.y : y < @current_system.y
     when :z
+      return false unless x == @current_system.x && y == @current_system.y
       dir_config[:positive] ? z > @current_system.z : z < @current_system.z
     else
       true
