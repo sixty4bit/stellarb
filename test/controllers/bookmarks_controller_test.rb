@@ -15,7 +15,7 @@ class BookmarksControllerTest < ActionDispatch::IntegrationTest
     Bookmark.create!(user: @user, system: @system, label: "Home")
     get bookmarks_path
     assert_response :success
-    assert_select "span", "The Cradle"
+    assert_select "a", "The Cradle"
   end
 
   test "create bookmark for visited system" do
