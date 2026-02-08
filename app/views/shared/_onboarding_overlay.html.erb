@@ -11,6 +11,7 @@
      data-controller="onboarding"
      data-onboarding-step-value="<%= user.onboarding_step %>"
      data-onboarding-highlight-value="<%= config[:highlight] %>"
+     data-onboarding-mobile-only-value="<%= config[:mobile_only] ? 'true' : 'false' %>"
      class="fixed bottom-0 left-0 right-0 sm:top-0 sm:right-0 sm:left-auto sm:bottom-auto sm:h-full w-full sm:w-80 z-40 flex flex-col pointer-events-none <%= 'sm:hidden' if config[:mobile_only] %>">
   
   <!-- Sidebar Panel: bottom card on mobile, right sidebar on desktop -->
