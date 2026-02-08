@@ -541,9 +541,71 @@ class Ship < ApplicationRecord
     TravelResult.success
   end
 
+  # ===========================================
+  # Coordinate-based Travel (Exploration)
+  # ===========================================
+
+  def fuel_required_for_coordinates(x, y, z)
+    dx = x - (location_x || current_system&.x || 0)
+    dy = y - (location_y || current_system&.y || 0)
+    dz = z - (location_z || current_system&.z || 0)
+    distance = Math.sqrt(dx**2 + dy**2 + dz**2)
+    distance * fuel_efficiency
+  end
+
+  def travel_time_to_coordinates(x, y, z)
+    dx = x - (location_x || current_system&.x || 0)
+    dy = y - (location_y || current_system&.y || 0)
+    dz = z - (location_z || current_system&.z || 0)
+    distance = Math.sqrt(dx**2 + dy**2 + dz**2)
+    speed_multiplier = maneuverability.to_f / MANEUVERABILITY_BASELINE
+    (distance / (BASE_SPEED * speed_multiplier)).ceil
+  end
+
+  def travel_to_coordinates!(x, y, z, intent: :explore)
+    if status == "in_transit"
+      return TravelResult.failure("Ship is already in transit")
+    end
+
+    fuel_needed = fuel_required_for_coordinates(x, y, z)
+    if fuel < fuel_needed
+      return TravelResult.failure("Insufficient fuel (need #{fuel_needed.round(1)}, have #{fuel})")
+    end
+
+    travel_time = travel_time_to_coordinates(x, y, z)
+
+    self.fuel -= fuel_needed
+    self.status = "in_transit"
+    self.destination_x = x
+    self.destination_y = y
+    self.destination_z = z
+    self.travel_intent = intent.to_s
+    self.destination_system = nil
+    self.arrival_at = Time.current + travel_time.seconds
+    save!
+
+    TravelResult.success
+  end
+
   def check_arrival!
     return unless status == "in_transit" && arrival_at.present?
     return if arrival_at > Time.current
+
+    # Coordinate-based travel (no destination system)
+    if destination_x.present? && destination_system_id.nil?
+      self.location_x = destination_x
+      self.location_y = destination_y
+      self.location_z = destination_z
+      self.current_system_id = nil
+      self.status = "docked"
+      self.destination_x = nil
+      self.destination_y = nil
+      self.destination_z = nil
+      self.travel_intent = nil
+      self.arrival_at = nil
+      save!
+      return
+    end
 
     # Store destination name before clearing
     arrived_at_system = destination_system

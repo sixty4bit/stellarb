@@ -214,13 +214,48 @@ class ExplorationService
 
     case dir_config[:axis]
     when :x
+      return false unless y == @current_system.y && z == @current_system.z
       dir_config[:positive] ? x > @current_system.x : x < @current_system.x
     when :y
+      return false unless x == @current_system.x && z == @current_system.z
       dir_config[:positive] ? y > @current_system.y : y < @current_system.y
     when :z
+      return false unless x == @current_system.x && y == @current_system.y
       dir_config[:positive] ? z > @current_system.z : z < @current_system.z
     else
       true
+    end
+  end
+
+  public
+
+  # Realize a system at ship's current coordinates and handle arrival.
+  # Called after ship arrives at explored coordinates.
+  # @param ship [Ship] the arrived ship
+  def realize_and_arrive!(ship)
+    x = ship.location_x
+    y = ship.location_y
+    z = ship.location_z
+
+    # Try to find or discover a system at these coordinates
+    existing_system = System.find_by(x: x, y: y, z: z)
+
+    if existing_system
+      # Dock at existing system
+      ship.update!(current_system_id: existing_system.id, status: "docked")
+      SystemVisit.record_visit(@user, existing_system)
+      ExploredCoordinate.mark_explored!(user: @user, x: x, y: y, z: z, has_system: true)
+    else
+      # Try procedural generation
+      begin
+        discovered = System.discover_at(x: x, y: y, z: z, user: @user)
+        ship.update!(current_system_id: discovered.id, status: "docked")
+        SystemVisit.record_visit(@user, discovered)
+        ExploredCoordinate.mark_explored!(user: @user, x: x, y: y, z: z, has_system: true)
+      rescue => e
+        # No system here (proc gen might reject coords) — mark as empty
+        ExploredCoordinate.mark_explored!(user: @user, x: x, y: y, z: z, has_system: false)
+      end
     end
   end
 end
