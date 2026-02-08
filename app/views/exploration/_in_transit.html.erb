@@ -1,0 +1,13 @@
+<div class="bg-yellow-900 border border-yellow-700 rounded p-6">
+  <h3 class="text-lg font-bold text-yellow-400 mb-2">🚀 Ship In Transit</h3>
+  <% if @ship.destination_x.present? %>
+    <p class="text-gray-300 font-mono">
+      Traveling to (<%= @ship.destination_x %>, <%= @ship.destination_y %>, <%= @ship.destination_z %>)
+    </p>
+  <% end %>
+  <% if @ship.arrival_at %>
+    <p class="text-gray-400 text-sm mt-2">
+      ETA: <%= distance_of_time_in_words_to_now(@ship.arrival_at) %>
+    </p>
+  <% end %>
+</div>
