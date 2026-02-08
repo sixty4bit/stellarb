@@ -115,6 +115,39 @@ class ExplorationServiceTest < ActiveSupport::TestCase
     assert result[:z] < 0, "From origin, down should find negative Z"
   end
 
+  test "closest_unexplored spinward from origin returns (1,0,0) not off-axis" do
+    result = @service.closest_unexplored(direction: :spinward)
+
+    assert_equal({ x: 1, y: 0, z: 0, distance: 1.0 }, result)
+  end
+
+  test "closest_unexplored north from origin returns (0,1,0) not off-axis" do
+    result = @service.closest_unexplored(direction: :north)
+
+    assert_equal({ x: 0, y: 1, z: 0, distance: 1.0 }, result)
+  end
+
+  test "closest_unexplored up from origin returns (0,0,1) not off-axis" do
+    result = @service.closest_unexplored(direction: :up)
+
+    assert_equal({ x: 0, y: 0, z: 1, distance: 1.0 }, result)
+  end
+
+  test "direction filtering constrains off-axis coordinates from non-origin" do
+    # Move ship to (3,3,3)
+    new_system = System.discover_at(x: 3, y: 3, z: 3, user: @user)
+    @ship.update!(current_system: new_system)
+    SystemVisit.record_visit(@user, new_system)
+
+    service = ExplorationService.new(@user, @ship)
+    result = service.closest_unexplored(direction: :spinward)
+
+    # Should be (4,3,3) — axis-aligned means y=3, z=3
+    assert_equal 4, result[:x]
+    assert_equal 3, result[:y]
+    assert_equal 3, result[:z]
+  end
+
   test "all six directions find candidates from origin" do
     %i[spinward antispinward north south up down].each do |dir|
       result = @service.closest_unexplored(direction: dir)
@@ -142,10 +175,13 @@ class ExplorationServiceTest < ActiveSupport::TestCase
   test "all_unexplored filters by direction and returns sorted" do
     results = @service.all_unexplored(direction: :spinward, limit: 10)
 
-    assert_equal 10, results.size
-    # All results should have X > current position (0)
+    # Axis-aligned: spinward from (0,0,0) means x=1..9, y=0, z=0 → 9 results
+    assert_equal 9, results.size
+    # All results should have X > current position (0) and y=0, z=0
     results.each do |r|
       assert r[:x] > @cradle.x, "Spinward results should have X > #{@cradle.x}"
+      assert_equal 0, r[:y], "Spinward should constrain Y to current position"
+      assert_equal 0, r[:z], "Spinward should constrain Z to current position"
     end
     # Should be sorted by distance
     distances = results.map { |r| r[:distance] }
